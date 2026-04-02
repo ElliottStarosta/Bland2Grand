@@ -1,0 +1,152 @@
+/* pages/SettingsPage.css */
+
+.settings-page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: var(--space-5) var(--space-5) var(--space-12);
+}
+
+/* Section */
+.settings-section__title {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-3);
+}
+
+.settings-section__desc {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-3);
+  line-height: var(--leading-normal);
+}
+
+/* Network */
+.settings-network {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.settings-network__status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.settings-network__dot {
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+.settings-network__label {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.settings-network__sub {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+/* Calibration rows */
+.settings-cal-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.settings-cal-row:last-child {
+  border-bottom: none;
+}
+
+.settings-cal-row__slot {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.settings-cal-row__label {
+  flex: 1;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-primary);
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.settings-cal-row__input {
+  width: 80px;
+  height: 38px;
+  padding: 0 var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  text-align: center;
+}
+
+/* Custom recipe form */
+.settings-custom {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.settings-field__label {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+/* Spice grid — 2 columns */
+.settings-spice-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.settings-spice-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.settings-spice-field__label {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  font-weight: var(--weight-medium);
+}
+
+.settings-spice-field__input {
+  height: 44px;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  text-align: center;
+  padding: 0 var(--space-3);
+}

@@ -1,0 +1,87 @@
+/* pages/DispensingPage.css */
+
+.dispense-page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-5) var(--space-8);
+}
+
+/* Octagon */
+.dispense-page__octagon {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-2) 0;
+}
+
+/* Active card */
+.dispense-page__active {
+  overflow: visible;
+}
+
+.dispense-page__active-label {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-1);
+}
+
+.dispense-page__active-name {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-snug);
+}
+
+/* Gram counter */
+.dispense-page__gram-counter {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.dispense-page__gram-current {
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-bold);
+  color: var(--color-accent);
+  line-height: 1;
+  transition: color var(--duration-fast) var(--ease-out);
+  min-width: 80px;
+  display: inline-block;
+}
+
+.dispense-page__gram-sep {
+  font-size: var(--text-xl);
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+}
+
+.dispense-page__gram-target {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-secondary);
+  line-height: 1;
+}
+
+.dispense-page__step {
+  font-size: var(--text-xs);
+  margin-top: var(--space-3);
+  font-family: var(--font-mono);
+}
+
+/* Checklist */
+.dispense-page__checklist {
+  flex: 1;
+}
+
+/* Footer */
+.dispense-page__footer {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-2) 0;
+}

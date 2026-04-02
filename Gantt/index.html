@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bland2Grand — Project Schedule</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ═══════════════════════ TOPBAR ═══════════════════════ -->
+<div id="topbar">
+  <div class="logo">
+    Bland<span class="accent">2Grand</span>
+    <span class="logo-badge">TEJ4M · 2026</span>
+  </div>
+  <div class="topbar-sep"></div>
+  <button class="btn btn-ghost btn-sm" onclick="resetData()">
+    <i class="fa-solid fa-rotate"></i> Reset
+  </button>
+  <button class="btn btn-ghost btn-sm" onclick="exportCSV()">
+    <i class="fa-solid fa-file-csv"></i> Export CSV
+  </button>
+  <button class="btn btn-ghost btn-sm" id="exportImgBtn" onclick="exportImage()">
+    <i class="fa-solid fa-image"></i> Export PNG
+  </button>
+  <button class="btn btn-primary btn-sm" onclick="openAdd()">
+    <i class="fa-solid fa-plus"></i> Add Task
+  </button>
+</div>
+
+<!-- ═══════════════════════ TOOLBAR ══════════════════════ -->
+<div id="toolbar">
+  <div class="tb-group">
+    <span class="tb-label">Zoom</span>
+    <select class="tb-select" id="zoomSelect" onchange="setZoom(this.value)">
+      <option value="16">Micro (16px)</option>
+      <option value="20">Wide (20px)</option>
+      <option value="24" selected>Normal (24px)</option>
+      <option value="32">Detail (32px)</option>
+      <option value="44">Close-up (44px)</option>
+    </select>
+  </div>
+  <div class="tb-sep"></div>
+  <div class="tb-group">
+    <span class="tb-label">Phase</span>
+    <select class="tb-select" id="filterPhase" onchange="filterByPhase(this.value)">
+      <option value="all">All Phases</option>
+      <option value="1">Phase 1 — Electronics</option>
+      <option value="2">Phase 2 — Flask/WiFi</option>
+      <option value="3">Phase 3 — Mechanical</option>
+      <option value="4">Phase 4 — Integration</option>
+      <option value="5">Phase 5 — Docs</option>
+    </select>
+  </div>
+  <div class="tb-sep"></div>
+  <div class="tb-group">
+    <i class="fa-solid fa-magnifying-glass" style="color:var(--text3);font-size:11px"></i>
+    <input class="tb-input" id="searchInput" type="text" placeholder="Search tasks…" oninput="filterSearch(this.value)">
+  </div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>Electronics</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#06b6d4"></div>Flask/WiFi</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div>Mechanical</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>Integration</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#a855f7"></div>Docs</div>
+    <div class="legend-item">
+      <div style="width:8px;height:8px;background:#f43f5e;transform:rotate(45deg);border-radius:1px"></div>Milestone
+    </div>
+    <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div>Done</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ APP ═══════════════════════════ -->
+<div id="app">
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="sidebar-head">
+      <span>Task</span>
+      <span>Dur</span>
+      <span>Dep</span>
+      <span>Progress</span>
+      <span></span>
+    </div>
+    <div id="taskList"></div>
+  </div>
+
+  <div id="sidebarResize" class="sidebar-resize" title="Drag to resize task panel" role="separator" aria-orientation="vertical" aria-label="Resize task sidebar"></div>
+
+  <!-- GANTT PANE -->
+  <div id="ganttPane">
+    <div id="ganttInner">
+      <div id="ganttHeader"></div>
+      <div id="ganttBody"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════ STATUS BAR ══════════════════ -->
+<div id="statusBar"></div>
+
+<!-- ═══════════════════════ TOOLTIP ══════════════════════ -->
+<div id="tooltip"></div>
+
+<!-- ═══════════════════════ MODAL ════════════════════════ -->
+<div id="modalOverlay">
+  <div class="modal">
+    <div class="modal-title">
+      <span id="modalTitle">Add Task</span>
+      <button class="modal-close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <div class="form-grid">
+      <div class="form-row">
+        <div class="form-field">
+          <label><i class="fa-solid fa-hashtag"></i> Task ID</label>
+          <input type="text" id="fId" placeholder="e.g. 5e">
+        </div>
+        <div class="form-field">
+          <label><i class="fa-solid fa-layer-group"></i> Phase</label>
+          <select id="fPhase">
+            <option value="1">Phase 1 — Electronics</option>
+            <option value="2">Phase 2 — Flask/WiFi</option>
+            <option value="3">Phase 3 — Mechanical</option>
+            <option value="4">Phase 4 — Integration</option>
+            <option value="5">Phase 5 — Docs</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label><i class="fa-solid fa-align-left"></i> Task Name</label>
+        <textarea id="fName" placeholder="Describe the task…"></textarea>
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label><i class="fa-solid fa-calendar-day"></i> Start Date</label>
+          <input type="date" id="fStart">
+        </div>
+        <div class="form-field">
+          <label><i class="fa-solid fa-hourglass-half"></i> Duration (days)</label>
+          <input type="number" id="fDur" min="0" step="0.5" value="1">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label><i class="fa-solid fa-arrow-right-from-bracket"></i> Dependencies</label>
+          <input type="text" id="fDep" placeholder="e.g. 1b, 2c">
+        </div>
+        <div class="form-field">
+          <label><i class="fa-solid fa-shapes"></i> Type</label>
+          <select id="fType">
+            <option value="subtask">Subtask</option>
+            <option value="task">Main Task</option>
+            <option value="milestone">Milestone</option>
+            <option value="phase">Phase Header</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label>
+          <i class="fa-solid fa-chart-simple"></i>
+          Progress — <span id="fProgVal" class="prog-val-pill">0%</span>
+        </label>
+        <div class="prog-slider-wrap" id="progSliderWrap">
+          <input type="range" id="fProg" class="prog-slider" min="0" max="100" step="10" value="0" aria-valuetext="0 percent">
+          <div class="prog-slider-ticks" aria-hidden="true">
+            <span>0</span><span>25</span><span>50</span><span>75</span><span>100</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label><i class="fa-solid fa-note-sticky"></i> Notes</label>
+        <textarea id="fNotes" placeholder="Any notes or context…"></textarea>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-danger btn-sm" id="deleteBtn" onclick="deleteTask()" style="display:none">
+        <i class="fa-solid fa-trash"></i> Delete
+      </button>
+      <button class="btn btn-primary" onclick="saveTask()">
+        <i class="fa-solid fa-floppy-disk"></i> Save Task
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="main.js"></script>
+</body>
+</html>
