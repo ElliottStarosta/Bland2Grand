@@ -6,7 +6,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faMagnifyingGlass,
   faXmark,
-  faSparkles,
+  faWandMagicSparkles,
   faCircleNotch,
 } from '@fortawesome/free-solid-svg-icons';
 import NavBar from '../layout/NavBar';
@@ -148,7 +148,7 @@ export default function SearchPage() {
         {/* AI generating state */}
         {searchLoading && debouncedQuery && searchResults.length === 0 && (
           <div className="search-page__ai-state" data-animate>
-            <FontAwesomeIcon icon={faSparkles} className="search-page__ai-icon" />
+            <FontAwesomeIcon icon={faWandMagicSparkles} className="search-page__ai-icon" />
             <p className="search-page__ai-text">Finding the best blend...</p>
           </div>
         )}

@@ -2,7 +2,7 @@
 import React, { useRef, useEffect } from 'react';
 import { gsap } from 'gsap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowRight, faStars } from '@fortawesome/free-solid-svg-icons';
+import { faArrowRight, faStar } from '@fortawesome/free-solid-svg-icons';
 import { activeSpices, spiceLabel, SPICE_META } from '../../utils/spices';
 import Button from './Button';
 import './RecipeCard.css';
@@ -75,7 +75,7 @@ export default function RecipeCard({ recipe, onSelect, index = 0 }) {
           </span>
           {recipe.ai_generated && (
             <span className="recipe-card__ai badge badge--blue">
-              <FontAwesomeIcon icon={faStars} /> AI blend
+              <FontAwesomeIcon icon={faStar} /> AI blend
             </span>
           )}
           {recipe.use_count > 0 && (
