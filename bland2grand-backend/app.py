@@ -106,12 +106,14 @@ def status_stream():
             unregister_sse_client(q)
 
     return Response(
-        stream_with_context(generate()),
-        mimetype="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "X-Accel-Buffering": "no",
-            "Connection": "keep-alive",
+    stream_with_context(generate()),
+    mimetype="text/event-stream",
+    headers={
+        "Cache-Control": "no-cache",
+        "X-Accel-Buffering": "no",
+        "Connection": "keep-alive",
+        "Content-Type": "text/event-stream",
+        "X-Content-Type-Options": "nosniff",
         },
     )
 

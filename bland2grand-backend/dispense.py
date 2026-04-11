@@ -37,6 +37,8 @@ def unregister_sse_client(q: queue.Queue) -> None:
 def _broadcast(event: dict) -> None:
     # send an event to all connected clients
     # non-blocking so one slow client doesn't freeze everything
+    print(f"[Broadcast] {event['type']} → {len(_sse_clients)} clients")
+    
     with _clients_lock:
         for q in _sse_clients:
             try:
@@ -141,6 +143,7 @@ def start_dispense(recipe: dict, serving_count: int) -> tuple[bool, str]:
     # this runs in a background thread
     def _run() -> None:
         _session.active = True
+        print(f"[Dispense] _run() started, clients={len(_sse_clients)}")
 
         try:
             # tell UI we're starting
