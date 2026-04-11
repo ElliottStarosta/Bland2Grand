@@ -56,8 +56,6 @@ def get_recipe(recipe_id: int):
 
 
 # Dispense
-
-
 @app.post("/api/dispense")
 def dispense():
     if is_busy():
