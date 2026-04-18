@@ -121,7 +121,7 @@ export function Bowl({ slots, totalTarget, totalWeight, activeSlot }: Props) {
   // f=0 → baseY (floor), f=1 → mouthY (full to brim)
   const fracToY = (f: number) => baseY - f * depth
 
-  // ── Clip path ─────────────────────────────────────────────────────────────
+  //  Clip path 
   const clip = [
     `M ${cx - mouthHW} ${mouthY}`,
     `C ${cx - mouthHW + 10} ${mouthY + 50}  ${cx - baseHW - 8} ${baseY - 20}  ${cx - baseHW} ${baseY}`,
@@ -137,7 +137,7 @@ export function Bowl({ slots, totalTarget, totalWeight, activeSlot }: Props) {
     `C ${cx + baseHW + 10} ${baseY - 18}  ${cx + mouthHW - 8} ${mouthY + 52}  ${cx + mouthHW} ${mouthY}`,
   ].join(' ')
 
-  // ── Layers ────────────────────────────────────────────────────────────────
+  //  Layers 
   const layers: { slot: number; color: string; topFrac: number; botFrac: number }[] = []
   let cum = 0
   for (const s of slots) {
@@ -153,7 +153,7 @@ export function Bowl({ slots, totalTarget, totalWeight, activeSlot }: Props) {
     cum = Math.min(cum + f, 1)
   }
 
-  // ── Drip ──────────────────────────────────────────────────────────────────
+  //  Drip 
   useEffect(() => {
     dripTlRef.current?.kill()
     dripTlRef.current = null
@@ -205,7 +205,7 @@ export function Bowl({ slots, totalTarget, totalWeight, activeSlot }: Props) {
       {/* Exterior bowl body */}
       <path d={outer} fill="#141210" />
 
-      {/* ── Interior — all clipped ── */}
+      {/*  Interior — all clipped  */}
       <g clipPath="url(#bowl-clip-v3)">
         {/* Empty base */}
         <rect x={0} y={0} width={W} height={H} fill="#090806" />

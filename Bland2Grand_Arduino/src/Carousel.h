@@ -117,7 +117,7 @@ public:
 
     // The shaft encoder count corresponding to slot 1 (Module 1 reference)
     // IMPORTANT: This value must be measured by running the homing calibration
-    //           utility sketch and replacing this constant with the observed value.
+    //          utility sketch and replacing this constant with the observed value.
     static constexpr uint16_t MODULE_1_SHAFT_COUNTS = 512;  // ← CALIBRATE THIS VALUE
 
 private:

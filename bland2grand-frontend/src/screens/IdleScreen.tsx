@@ -3,13 +3,13 @@ import { gsap } from 'gsap'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faHandPointer } from '@fortawesome/free-solid-svg-icons'
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+// Types 
 
 interface Props {
   onWake: () => void
 }
 
-// ── Ambient orb config ────────────────────────────────────────────────────────
+// Ambient orb config 
 
 const ORBS = [
   { color: '#C94020', size: 300, left: '10%',  top: '8%'  },
@@ -24,7 +24,7 @@ const DOTS = [
   '#4E7C55','#D4A870','#5a5650','#C63B0A',
 ]
 
-// ── Hook: idle timer ──────────────────────────────────────────────────────────
+// Hook: idle timer 
 // Fires onIdle after timeoutMs of no interaction.
 // Call the returned `wakeUp()` after dismissing the idle screen to restart the timer.
 
@@ -65,7 +65,7 @@ export function useIdleTimer(timeoutMs: number, onIdle: () => void) {
   return { wakeUp }
 }
 
-// ── Ambient orbs (initialised once, no re-run) ────────────────────────────────
+// Ambient orbs (initialised once, no re-run) 
 
 function AmbientOrbs() {
   const ref       = useRef<HTMLDivElement>(null)
@@ -105,7 +105,7 @@ function AmbientOrbs() {
   )
 }
 
-// ── Logo (logo.png) ───────────────────────────────────────────────────────────
+// Logo (logo.png) 
 
 function Logo() {
   const ref       = useRef<HTMLImageElement>(null)
@@ -140,7 +140,7 @@ function Logo() {
   )
 }
 
-// ── Wordmark ──────────────────────────────────────────────────────────────────
+// Wordmark 
 
 function Wordmark() {
   const ref       = useRef<HTMLDivElement>(null)
@@ -156,7 +156,7 @@ function Wordmark() {
   }, [])
 
   return (
-    <div ref={ref} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+    <div ref={ref} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
       <span style={{
         fontFamily: '"Cormorant", serif',
         fontSize: '2.8rem',
@@ -170,10 +170,10 @@ function Wordmark() {
       </span>
       <span style={{
         fontFamily: '"Outfit", sans-serif',
-        fontSize: '0.58rem',
+        fontSize: '0.62rem',
         fontWeight: 400,
         color: '#5a5652',
-        letterSpacing: '0.3em',
+        letterSpacing: '0.34em',
         textTransform: 'uppercase',
       }}>
         Spice Dispensing System
@@ -182,7 +182,7 @@ function Wordmark() {
   )
 }
 
-// ── Tap button (visual only — whole screen is the tap target) ─────────────────
+// Tap button (visual only — whole screen is the tap target) 
 
 function TapCue() {
   const wrapRef   = useRef<HTMLDivElement>(null)
@@ -220,7 +220,7 @@ function TapCue() {
   }, [])
 
   return (
-    <div ref={wrapRef} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18 }}>
+    <div ref={wrapRef} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 22 }}>
       {/* Ring + circle */}
       <div style={{ position: 'relative', width: 82, height: 82, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div ref={ring2Ref} style={{
@@ -255,12 +255,12 @@ function TapCue() {
       {/* Label */}
       <span ref={labelRef} style={{
         fontFamily: '"Outfit", sans-serif',
-        fontSize: '0.62rem',
+        fontSize: '0.68rem',
         fontWeight: 400,
         color: '#7A7672',
-        letterSpacing: '0.26em',
+        letterSpacing: '0.28em',
         textTransform: 'uppercase',
-        marginTop: 10,
+        marginTop: 14,
       }}>
         Tap anywhere to continue
       </span>
@@ -268,7 +268,7 @@ function TapCue() {
   )
 }
 
-// ── Spice dot strip ───────────────────────────────────────────────────────────
+// Spice dot strip 
 
 function SpiceDots() {
   const ref       = useRef<HTMLDivElement>(null)
@@ -318,10 +318,10 @@ function SpiceDots() {
   )
 }
 
-// ── Main idle screen ──────────────────────────────────────────────────────────
-// • Clicking ANYWHERE on the screen wakes it up
-// • All child animations guard with `initiated` ref so they never re-run
-//   if the component remounts (e.g. user goes idle a second time)
+// Main idle screen 
+// Clicking ANYWHERE on the screen wakes it up
+// All child animations guard with `initiated` ref so they never re-run
+// if the component remounts (e.g. user goes idle a second time)
 
 export function IdleScreen({ onWake }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -383,7 +383,7 @@ export function IdleScreen({ onWake }: Props) {
         background: 'linear-gradient(90deg, transparent, rgba(212,116,46,0.45), transparent)',
       }} />
 
-      {/* ── Three-zone layout ── */}
+      {/*  Three-zone layout  */}
       <div style={{
         position: 'relative', zIndex: 10,
         flex: 1,
@@ -391,21 +391,20 @@ export function IdleScreen({ onWake }: Props) {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingTop: 56,
-        paddingBottom: 40,
+        justifyContent: 'center',
+        paddingTop: 44,
+        paddingBottom: 34,
+        gap: 34,
       }}>
 
         {/* TOP: Logo + wordmark */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24 }}>
           <Logo />
           <Wordmark />
         </div>
 
         {/* MIDDLE: Tap cue */}
-        <div style={{ marginTop: -60 }}>
-          <TapCue />
-        </div>
+        <TapCue />
 
         {/* BOTTOM: Spice dots */}
         <SpiceDots />

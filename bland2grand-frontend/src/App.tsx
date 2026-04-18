@@ -7,7 +7,7 @@ import { ResultsScreen } from "./screens/ResultsScreen";
 import { ServingScreen } from "./screens/ServingScreen";
 import { DispensingScreen } from "./screens/DispensingScreen";
 import { CompleteScreen } from "./screens/CompleteScreen";
-import { api } from "./lib/api";
+import { api } from "./screens/lib/api";
 import { useDispenseStream } from "./hooks/useDispenseStream";
 import type { Recipe, Screen } from "./types";
 
@@ -21,8 +21,9 @@ export default function App() {
 
   const { session, connect, reset: resetSession, setSession } = useDispenseStream();
   const contentRef = useRef<HTMLDivElement>(null);
+  const fromFeatured = useRef(false);
 
-  // ── Idle timer — inside the component ──────────────────────────────────────
+  // Idle timer — inside the component 
   const { wakeUp } = useIdleTimer(60_000, () => {
     // Don't go idle while dispensing
     if (screen !== "dispensing") setIsIdle(true);
@@ -33,7 +34,7 @@ export default function App() {
     wakeUp(); // restart the countdown
   }, [wakeUp]);
 
-  // ── Screen transition ───────────────────────────────────────────────────────
+  // Screen transition 
   const navigateTo = useCallback((next: Screen) => {
     const el = contentRef.current;
     if (!el) { setScreen(next); return; }
@@ -54,7 +55,7 @@ export default function App() {
     });
   }, []);
 
-  // ── Handlers ────────────────────────────────────────────────────────────────
+  // Handlers 
   const handleResults = useCallback(
     (recipes: Recipe[], q: string) => {
       setResults(recipes);
@@ -67,9 +68,10 @@ export default function App() {
   const handleSelect = useCallback(
     (recipe: Recipe) => {
       setSelected(recipe);
+      fromFeatured.current = screen === 'search'; // came directly from search
       navigateTo("serving");
     },
-    [navigateTo],
+    [navigateTo, screen],
   );
 
   const handleDispense = useCallback(
@@ -102,15 +104,21 @@ export default function App() {
   }, [resetSession, navigateTo, wakeUp]);
 
   const handleBack = useCallback(() => {
-    const backMap: Partial<Record<Screen, Screen>> = {
-      results: "search",
-      serving: "results",
-    };
-    const prev = backMap[screen];
-    if (prev) navigateTo(prev);
+    if (screen === 'serving' && fromFeatured.current) {
+      fromFeatured.current = false;
+      navigateTo('search');
+    } else {
+      const backMap: Partial<Record<Screen, Screen>> = {
+        results: "search",
+        serving: "results",
+      };
+      const prev = backMap[screen];
+      if (prev) navigateTo(prev);
+    }
   }, [screen, navigateTo]);
 
-  // ── Auto-navigate to complete ───────────────────────────────────────────────
+
+  // Auto-navigate to complete 
   const prevComplete = useRef(false);
   if ((session.isComplete || session.isError) && !prevComplete.current && screen === "dispensing") {
     prevComplete.current = true;
@@ -127,7 +135,7 @@ export default function App() {
 
   return (
     <div
-      className="h-full flex flex-col max-w-md mx-auto overflow-hidden"
+      className="h-full w-full min-w-0 max-w-md mx-auto flex flex-col overflow-x-hidden overflow-y-hidden"
       style={{ background: "#080706" }}
     >
       {/* Idle screen overlay */}
@@ -157,7 +165,7 @@ export default function App() {
       <Header screen={screen} onBack={showBack ? handleBack : undefined} />
 
       {/* Screen content */}
-      <div ref={contentRef} className="flex-1 overflow-hidden flex flex-col min-h-0">
+      <div ref={contentRef} className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden">
         {screen === "search" && <SearchScreen onResults={handleResults} onSelect={handleSelect} />}
         {screen === "results"    && <ResultsScreen results={results} query={query} onSelect={handleSelect} />}
         {screen === "serving"    && selected && <ServingScreen recipe={selected} onDispense={handleDispense} loading={dispLoading} />}

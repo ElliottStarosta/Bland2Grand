@@ -55,7 +55,7 @@ export function DispensingScreen({ session }: Props) {
     >
       <div className="flex flex-col px-4 pb-safe gap-3">
 
-        {/* ── Status bar ── */}
+        {/*  Status bar  */}
         <div data-s className="flex items-center justify-between">
           <div className="flex items-center gap-2 min-w-0">
             {activeSlot?.status === 'indexing' && (
@@ -95,7 +95,7 @@ export function DispensingScreen({ session }: Props) {
           </div>
         </div>
 
-        {/* ── Bowl ── */}
+        {/*  Bowl  */}
         <div data-s className="glass-card px-3 pt-2 pb-2">
           <Bowl
             slots={session.slots}
@@ -123,7 +123,7 @@ export function DispensingScreen({ session }: Props) {
           </div>
         </div>
 
-        {/* ── Slot rows ── */}
+        {/*  Slot rows  */}
         <div data-s className="glass-card px-3 py-1">
           <div className="divide-y divide-border">
             {session.slots.map((s) => (
