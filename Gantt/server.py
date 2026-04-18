@@ -31,7 +31,7 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):
         print(f"  {self.address_string()} {fmt % args}")
 
-    # ── GET ──────────────────────────────────────────────
+    #  GET 
     def do_GET(self):
         path = self.path.split('?')[0]
 
@@ -58,7 +58,7 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
-    # ── POST ─────────────────────────────────────────────
+    #  POST 
     def do_POST(self):
         if self.path == '/save':
             length = int(self.headers.get('Content-Length', 0))

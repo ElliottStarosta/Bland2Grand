@@ -81,11 +81,22 @@ def _recipe_to_dict(row: sqlite3.Row) -> dict:
 
 # Public API
 
-def search_recipes(query: str, limit: int = 3) -> list[dict]:
+def search_recipes(query: str, limit: int = 6) -> list[dict]:
     conn = get_connection()
     rows = conn.execute(
         "SELECT * FROM recipes WHERE name LIKE ? COLLATE NOCASE ORDER BY name LIMIT ?",
         (f"%{query}%", limit),
+    ).fetchall()
+    conn.close()
+    return [_recipe_to_dict(r) for r in rows]
+
+
+def search_recipes_by_category(category: str, limit: int = 10) -> list[dict]:
+    """Return all recipes matching a category, ordered by name."""
+    conn = get_connection()
+    rows = conn.execute(
+        "SELECT * FROM recipes WHERE category LIKE ? COLLATE NOCASE ORDER BY name LIMIT ?",
+        (f"%{category}%", limit),
     ).fetchall()
     conn.close()
     return [_recipe_to_dict(r) for r in rows]

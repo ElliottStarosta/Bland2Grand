@@ -2,26 +2,33 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Root variables ── */
+/*  Root variables  */
 :root {
-  --color-bg:        #0C0B09;
-  --color-surface:   #141210;
-  --color-card:      #1C1A16;
-  --color-border:    #2C2926;
-  --color-accent:    #D4742E;
-  --color-accent-2:  #C4A55A;
+  --color-bg:        #080706;
+  --color-surface:   #0F0E0C;
+  --color-card:      #161411;
+  --color-card-hover:#1E1B17;
+  --color-border:    #252220;
+  --color-border-hi: #3A3530;
+  --color-accent:    #C8692A;
+  --color-accent-2:  #B89848;
+  --color-accent-glow: rgba(200, 105, 42, 0.15);
   --color-txt:       #EDE9E0;
-  --color-muted:     #7A7672;
-  --color-success:   #5BA85C;
-  --color-error:     #C94040;
+  --color-txt-dim:   #C4BFB4;
+  --color-muted:     #6A6662;
+  --color-success:   #4E9E50;
+  --color-error:     #B83838;
+  --radius-card:     20px;
+  --radius-pill:     100px;
 }
 
-/* ── Reset & base ── */
+/*  Reset & base  */
 *,
 *::before,
 *::after {
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
 }
 
 html,
@@ -40,49 +47,84 @@ body {
   height: 100%;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
-/* ── Safe-area helpers ── */
+/*  Safe-area helpers  */
 .pb-safe {
   padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
 }
 .pt-safe {
-  padding-top: max(1rem, env(safe-area-inset-top));
+  padding-top: max(1.25rem, env(safe-area-inset-top));
 }
 
-/* ── Typography ── */
+/*  Typography  */
 .font-display {
   font-family: 'Cormorant', serif;
 }
 
-/* ── Scrollbar ── */
-::-webkit-scrollbar {
-  width: 0;
-  height: 0;
-}
+/*  Scrollbar  */
+::-webkit-scrollbar { width: 0; height: 0; }
 
-/* ── Input resets ── */
-input {
-  outline: none;
-  background: transparent;
-}
+/*  Input resets  */
+input { outline: none; background: transparent; }
 
-/* ── Touch feedback ── */
-button,
-[role='button'] {
+/*  Touch feedback  */
+button, [role='button'] {
   cursor: pointer;
   touch-action: manipulation;
   user-select: none;
 }
 
-/* ── Card base ── */
+/*  Card base  */
 .glass-card {
   background: var(--color-card);
   border: 1px solid var(--color-border);
-  border-radius: 1rem;
+  border-radius: var(--radius-card);
+  position: relative;
+  overflow: hidden;
 }
 
-/* ── Shimmer animation ── */
+.glass-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(145deg, rgba(255,255,255,0.025) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+/*  Luxury card  */
+.luxury-card {
+  background: linear-gradient(145deg, #1C1915 0%, #131210 100%);
+  border: 1px solid #2A2722;
+  border-radius: var(--radius-card);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 8px 32px rgba(0,0,0,0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.luxury-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+}
+
+/*  Glow button  */
+.btn-glow {
+  background: linear-gradient(135deg, #D4742E 0%, #B85C1E 100%);
+  box-shadow: 0 4px 24px rgba(200,105,42,0.3), 0 1px 0 rgba(255,255,255,0.1) inset;
+  transition: box-shadow 0.2s, transform 0.1s;
+}
+
+.btn-glow:active {
+  box-shadow: 0 2px 12px rgba(200,105,42,0.2);
+  transform: scale(0.98);
+}
+
+/*  Shimmer animation  */
 @keyframes shimmer {
   0%   { background-position: -200% 0; }
   100% { background-position:  200% 0; }
@@ -91,21 +133,104 @@ button,
 .shimmer {
   background: linear-gradient(
     90deg,
-    rgba(255,255,255,0.03) 0%,
-    rgba(255,255,255,0.08) 50%,
-    rgba(255,255,255,0.03) 100%
+    rgba(255,255,255,0.02) 0%,
+    rgba(255,255,255,0.06) 50%,
+    rgba(255,255,255,0.02) 100%
   );
   background-size: 200% 100%;
-  animation: shimmer 1.8s infinite;
+  animation: shimmer 2s infinite;
 }
 
-/* ── Progress bar fill transition ── */
-.progress-fill {
-  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+/*  Grain texture  */
+@keyframes grain {
+  0%, 100% { transform: translate(0,0); }
+  10% { transform: translate(-1%,-1%); }
+  20% { transform: translate(1%,1%); }
+  30% { transform: translate(-1%,1%); }
+  40% { transform: translate(1%,-1%); }
+  50% { transform: translate(0,1%); }
+  60% { transform: translate(-1%,0); }
+  70% { transform: translate(1%,0); }
+  80% { transform: translate(0,-1%); }
+  90% { transform: translate(-1%,1%); }
 }
 
-/* ── Focus ring (accessibility) ── */
+/*  Focus ring  */
 button:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 3px;
+}
+
+/*  Ambient light pulse  */
+@keyframes ambientPulse {
+  0%, 100% { opacity: 0.12; }
+  50% { opacity: 0.22; }
+}
+
+.ambient-pulse {
+  animation: ambientPulse 4s ease-in-out infinite;
+}
+
+/*  Spice dot pulse  */
+@keyframes dotPulse {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.4); opacity: 1; }
+}
+
+/*  Idle screen  */
+.idle-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #060504;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+/*  Category pill  */
+.category-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(200, 105, 42, 0.2);
+  background: rgba(200, 105, 42, 0.08);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  font-weight: 600;
+  font-family: 'Outfit', sans-serif;
+}
+
+/*  Suggestion pill hover  */
+.suggestion-pill {
+  padding: 10px 18px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border-hi);
+  font-size: 13px;
+  color: var(--color-txt-dim);
+  background: var(--color-surface);
+  font-family: 'Outfit', sans-serif;
+  font-weight: 300;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.suggestion-pill:active {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background: var(--color-accent-glow);
+}
+
+/*  Divider line  */
+.gold-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-accent-2), transparent);
+  opacity: 0.2;
 }

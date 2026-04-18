@@ -143,6 +143,7 @@ def start_dispense(recipe: dict, serving_count: int) -> tuple[bool, str]:
     # this runs in a background thread
     def _run() -> None:
         _session.active = True
+        time.sleep(0.5)
         print(f"[Dispense] _run() started, clients={len(_sse_clients)}")
 
         try:

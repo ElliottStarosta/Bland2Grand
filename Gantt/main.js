@@ -2,7 +2,7 @@
    Bland2Grand · main.js
 ═══════════════════════════════════════════════════════ */
 
-// ── CONFIG ────────────────────────────────────────────
+//CONFIG 
 const DATA_URL     = 'tasks.json';
 const STORAGE_KEY     = 'b2g_tasks_v2';
 const COLLAPSE_KEY    = 'b2g_collapse_v1';
@@ -30,7 +30,7 @@ let filterPhase = 'all';
 let searchQ     = '';
 let editingId   = null;
 
-// ── INIT ─────────────────────────────────────────────
+//INIT 
 async function init() {
   try { collapsed = JSON.parse(localStorage.getItem(COLLAPSE_KEY)) || {}; } catch { collapsed = {}; }
   loadSidebarWidth();
@@ -132,7 +132,7 @@ function initSidebarResize() {
   window.addEventListener('resize', function() { applySidebarWidth(readCurrentW()); });
 }
 
-// ── PERSIST ───────────────────────────────────────────
+//PERSIST 
 function persist() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
   localStorage.setItem(COLLAPSE_KEY, JSON.stringify(collapsed));
@@ -167,7 +167,7 @@ function showSaveIndicator(msg, isError) {
 function persistAndSave() { persist(); saveToFile(); }
 setInterval(function() { if (tasks && tasks.length) saveToFile(); }, 30000);
 
-// ── UTILS ─────────────────────────────────────────────
+//UTILS 
 const daysBetween = function(a, b) { return (new Date(b) - new Date(a)) / 86400000; };
 const dateToX     = function(d)    { return daysBetween(PROJECT_START, parseTaskDate(d)) * PX_PER_DAY; };
 const totalDays   = function()     { return Math.ceil(daysBetween(PROJECT_START, PROJECT_END)) + 2; };
@@ -202,10 +202,10 @@ function getProgressColor(pct) {
   return '#3b82f6';
 }
 
-// ── RENDER ────────────────────────────────────────────
+//RENDER 
 function render() { renderSidebar(); renderGantt(); renderStats(); }
 
-// ── SIDEBAR ───────────────────────────────────────────
+//SIDEBAR 
 function renderSidebar() {
   const container = document.getElementById('taskList');
   const frags = [];
@@ -273,7 +273,7 @@ function renderSidebar() {
   container.innerHTML = frags.join('');
 }
 
-// ── GANTT ─────────────────────────────────────────────
+//GANTT 
 function renderGantt() {
   const total  = totalDays();
   const W      = total * PX_PER_DAY;
@@ -365,7 +365,7 @@ function renderGantt() {
   sidebar.parentElement.onscroll = function() { pane.scrollTop = sidebar.parentElement.scrollTop; };
 }
 
-// ── BUILD MONTH METADATA ──────────────────────────────
+//BUILD MONTH METADATA 
 function buildMonths(total) {
   const months = [];
   let lastM = -1;
@@ -382,7 +382,7 @@ function buildMonths(total) {
   return months;
 }
 
-// ── DEPENDENCY ARROWS ─────────────────────────────────
+//DEPENDENCY ARROWS 
 function drawArrows() {
   var old = document.getElementById('arrowLayer');
   if (old) old.remove();
@@ -892,7 +892,7 @@ function drawArrows() {
   body.appendChild(SVG);
 }
 
-// ── STATS ─────────────────────────────────────────────
+//STATS 
 function renderStats() {
   var nonPhase   = tasks.filter(function(t) { return t.type !== 'phase'; });
   var totalT     = nonPhase.length;
@@ -910,10 +910,10 @@ function renderStats() {
     '<div class="stat-author"><i class="fa-solid fa-user-gear"></i> Elliott Starosta \u00b7 TEJ4M</div>';
 }
 
-// ── COLLAPSE ──────────────────────────────────────────
+//COLLAPSE 
 function toggleCollapse(id) { collapsed[id] = !collapsed[id]; persist(); render(); }
 
-// ── QUICK PROGRESS ────────────────────────────────────
+//QUICK PROGRESS 
 function quickProgress(id) {
   var task = tasks.find(function(t) { return t.id === id; });
   if (!task) return;
@@ -924,7 +924,7 @@ function quickProgress(id) {
   persistAndSave(); render();
 }
 
-// ── TOGGLE DONE ───────────────────────────────────────
+//TOGGLE DONE 
 function toggleDone(id) {
   var task = tasks.find(function(t) { return t.id === id; });
   if (!task) return;
@@ -932,7 +932,7 @@ function toggleDone(id) {
   persistAndSave(); render();
 }
 
-// ── TOOLTIP ───────────────────────────────────────────
+//TOOLTIP 
 function showTT(e, id) {
   var task = tasks.find(function(t) { return t.id === id; });
   if (!task) return;
@@ -958,12 +958,12 @@ function moveTT(e) {
 }
 document.addEventListener('mousemove', moveTT);
 
-// ── ZOOM / FILTER ─────────────────────────────────────
+//ZOOM / FILTER 
 function setZoom(v)       { PX_PER_DAY = parseInt(v); renderGantt(); }
 function filterByPhase(v) { filterPhase = v; render(); }
 function filterSearch(v)  { searchQ = v; render(); }
 
-// ── MODAL ─────────────────────────────────────────────
+//MODAL 
 function openAdd() {
   editingId = null;
   document.getElementById('modalTitle').textContent = 'Add Task';
@@ -1028,7 +1028,7 @@ function deleteTask() {
   persistAndSave(); closeModal(); render();
 }
 
-// ── EXPORT CSV ────────────────────────────────────────
+//EXPORT CSV 
 function exportCSV() {
   var rows = [['ID','Name','Type','Phase','Start','Duration','Dependencies','Progress','Notes']];
   tasks.forEach(function(t) {
@@ -1040,12 +1040,12 @@ function exportCSV() {
   a.click();
 }
 
-// ── EXPORT PNG ────────────────────────────────────────
+//EXPORT PNG 
 async function exportImage() {
   const btn = document.getElementById('exportImgBtn');
   if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Rendering…'; }
 
-  // Load html2canvas on-demand
+  //Load html2canvas on-demand
   if (!window.html2canvas) {
     await new Promise((resolve, reject) => {
       const s = document.createElement('script');
@@ -1071,16 +1071,16 @@ async function exportImage() {
   const HEADER_H  = 64;
   const ROW_H     = 32;
 
-  // Count all visible rows (both .row and phase rows that are 28px — use offsetHeight sum)
+  //Count all visible rows (both .row and phase rows that are 28px — use offsetHeight sum)
   const allRows = taskListEl.querySelectorAll('.row:not(.hidden)');
   let contentH = HEADER_H;
   allRows.forEach(function(r) { contentH += r.offsetHeight || ROW_H; });
-  contentH += 4; // small bottom pad
+  contentH += 4; //small bottom pad
 
   const totalW = sidebarW + ganttW;
   const totalH = contentH;
 
-  // ── Off-screen wrapper ────────────────────────────────
+  //Off-screen wrapper 
   const wrapper = document.createElement('div');
   wrapper.style.cssText = [
     'position:fixed',
@@ -1093,7 +1093,7 @@ async function exportImage() {
     'background:#0d1117',
   ].join(';');
 
-  // Sidebar clone
+  //Sidebar clone
   const sCol = document.createElement('div');
   sCol.style.cssText = `width:${sidebarW}px;flex-shrink:0;border-right:1px solid #30363d;background:#161b22;overflow:hidden;height:${totalH}px;`;
 
@@ -1101,13 +1101,13 @@ async function exportImage() {
   hClone.style.position = 'relative';
   const lClone = taskListEl.cloneNode(true);
   lClone.style.overflow = 'visible';
-  // Show action buttons in the export so it looks clean
+  //Show action buttons in the export so it looks clean
   lClone.querySelectorAll('.row-acts').forEach(el => el.style.opacity = '0');
 
   sCol.appendChild(hClone);
   sCol.appendChild(lClone);
 
-  // Gantt clone
+  //Gantt clone
   const gCol = document.createElement('div');
   gCol.style.cssText = `flex:1;position:relative;background:#0d1117;overflow:hidden;height:${totalH}px;`;
 
@@ -1117,7 +1117,7 @@ async function exportImage() {
   const gbClone = ganttBodyEl.cloneNode(true);
   gbClone.style.cssText = `position:relative;width:${ganttW}px;`;
 
-  // Fix the SVG arrow layer inside the clone
+  //Fix the SVG arrow layer inside the clone
   const svgClone = gbClone.querySelector('#arrowLayer');
   if (svgClone) {
     svgClone.setAttribute('width', String(ganttW));
@@ -1159,7 +1159,7 @@ async function exportImage() {
   }
 }
 
-// ── RESET ─────────────────────────────────────────────
+//RESET 
 function resetData() {
   if (!confirm('Reset ALL data to original tasks.json? All progress will be lost.')) return;
   localStorage.removeItem(STORAGE_KEY);
@@ -1167,7 +1167,7 @@ function resetData() {
   location.reload();
 }
 
-// ── EVENTS ────────────────────────────────────────────
+//EVENTS 
 document.getElementById('modalOverlay').addEventListener('click', function(e) {
   if (e.target === document.getElementById('modalOverlay')) closeModal();
 });
@@ -1184,5 +1184,5 @@ function syncProgSliderVisual() {
 }
 document.getElementById('fProg').addEventListener('input', syncProgSliderVisual);
 
-// ── START ─────────────────────────────────────────────
+//START 
 init();
