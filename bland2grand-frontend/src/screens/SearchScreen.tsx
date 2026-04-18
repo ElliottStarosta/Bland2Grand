@@ -10,7 +10,6 @@ import {
   faStar,
   faGlobe,
   faBowlFood,
-  faBurn,
   faSeedling,
   faFish,
   faSun,
@@ -28,7 +27,7 @@ interface Props {
 }
 
 const CATEGORIES = [
-  { label: 'Mexican',       icon: faBurn,         query: 'Mexican'       },
+  { label: 'Mexican',       icon: faFire,          query: 'Mexican'       },
   { label: 'Indian',        icon: faSun,           query: 'Indian'        },
   { label: 'Italian',       icon: faLeaf,          query: 'Italian'       },
   { label: 'BBQ',           icon: faFire,          query: 'BBQ'           },
@@ -139,10 +138,27 @@ function FeaturedCard({
     gsap.fromTo(ref.current, { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, delay, ease: 'power3.out' })
   }, [delay])
 
+  const handleClick = () => {
+    if (!ref.current) return
+    gsap.to(ref.current, {
+      scale: 0.95,
+      duration: 0.08,
+      ease: 'power2.out',
+      onComplete: () => {
+        gsap.to(ref.current, {
+          scale: 1,
+          duration: 0.3,
+          ease: 'back.out(2.5)',
+          onComplete: onClick,
+        })
+      },
+    })
+  }
+
   return (
     <button
       ref={ref}
-      onClick={onClick}
+      onClick={handleClick}
       className="glass-card p-3 text-left flex-shrink-0 w-40 flex flex-col gap-2
                  active:border-accent/50 transition-colors duration-150 focus:outline-none"
     >
@@ -159,6 +175,53 @@ function FeaturedCard({
         <span className="text-[10px] text-accent font-body font-medium uppercase tracking-wider">Dispense</span>
         <FontAwesomeIcon icon={faChevronRight} className="text-accent text-[9px]" />
       </div>
+    </button>
+  )
+}
+
+// Reusable pressable button with GSAP bounce
+function PressableRow({
+  onClick,
+  children,
+}: {
+  onClick: () => void
+  children: React.ReactNode
+}) {
+  const ref = useRef<HTMLButtonElement>(null)
+
+  const handleClick = () => {
+    if (!ref.current) return
+    gsap.to(ref.current, {
+      scale: 0.97,
+      duration: 0.08,
+      ease: 'power2.out',
+      onComplete: () => {
+        gsap.to(ref.current, {
+          scale: 1,
+          duration: 0.28,
+          ease: 'back.out(2.5)',
+          onComplete: onClick,
+        })
+      },
+    })
+  }
+
+  return (
+    <button
+      ref={ref}
+      onClick={handleClick}
+      className="w-full flex items-center gap-3 px-3.5 py-2.5 text-left focus:outline-none"
+      style={{
+        background: 'var(--color-card)',
+        border: '1px solid var(--color-border)',
+        borderRadius: '1rem',
+        cursor: 'pointer',
+        // ensure it never exceeds parent width
+        minWidth: 0,
+        boxSizing: 'border-box',
+      }}
+    >
+      {children}
     </button>
   )
 }
@@ -205,7 +268,6 @@ export function SearchScreen({ onResults, onSelect }: Props) {
     }
   }, [onResults])
 
-  // Featured card: fetch the recipe directly and jump straight to serving screen
   const doFeatured = useCallback(async (name: string) => {
     setLoading(true)
     setError('')
@@ -238,25 +300,26 @@ export function SearchScreen({ onResults, onSelect }: Props) {
   const isSearching = loading && !aiLoading
 
   return (
-    <div className="flex-1 overflow-y-auto overflow-x-hidden pb-5" style={{ paddingLeft: '1rem', paddingRight: '1rem', boxSizing: 'border-box', width: '100%' }}>
+    // px-4 handles all horizontal padding — no width/boxSizing overrides needed
+    <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-5">
 
       {/* Search bar */}
-      <div ref={searchRef} className="mt-2" style={{ width: '100%' }}>
+      <div ref={searchRef} className="mt-2">
         <div className="flex items-center gap-3 glass-card px-3 py-3.5
-                        focus-within:border-accent/50 transition-colors duration-200"
-             style={{ width: '100%', boxSizing: 'border-box' }}>
+                        focus-within:border-accent/50 transition-colors duration-200">
           <FontAwesomeIcon
             icon={isSearching ? faWandMagicSparkles : faMagnifyingGlass}
-            className={`flex-shrink-0 text-base transition-colors duration-200 ${isSearching ? 'animate-pulse text-accent' : 'text-muted'}`}
+            className={`flex-shrink-0 text-base transition-colors duration-200 ${
+              isSearching ? 'animate-pulse text-accent' : 'text-muted'
+            }`}
           />
           <input
             value={query}
             onChange={(e) => handleChange(e.target.value)}
             onKeyDown={handleKey}
             placeholder="tacos, butter chicken…"
-            className="flex-1 bg-transparent text-txt text-base font-body placeholder-muted/50 min-w-0"
+            className="flex-1 min-w-0 bg-transparent text-txt text-base font-body placeholder-muted/50"
             autoComplete="off" autoCorrect="off" spellCheck={false} inputMode="search"
-            style={{ minWidth: 0 }}
           />
           {isSearching && (
             <div className="flex items-center gap-0.5 flex-shrink-0">
@@ -275,13 +338,15 @@ export function SearchScreen({ onResults, onSelect }: Props) {
       {aiLoading && query.trim() && <AiLoadingOverlay query={query.trim()} />}
 
       {!aiLoading && (
-        <div ref={bodyRef} className="flex flex-col gap-5 mt-5" style={{ width: '100%' }}>
+        <div ref={bodyRef} className="flex flex-col gap-5 mt-5">
 
           {/* Featured blends */}
-          <section style={{ width: '100%' }}>
+          <section>
             <div className="flex items-center gap-2 mb-3">
               <FontAwesomeIcon icon={faStar} className="text-accent text-xs" />
-              <p className="text-xs text-muted font-body uppercase tracking-widest font-semibold">Featured Blends</p>
+              <p className="text-xs text-muted font-body uppercase tracking-widest font-semibold">
+                Featured Blends
+              </p>
             </div>
             <div className="flex gap-2.5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
               {FEATURED.map((f, i) => (
@@ -298,41 +363,89 @@ export function SearchScreen({ onResults, onSelect }: Props) {
           </section>
 
           {/* Browse by cuisine */}
-          <section style={{ width: '100%', boxSizing: 'border-box' }}>
+          <section>
             <div className="flex items-center gap-2 mb-3">
               <FontAwesomeIcon icon={faGlobe} className="text-accent text-xs" />
-              <p className="text-xs text-muted font-body uppercase tracking-widest font-semibold">Browse by Cuisine</p>
+              <p className="text-xs text-muted font-body uppercase tracking-widest font-semibold">
+                Browse by Cuisine
+              </p>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%', boxSizing: 'border-box' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {CATEGORIES.map((cat) => (
                 <button
-                  key={cat.label}
-                  onClick={() => { setQuery(cat.label); doSearch(cat.query) }}
-                  style={{ width: '100%', boxSizing: 'border-box', display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.625rem 0.875rem', background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: '1rem', cursor: 'pointer' }}
+                  className="w-full focus:outline-none"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    padding: '10px 14px',
+                    background: 'var(--color-card)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 16,
+                    cursor: 'pointer',
+                    boxSizing: 'border-box', 
+                    minWidth: 0,
+                  }}
                 >
-                  <div style={{ width: '2rem', height: '2rem', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'rgba(212,116,46,0.09)', border: '1px solid rgba(212,116,46,0.18)' }}>
-                    <FontAwesomeIcon icon={cat.icon} className="text-accent text-sm" />
+                  <div style={{
+                    width: 32, height: 32, borderRadius: 8,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0,
+                    background: 'rgba(212,116,46,0.09)',
+                    border: '1px solid rgba(212,116,46,0.18)',
+                  }}>
+                    <FontAwesomeIcon icon={cat.icon} className="text-accent" style={{ fontSize: 13 }} />
                   </div>
-                  <span className="text-sm font-body text-txt font-medium" style={{ flex: 1, textAlign: 'left' }}>{cat.label}</span>
-                  <FontAwesomeIcon icon={faChevronRight} className="text-muted text-xs" style={{ flexShrink: 0 }} />
+                  <span style={{
+                    flex: 1,
+                    minWidth: 0,
+                    textAlign: 'left',
+                    fontSize: 14,
+                    fontFamily: '"Outfit", sans-serif',
+                    fontWeight: 500,
+                    color: 'var(--color-txt)',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}>
+                    {cat.label}
+                  </span>
+                  <FontAwesomeIcon
+                    icon={faChevronRight}
+                    style={{ fontSize: 11, color: 'var(--color-muted)', flexShrink: 0 }}
+                  />
                 </button>
               ))}
             </div>
           </section>
 
           {/* Spice slots legend */}
-          <section style={{ width: '100%', boxSizing: 'border-box', background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: '1rem', padding: '1rem', marginBottom: '0.25rem' }}>
+          <section
+            className="mb-1 p-4 rounded-2xl"
+            style={{
+              background: 'var(--color-card)',
+              border: '1px solid var(--color-border)',
+            }}
+          >
             <div className="flex items-center gap-2 mb-3">
               <FontAwesomeIcon icon={faBowlFood} className="text-accent text-xs" />
-              <p className="text-xs text-muted font-body uppercase tracking-widest font-semibold">Spice Slots</p>
+              <p className="text-xs text-muted font-body uppercase tracking-widest font-semibold">
+                Spice Slots
+              </p>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.625rem 0.75rem', width: '100%', boxSizing: 'border-box' }}>
+            <div className="grid grid-cols-2 gap-x-3 gap-y-2.5">
               {Object.entries(SPICE_LABELS).map(([slot, label]) => (
-                <div key={slot} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
-                  <span style={{ width: '0.625rem', height: '0.625rem', borderRadius: '50%', flexShrink: 0, backgroundColor: SPICE_COLORS[Number(slot)] }} />
-                  <span className="font-body text-muted font-light" style={{ fontSize: '0.7rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div key={slot} className="flex items-center gap-2 min-w-0">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: SPICE_COLORS[Number(slot)] }}
+                  />
+                  <span
+                    className="font-body text-muted font-light truncate"
+                    style={{ fontSize: '0.7rem' }}
+                  >
                     <span className="text-txt font-semibold">{slot}</span>
-                    <span style={{ margin: '0 3px', color: 'var(--color-border)' }}>·</span>
+                    <span className="mx-1" style={{ color: 'var(--color-border)' }}>·</span>
                     {label}
                   </span>
                 </div>

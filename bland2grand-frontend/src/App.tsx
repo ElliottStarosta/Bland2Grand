@@ -158,7 +158,7 @@ export default function App() {
 
       {/* Screen content */}
       <div ref={contentRef} className="flex-1 overflow-hidden flex flex-col min-h-0">
-        {screen === "search"     && <SearchScreen onResults={handleResults} />}
+        {screen === "search" && <SearchScreen onResults={handleResults} onSelect={handleSelect} />}
         {screen === "results"    && <ResultsScreen results={results} query={query} onSelect={handleSelect} />}
         {screen === "serving"    && selected && <ServingScreen recipe={selected} onDispense={handleDispense} loading={dispLoading} />}
         {screen === "dispensing" && <DispensingScreen session={session} />}
