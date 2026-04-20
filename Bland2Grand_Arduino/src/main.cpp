@@ -95,13 +95,10 @@ void setup()
     Serial.println(F(""));
 }
 
-//
-// loop()
-//
+
 void loop()
 {
     sm.update();
-
     // Keep background stepper service running (for future non-blocking extension)
     carousel.runService();
     auger.runService();

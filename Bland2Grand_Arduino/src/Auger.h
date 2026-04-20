@@ -16,26 +16,27 @@ enum class DispenseResult
 class Auger
 {
 public:
-    //Construction
+    // Construction
     Auger(Scale &scale, FlowModel &model)
         : _stepper(AccelStepper::DRIVER, PIN_AUGER_STEP, PIN_AUGER_DIR), _scale(scale), _model(model)
     {
     }
 
-    //begin() — call once in setup()
+    // begin() — call once in setup()
     void begin()
     {
         _stepper.setMaxSpeed(AUGER_FULL_SPEED_STEPS_S);
         _stepper.setAcceleration(AUGER_FULL_SPEED_STEPS_S * 2.0f);
         _stepper.setCurrentPosition(0);
-        //Keep motor energised at all times (ENA− tied to GND externally)
+        // Keep motor energised at all times (ENA− tied to GND externally)
     }
 
-    //dispense() — blocking; returns DispenseResult
-    //slot (0-based): used to look up the FlowModel.
-    //targetGrams: mass to dispense into the bowl.
-    //On exit, actual_g is set to the final scale reading.
-    DispenseResult dispense(uint8_t slot, float targetGrams, float& actual_g) {
+    // dispense() — blocking; returns DispenseResult
+    // slot (0-based): used to look up the FlowModel.
+    // targetGrams: mass to dispense into the bowl.
+    // On exit, actual_g is set to the final scale reading.
+    DispenseResult dispense(uint8_t slot, float targetGrams, float &actual_g)
+    {
         _scale.tare();
         float stopWeight = _model.predictStopWeight(slot, targetGrams);
 
@@ -52,19 +53,23 @@ public:
         _setAugerSpeed(0.0f, targetGrams);
         _stepper.setSpeed(AUGER_FULL_SPEED_STEPS_S);
 
-        while (true) {
+        while (true)
+        {
             _stepper.runSpeed();
             stepsInCycle++;
             totalStepsDispensed++;
 
-            if (stepsInCycle >= static_cast<long>(STEPS_PER_AUGER_CYCLE)) {
+            if (stepsInCycle >= static_cast<long>(STEPS_PER_AUGER_CYCLE))
+            {
                 stepsInCycle = 0;
                 cyclesCompleted++;
             }
 
             uint32_t now = millis();
-            if (now - lastScalePoll >= SCALE_POLL_MS) {
-                if (!_scale.isReady()) {
+            if (now - lastScalePoll >= SCALE_POLL_MS)
+            {
+                if (!_scale.isReady())
+                {
                     lastScalePoll = now;
                     continue;
                 }
@@ -72,18 +77,21 @@ public:
                 lastScalePoll = now;
                 currentWeight = _scale.read();
 
-                if (firstRead) {
+                if (firstRead)
+                {
                     weightAtStart = currentWeight;
                     firstRead = false;
                 }
 
-                if (cyclesCompleted > 0 && currentWeight > 0.0f) {
+                if (cyclesCompleted > 0 && currentWeight > 0.0f)
+                {
                     _model.addObservation(slot,
-                                        static_cast<float>(cyclesCompleted),
-                                        currentWeight - weightAtStart);
+                                          static_cast<float>(cyclesCompleted),
+                                          currentWeight - weightAtStart);
                 }
 
-                if (_scale.isOverloaded()) {
+                if (_scale.isOverloaded())
+                {
                     _stopAndPurge(totalStepsDispensed);
                     actual_g = _scale.read();
                     return DispenseResult::OVERLOAD;
@@ -91,13 +99,15 @@ public:
 
                 _setAugerSpeed(currentWeight, targetGrams);
 
-                if (currentWeight >= stopWeight) {
+                if (currentWeight >= stopWeight)
+                {
                     _stopAndPurge(totalStepsDispensed);
 
                     delay(300);
                     actual_g = _scale.read();
                     float coast = actual_g - currentWeight;
-                    if (coast > 0.0f) {
+                    if (coast > 0.0f)
+                    {
                         _model.recordCoast(slot, coast);
                         _model.saveToEEPROM(slot);
                     }
@@ -105,7 +115,8 @@ public:
                 }
             }
 
-            if (millis() - startTime > DISPENSE_TIMEOUT_MS) {
+            if (millis() - startTime > DISPENSE_TIMEOUT_MS)
+            {
                 _stopAndPurge(totalStepsDispensed);
                 actual_g = _scale.read();
                 return DispenseResult::TIMEOUT;
@@ -113,45 +124,48 @@ public:
         }
     }
 
-    void _stopAndPurge(long stepsToReverse) {
-    // Hard stop
-    _stepper.stop();
-    while (_stepper.distanceToGo() != 0)
-        _stepper.run();
-
-    // Reverse exactly as many steps as were used during the dispense.
-    // Because the half-spur gear teeth cover exactly 180° (= 1 auger cycle =
-    // STEPS_PER_AUGER_CYCLE steps), reversing the exact step count sweeps the
-    // same powder back up the helix and re-parks the toothless arc in the same
-    // angular position it started from — restoring the mechanical cutoff.
-    if (stepsToReverse > 0) {
-        _stepper.setMaxSpeed(BACK_PURGE_SPEED_STEPS_S);
-        _stepper.setAcceleration(BACK_PURGE_SPEED_STEPS_S * 2.0f);
-        _stepper.move(-stepsToReverse);
+    void _stopAndPurge(long stepsToReverse)
+    {
+        // Hard stop
+        _stepper.stop();
         while (_stepper.distanceToGo() != 0)
             _stepper.run();
+
+        // Reverse exactly as many steps as were used during the dispense.
+        // Because the half-spur gear teeth cover exactly 180° (= 1 auger cycle =
+        // STEPS_PER_AUGER_CYCLE steps), reversing the exact step count sweeps the
+        // same powder back up the helix and re-parks the toothless arc in the same
+        // angular position it started from — restoring the mechanical cutoff.
+        if (stepsToReverse > 0)
+        {
+            _stepper.setMaxSpeed(BACK_PURGE_SPEED_STEPS_S);
+            _stepper.setAcceleration(BACK_PURGE_SPEED_STEPS_S * 2.0f);
+            _stepper.move(-stepsToReverse);
+            while (_stepper.distanceToGo() != 0)
+                _stepper.run();
+        }
+
+        // Restore forward settings for next dispense
+        _stepper.setMaxSpeed(AUGER_FULL_SPEED_STEPS_S);
+        _stepper.setAcceleration(AUGER_FULL_SPEED_STEPS_S * 2.0f);
+
+        delay(AUGER_COIL_DISABLE_DELAY_MS);
+        disableCoils();
     }
 
-    // Restore forward settings for next dispense
-    _stepper.setMaxSpeed(AUGER_FULL_SPEED_STEPS_S);
-    _stepper.setAcceleration(AUGER_FULL_SPEED_STEPS_S * 2.0f);
-
-    delay(AUGER_COIL_DISABLE_DELAY_MS);
-    disableCoils();
-}
-    //runService() — call from loop() for non-blocking background stepping
+    // runService() — call from loop() for non-blocking background stepping
     void runService()
     {
         _stepper.run();
     }
 
-    //disableCoils() — cut coil current during idle periods
+    // disableCoils() — cut coil current during idle periods
     void disableCoils()
     {
         _stepper.disableOutputs();
     }
 
-    //enableCoils() — re-energise before next dispense
+    // enableCoils() -- re-energise before next dispense
     void enableCoils()
     {
         _stepper.enableOutputs();
@@ -170,15 +184,15 @@ private:
 
         if (ratio < RAMP_STAGE2_THRESHOLD)
         {
-            speedFraction = RAMP_SPEED_STAGE1; //100%
+            speedFraction = RAMP_SPEED_STAGE1; // 100%
         }
         else if (ratio < RAMP_STAGE3_THRESHOLD)
         {
-            speedFraction = RAMP_SPEED_STAGE2; //50%
+            speedFraction = RAMP_SPEED_STAGE2; // 50%
         }
         else
         {
-            speedFraction = RAMP_SPEED_STAGE3; //15%
+            speedFraction = RAMP_SPEED_STAGE3; // 15%
         }
 
         float speed = AUGER_FULL_SPEED_STEPS_S * speedFraction;
@@ -189,27 +203,27 @@ private:
     //_stopAndPurge() — stop motor, run back-purge, disable coils
     void _stopAndPurge(uint8_t slot, long cyclesCompleted)
     {
-        //Immediate stop
+        // Immediate stop
         _stepper.stop();
         while (_stepper.distanceToGo() != 0)
             _stepper.run();
 
-        //Back-purge: reverse BACK_PURGE_STEPS at moderate speed
-        //The half-gear engagement means reverse motion will pull the auger
-        //helix backwards, sweeping residual powder back up into the container.
-        //We reverse exactly 1 full revolution so the toothless arc re-parks
-        //facing the container gear (providing positive mechanical cutoff).
+        // Back-purge: reverse BACK_PURGE_STEPS at moderate speed
+        // The half-gear engagement means reverse motion will pull the auger
+        // helix backwards, sweeping residual powder back up into the container.
+        // We reverse exactly 1 full revolution so the toothless arc re-parks
+        // facing the container gear (providing positive mechanical cutoff).
         _stepper.setMaxSpeed(BACK_PURGE_SPEED_STEPS_S);
         _stepper.setAcceleration(BACK_PURGE_SPEED_STEPS_S * 2.0f);
         _stepper.move(-static_cast<long>(BACK_PURGE_STEPS));
         while (_stepper.distanceToGo() != 0)
             _stepper.run();
 
-        //Restore forward acceleration setting for next dispense
+        // Restore forward acceleration setting for next dispense
         _stepper.setMaxSpeed(AUGER_FULL_SPEED_STEPS_S);
         _stepper.setAcceleration(AUGER_FULL_SPEED_STEPS_S * 2.0f);
 
-        //Disable coils after settle delay to reduce heat
+        // Disable coils after settle delay to reduce heat
         delay(AUGER_COIL_DISABLE_DELAY_MS);
         disableCoils();
     }
