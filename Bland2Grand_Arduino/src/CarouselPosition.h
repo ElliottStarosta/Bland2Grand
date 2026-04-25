@@ -11,7 +11,7 @@
 //   int32_t  stepPosition  (AccelStepper position)  — bytes 3-6
 //   uint8_t  magic         (0xA5 = valid record)    — byte 7
 //   uint8_t  padding[8]                             — bytes 8-15
-static constexpr uint16_t CAROUSEL_POS_EEPROM_ADDR = 64;
+static constexpr uint16_t CAROUSEL_POS_EEPROM_ADDR = 128;
 static constexpr uint8_t CAROUSEL_POS_MAGIC = 0xA5;
 
 // How far encoder and step-derived positions may disagree before we trust
