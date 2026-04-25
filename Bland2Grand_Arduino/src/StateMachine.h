@@ -141,6 +141,13 @@ private:
             Serial.println(_pendingGrams);
             _transitionTo(State::INDEXING);
         }
+
+        if (cmd.isWeightQuery)
+        {
+            float w = _scale.read();
+            _wifi.sendWeightResponse(w);
+            return;
+        }
     }
 
     // INDEXING

@@ -1,17 +1,15 @@
-# import json  # not used right now
-import queue
-import random
-import threading
-import time
 from typing import Optional
 
 import requests
+import queue, threading, time, requests
 from config import ARDUINO_URL, MOCK_ARDUINO, SPICE_SLOTS
 
 
 # list of all connected clients (each gets its own queue)
 _sse_clients: list[queue.Queue] = []
 _clients_lock = threading.Lock()  # prevent race conditions when modifying list
+
+_POLL_INTERVAL = 0.15  # seconds between weight polls
 
 
 def register_sse_client() -> queue.Queue:
@@ -65,17 +63,56 @@ _session = DispenseSession()
 
 # send request to Arduino and wait for response
 def _send_to_arduino(slot: int, grams: float) -> dict:
-    url = f"{ARDUINO_URL}/"
-    payload = {"carousel": slot, "grams": grams}
+    """
+    POST to Arduino to start dispensing.
+    Arduino blocks until done, so we poll weight in a separate thread
+    and let the POST complete when the Arduino finishes.
+    """
+    result_holder = {}
+    error_holder = {}
 
-    # send command (blocking)
-    resp = requests.post(url, json=payload, timeout=90)
-    resp.raise_for_status()
+    def _do_post():
+        try:
+            r = requests.post(
+                f"{ARDUINO_URL}/",
+                json={"carousel": slot, "grams": grams},
+                timeout=120  # Arduino can take up to 60s + carousel time
+            )
+            r.raise_for_status()
+            result_holder.update(r.json())
+        except Exception as e:
+            error_holder["err"] = str(e)
 
-    # expected: {"status": "done"|"timeout", "actual": float}
-    return resp.json()
+    post_thread = threading.Thread(target=_do_post, daemon=True)
+    post_thread.start()
 
+    # Poll weight while Arduino is dispensing
+    deadline = time.time() + 90
+    while post_thread.is_alive() and time.time() < deadline:
+        weight = _poll_weight()
+        _broadcast({
+            "type": "weight_update",
+            "slot": slot,
+            "current_weight": round(weight, 2),
+            "target_weight": round(grams, 2),
+        })
+        time.sleep(_POLL_INTERVAL)
 
+    post_thread.join(timeout=5)
+
+    if error_holder:
+        return {"status": "timeout", "actual": _poll_weight()}
+
+    return result_holder if result_holder else {"status": "timeout", "actual": 0.0}
+
+def _poll_weight() -> float:
+    """GET /weight from Arduino — returns current scale reading."""
+    try:
+        r = requests.get(f"{ARDUINO_URL}/weight", timeout=2)
+        r.raise_for_status()
+        return float(r.json().get("weight", 0.0))
+    except Exception:
+        return 0.0
 # fake Arduino logic so you can test without hardware
 def _mock_dispense_spice(slot: int, target_grams: float) -> dict:
     current = 0.0

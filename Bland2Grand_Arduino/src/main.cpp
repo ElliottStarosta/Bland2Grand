@@ -27,9 +27,9 @@ static char g_password[65] = {};
 Scale scale;
 Encoder encoder;
 FlowModel model;
-Carousel carousel(encoder);
-Auger auger(scale, model);
 WiFiComm wifi;
+Carousel carousel(encoder);
+Auger auger(scale, model, wifi);
 StateMachine sm(carousel, auger, scale, model, wifi);
 
 // EEPROM helpers

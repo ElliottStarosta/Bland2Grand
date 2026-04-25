@@ -4,6 +4,7 @@
 #include "Constants.h"
 #include "Scale.h"
 #include "FlowModel.h"
+#include "WiFiComm.h"
 
 enum class DispenseResult
 {
@@ -17,10 +18,8 @@ class Auger
 {
 public:
     // Construction
-    Auger(Scale &scale, FlowModel &model)
-        : _stepper(AccelStepper::DRIVER, PIN_AUGER_STEP, PIN_AUGER_DIR), _scale(scale), _model(model)
-    {
-    }
+    Auger(Scale &scale, FlowModel &model, WiFiComm &wifi)
+        : _stepper(...), _scale(scale), _model(model), _wifi(wifi) {}
 
     // begin() — call once in setup()
     void begin()
@@ -58,6 +57,15 @@ public:
             _stepper.runSpeed();
             stepsInCycle++;
             totalStepsDispensed++;
+
+            static uint32_t lastWifiService = 0;
+            if (millis() - lastWifiService >= 50) {
+                lastWifiService = millis();
+                Command cmd;
+                if (_wifi.poll(cmd) && cmd.isWeightQuery) {
+                    _wifi.sendWeightResponse(_scale.read());
+                }
+            }
 
             if (stepsInCycle >= static_cast<long>(STEPS_PER_AUGER_CYCLE))
             {
@@ -175,6 +183,7 @@ private:
     AccelStepper _stepper;
     Scale &_scale;
     FlowModel &_model;
+    WiFiComm &_wifi;
 
     //_setAugerSpeed() — apply three-stage ramp-down
     void _setAugerSpeed(float current, float target)
