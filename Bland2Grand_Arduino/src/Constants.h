@@ -45,6 +45,11 @@ static constexpr uint16_t ENCODER_COUNTS_PER_REV = 4096;
 static constexpr uint16_t ENCODER_COUNTS_PER_SLOT = static_cast<uint16_t>(
     MOTOR_DEG_PER_SLOT / 360.0f * ENCODER_COUNTS_PER_REV); //= 1024
 
+//Carousel slot-1 home position: AS5600 raw count when slot 1 is aligned under the auger.
+//CALIBRATION REQUIRED: rotate the carousel until slot 1 is perfectly aligned, read
+//encoder.rawAngle() over Serial, and replace 512 with the observed value.
+static constexpr uint16_t MODULE_1_SHAFT_COUNTS = 512; // ← CALIBRATE THIS VALUE
+
 //Acceptable encoder positioning error: ±1° at carousel = ±2° at shaft
 static constexpr uint8_t ENCODER_TOLERANCE_COUNTS = static_cast<uint8_t>(
     2.0f / 360.0f * ENCODER_COUNTS_PER_REV + 0.5f); //≈ 23 counts

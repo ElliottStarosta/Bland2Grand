@@ -16,6 +16,7 @@ const TITLES: Record<Screen, string> = {
   serving:    'servings',
   dispensing: 'dispensing',
   complete:   'ready',
+  custom:     'custom blend',
 }
 
 const SUBTITLES: Record<Screen, string> = {
@@ -24,6 +25,7 @@ const SUBTITLES: Record<Screen, string> = {
   serving:    'how many portions?',
   dispensing: 'measuring your spices',
   complete:   'your blend is ready',
+  custom:     'build your own mix',
 }
 
 function B2GLogo() {

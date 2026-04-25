@@ -1,4 +1,4 @@
-export type Screen = 'search' | 'results' | 'serving' | 'dispensing' | 'complete'
+export type Screen = 'search' | 'results' | 'serving' | 'dispensing' | 'complete' | 'custom'
 
 export interface SpiceAmount {
   slot: number
@@ -14,7 +14,7 @@ export interface Recipe {
   spices: SpiceAmount[]
 }
 
-//Dispense state 
+// Dispense state
 
 export type SlotStatus = 'pending' | 'indexing' | 'dispensing' | 'done' | 'error'
 
@@ -39,7 +39,7 @@ export interface DispenseSession {
   totalTarget: number
 }
 
-//SSE events 
+// SSE events
 
 export type SSEEvent =
   | { type: 'connected' }
@@ -80,17 +80,17 @@ export interface CompletedSpice {
   status: 'done' | 'timeout'
 }
 
-//Spice colours 
+// Spice colours
 
 export const SPICE_COLORS: Record<number, string> = {
-  1: '#8B6914', //Cumin       — warm brown
-  2: '#C94020', //Paprika     — deep red
-  3: '#D4C57A', //Garlic      — pale gold
-  4: '#7B1F1F', //Chili       — dark red
-  5: '#4E7C55', //Oregano     — forest green
-  6: '#D4A870', //Onion       — sandy tan
-  7: '#6f009a', //Pepper      — near black
-  8: '#C63B0A', //Cayenne     — vivid orange-red
+  1: '#8B6914', // Cumin       — warm brown
+  2: '#C94020', // Paprika     — deep red
+  3: '#D4C57A', // Garlic      — pale gold
+  4: '#7B1F1F', // Chili       — dark red
+  5: '#4E7C55', // Oregano     — forest green
+  6: '#D4A870', // Onion       — sandy tan
+  7: '#6f009a', // Pepper      — near black
+  8: '#C63B0A', // Cayenne     — vivid orange-red
 }
 
 export const SPICE_LABELS: Record<number, string> = {
@@ -103,3 +103,14 @@ export const SPICE_LABELS: Record<number, string> = {
   7: 'Black Pepper',
   8: 'Cayenne',
 }
+
+export const SPICE_DENSITY_G_PER_ML: Record<number, number> = {
+  1: 0.50, // Cumin (ground)
+  2: 0.45, // Paprika
+  3: 0.55, // Garlic Powder
+  4: 0.50, // Chili Powder
+  5: 0.30, // Oregano (dried, fluffy)
+  6: 0.50, // Onion Powder
+  7: 0.60, // Black Pepper (ground)
+  8: 0.45, // Cayenne
+};
