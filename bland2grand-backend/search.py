@@ -2,7 +2,7 @@ from database import search_recipes, search_recipes_by_category, save_recipe, ge
 from ai_client import get_blend_for_dish
 from config import OPENROUTER_API_KEY
 
-# Known category keywords — if the query matches one, search by category instead
+# Known category keywords -- if the query matches one, search by category instead
 CATEGORY_ALIASES = {
     "mexican":        "Mexican",
     "indian":         "Indian",
@@ -51,7 +51,7 @@ def find_recipes(query: str) -> list[dict]:
     if results:
         return results
 
-    # AI fallback — only for non-category queries
+    # AI fallback -- only for non-category queries
     if normalised in CATEGORY_ALIASES:
         return []
 

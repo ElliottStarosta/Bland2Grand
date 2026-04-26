@@ -16,8 +16,22 @@ from flask import Flask, Response, jsonify, request, stream_with_context
 from flask_cors import CORS
 
 from config import FLASK_PORT, MOCK_ARDUINO
-from database import init_db, get_recipe_by_id, save_recipe, update_calibration
-from dispense import register_sse_client, unregister_sse_client, start_dispense, is_busy
+from dispense import (
+    init_db, 
+    get_recipe_by_id, 
+    save_recipe, 
+    update_calibration,
+    register_sse_client, 
+    unregister_sse_client, 
+    start_dispense, 
+    is_busy,
+    handle_arduino_indexing,
+    handle_arduino_dispense_start,
+    handle_arduino_weight_push,
+    handle_arduino_spice_complete,
+    handle_arduino_session_complete,
+    handle_arduino_fault,
+)
 from search import find_recipes
 
 app = Flask(__name__)
@@ -151,6 +165,47 @@ def create_recipe():
     recipe = get_recipe_by_id(recipe_id)
     return jsonify({"status": "created", "recipe": recipe}), 201
 
+@app.post("/api/arduino/indexing")
+def arduino_indexing():
+    data = request.get_json(silent=True) or {}
+    handle_arduino_indexing(data)
+    return jsonify({"ok": True})
+
+
+@app.post("/api/arduino/dispense-start")
+def arduino_dispense_start():
+    data = request.get_json(silent=True) or {}
+    handle_arduino_dispense_start(data)
+    return jsonify({"ok": True})
+
+
+@app.post("/api/arduino/weight-push")
+def arduino_weight_push():
+    data = request.get_json(silent=True) or {}
+    handle_arduino_weight_push(data)
+    return jsonify({"ok": True})
+
+
+@app.post("/api/arduino/spice-complete")
+def arduino_spice_complete():
+    data = request.get_json(silent=True) or {}
+    handle_arduino_spice_complete(data)
+    return jsonify({"ok": True})
+
+
+@app.post("/api/arduino/session-complete")
+def arduino_session_complete():
+    data = request.get_json(silent=True) or {}
+    # recipe_name comes from the session state tracked in dispense.py
+    handle_arduino_session_complete(data, data.get("recipe_name", ""))
+    return jsonify({"ok": True})
+
+
+@app.post("/api/arduino/fault")
+def arduino_fault():
+    data = request.get_json(silent=True) or {}
+    handle_arduino_fault(data)
+    return jsonify({"ok": True})
 
 # Entry point
 if __name__ == "__main__":

@@ -86,7 +86,7 @@ def provision(port: str, ssid: str, password: str) -> None:
                 print("\n✅  Done. Arduino will connect to this network on next boot.")
                 return
             if "PROV:FAIL" in line:
-                print("\n❌  Arduino reported failure — check the output above.")
+                print("\n❌  Arduino reported failure -- check the output above.")
                 return
 
     print("\n⚠️  Timed out. Open the serial monitor to see what happened.")

@@ -20,7 +20,7 @@ from database import init_db, save_recipe, get_connection
 
 # fmt: off
 RECIPES = [
-    #  Mexican / Tex-Mex 
+    # Mexican / Tex-Mex 
     {"name": "Tacos al Pastor",        "category": "Mexican",    "description": "Citrusy charred pork street tacos",
      "s": {1:2.0, 2:1.5, 3:0.8, 4:2.0, 5:0.5, 6:0.8, 7:0.3, 8:0.5}},
 
@@ -63,7 +63,7 @@ RECIPES = [
     {"name": "Taco Seasoning",         "category": "Mexican",    "description": "All-purpose taco spice blend",
      "s": {1:2.5, 2:1.0, 3:0.8, 4:2.5, 5:0.5, 6:0.8, 7:0.3, 8:0.5}},
 
-    #  Indian / South Asian 
+    # Indian / South Asian 
     {"name": "Chicken Tikka Masala",   "category": "Indian",     "description": "Creamy tomato-spiced chicken",
      "s": {1:2.0, 2:1.5, 3:1.5, 4:0.5, 5:0.0, 6:0.5, 7:0.5, 8:0.5}},
 
@@ -100,7 +100,7 @@ RECIPES = [
     {"name": "Aloo Gobi",              "category": "Indian",     "description": "Dry spiced potato and cauliflower",
      "s": {1:1.5, 2:0.5, 3:1.0, 4:0.5, 5:0.0, 6:0.5, 7:0.5, 8:0.3}},
 
-    #  Italian 
+    # Italian 
     {"name": "Pasta Marinara",         "category": "Italian",    "description": "Simple san marzano tomato sauce",
      "s": {1:0.0, 2:0.5, 3:2.0, 4:0.0, 5:3.0, 6:1.5, 7:0.5, 8:0.0}},
 
@@ -131,7 +131,7 @@ RECIPES = [
     {"name": "Osso Buco Spice",        "category": "Italian",    "description": "Braised veal shank seasoning",
      "s": {1:0.0, 2:0.5, 3:1.5, 4:0.0, 5:1.5, 6:1.5, 7:0.8, 8:0.0}},
 
-    #  BBQ & Cajun 
+    # BBQ & Cajun 
     {"name": "Classic BBQ Rub",        "category": "BBQ",        "description": "All-purpose smoky dry rub",
      "s": {1:1.0, 2:4.0, 3:1.5, 4:1.0, 5:0.5, 6:1.5, 7:0.8, 8:0.5}},
 
@@ -162,7 +162,7 @@ RECIPES = [
     {"name": "Blackened Chicken Wings","category": "Cajun",      "description": "Crispy spiced wings with heat",
      "s": {1:0.5, 2:2.0, 3:1.5, 4:1.0, 5:0.5, 6:1.0, 7:0.8, 8:1.0}},
 
-    #  Mediterranean & Middle Eastern 
+    # Mediterranean & Middle Eastern 
     {"name": "Greek Seasoning",        "category": "Mediterranean","description": "Lemon-herb lamb and chicken blend",
      "s": {1:0.0, 2:0.5, 3:1.5, 4:0.0, 5:3.0, 6:1.0, 7:0.5, 8:0.0}},
 
@@ -196,7 +196,7 @@ RECIPES = [
     {"name": "Za'atar Inspired",       "category": "Levantine",  "description": "Thyme-oregano sumac inspired blend",
      "s": {1:1.0, 2:0.5, 3:1.0, 4:0.0, 5:3.0, 6:0.0, 7:0.3, 8:0.0}},
 
-    #  American 
+    # American 
     {"name": "Fried Chicken",          "category": "American",   "description": "Southern crispy coating blend",
      "s": {1:0.5, 2:2.0, 3:1.5, 4:0.5, 5:0.5, 6:1.0, 7:1.0, 8:0.5}},
 
@@ -227,7 +227,7 @@ RECIPES = [
     {"name": "American Chili",         "category": "American",   "description": "Tex-Mex style bowl of red",
      "s": {1:3.0, 2:1.5, 3:1.0, 4:3.0, 5:0.5, 6:1.0, 7:0.5, 8:0.5}},
 
-    #  Seafood 
+    # Seafood 
     {"name": "Blackened Fish",         "category": "Seafood",    "description": "Cajun cast-iron seared fish",
      "s": {1:0.5, 2:3.0, 3:1.5, 4:0.5, 5:1.0, 6:1.0, 7:1.5, 8:1.5}},
 
@@ -240,7 +240,7 @@ RECIPES = [
     {"name": "Fish Tacos",             "category": "Seafood",    "description": "Baja-style crispy fish seasoning",
      "s": {1:1.5, 2:1.0, 3:1.0, 4:1.0, 5:0.5, 6:0.5, 7:0.5, 8:0.3}},
 
-    #  Vegetarian / Vegan 
+    # Vegetarian / Vegan 
     {"name": "Roasted Cauliflower",    "category": "Vegetarian", "description": "Golden spiced cauliflower steaks",
      "s": {1:1.5, 2:2.0, 3:1.5, 4:0.5, 5:0.5, 6:0.5, 7:0.5, 8:0.3}},
 
@@ -265,7 +265,7 @@ RECIPES = [
     {"name": "Veggie Burger Blend",    "category": "Vegetarian", "description": "Savory plant patty seasoning",
      "s": {1:1.0, 2:1.0, 3:1.5, 4:0.5, 5:0.5, 6:1.5, 7:0.8, 8:0.2}},
 
-    #  Latin American 
+    # Latin American 
     {"name": "Adobo Seasoning",        "category": "Latin",      "description": "Puerto Rican all-purpose seasoning",
      "s": {1:1.5, 2:1.0, 3:2.0, 4:0.5, 5:1.5, 6:1.5, 7:0.8, 8:0.2}},
 
@@ -278,7 +278,7 @@ RECIPES = [
     {"name": "Brazilian Churrasco",    "category": "Latin",      "description": "Herb-salted beef skewer rub",
      "s": {1:0.5, 2:1.0, 3:2.0, 4:0.0, 5:0.5, 6:0.5, 7:1.5, 8:0.2}},
 
-    #  Asian Fusion 
+    # Asian Fusion 
     {"name": "Korean BBQ Blend",       "category": "Asian",      "description": "Gochujang-inspired dry rub",
      "s": {1:0.5, 2:1.0, 3:2.0, 4:1.0, 5:0.0, 6:1.0, 7:0.8, 8:0.5}},
 
@@ -288,14 +288,14 @@ RECIPES = [
     {"name": "Dan Dan Noodles",        "category": "Asian",      "description": "Sichuan numbing peanut sauce spice",
      "s": {1:1.0, 2:0.5, 3:1.5, 4:1.5, 5:0.0, 6:0.5, 7:0.5, 8:1.0}},
 
-    #  Breakfast 
+    # Breakfast 
     {"name": "Breakfast Sausage",      "category": "Breakfast",  "description": "Sage-style morning pork sausage",
      "s": {1:0.0, 2:0.5, 3:0.8, 4:0.0, 5:0.5, 6:0.8, 7:1.5, 8:0.5}},
 
     {"name": "Spiced Hash Browns",     "category": "Breakfast",  "description": "Crispy seasoned potato cakes",
      "s": {1:0.5, 2:1.0, 3:1.0, 4:0.5, 5:0.5, 6:1.0, 7:0.5, 8:0.2}},
 
-    #  Holiday / Special 
+    # Holiday / Special 
     {"name": "Turkey Rub",             "category": "Holiday",    "description": "Thanksgiving herb-butter turkey",
      "s": {1:0.0, 2:1.0, 3:1.5, 4:0.0, 5:1.5, 6:1.0, 7:0.8, 8:0.0}},
 
@@ -377,7 +377,7 @@ def seed() -> int:
             else:
                 print(f"  [{i:>3}/{len(RECIPES)}] {recipe['name']}  (already exists)")
         except Exception as exc:
-            print(f"  [{i:>3}/{len(RECIPES)}] ERROR — {recipe['name']}: {exc}")
+            print(f"  [{i:>3}/{len(RECIPES)}] ERROR -- {recipe['name']}: {exc}")
 
     conn.commit()
     conn.close()

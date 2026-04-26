@@ -6,7 +6,7 @@ from config import OPENROUTER_API_KEY, AI_MODEL, API_URL
 
 _SYSTEM = (
     "You are a professional culinary spice expert. "
-    "Respond ONLY with a valid JSON object — no markdown fences, no preamble. "
+    "Respond ONLY with a valid JSON object -- no markdown fences, no preamble. "
     "Values are grams of each spice per single serving."
 )
 
