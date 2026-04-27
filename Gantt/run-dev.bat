@@ -20,7 +20,7 @@ exit /b 1
 :run
 set "PORT=5500"
 echo.
-echo  Bland2Grand — http://localhost:%PORT%
+echo  Bland2Grand -- http://localhost:%PORT%
 echo  Serves the app and API (save to tasks.json). Press Ctrl+C to stop.
 echo.
 "%PY%" server.py

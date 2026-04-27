@@ -88,7 +88,7 @@ export function ServingScreen({ recipe, onDispense, loading }: Props) {
           )}
         </div>
 
-        {/*  Serving counter — the hero  */}
+        {/*  Serving counter -- the hero  */}
         <div data-s>
           <p className="text-[10px] font-body font-semibold tracking-[0.2em] uppercase text-muted mb-4">
             How many servings?
@@ -211,7 +211,7 @@ export function ServingScreen({ recipe, onDispense, loading }: Props) {
           style={{ background: 'rgba(255,255,255,0.02)' }}
         >
           <p className="text-[12px] font-body font-light text-muted leading-relaxed">
-            Place an empty bowl on the scale before dispensing — the machine will tare automatically.
+            Place an empty bowl on the scale before dispensing -- the machine will tare automatically.
           </p>
         </div>
 

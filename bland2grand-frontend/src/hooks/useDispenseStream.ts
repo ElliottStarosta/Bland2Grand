@@ -18,7 +18,7 @@ export function useDispenseStream() {
   const esRef = useRef<EventSource | null>(null)
   const activeRef = useRef(false)
 
-  //Core message handler — shared by both connect() and connectAndDispense()
+  //Core message handler -- shared by both connect() and connectAndDispense()
   const handleMessage = useCallback((e: MessageEvent) => {
     if (!activeRef.current) return
     let event: SSEEvent
@@ -108,7 +108,7 @@ export function useDispenseStream() {
     })
   }, [])
 
-  //Plain connect — just opens the SSE stream, no dispense triggered.
+  //Plain connect -- just opens the SSE stream, no dispense triggered.
   //Use this if you want to observe an already-running session.
   const connect = useCallback(() => {
     if (esRef.current) {
@@ -133,7 +133,7 @@ export function useDispenseStream() {
     return es
   }, [handleMessage])
 
-  //Safe connect-then-dispense — opens SSE first, waits for the server's
+  //Safe connect-then-dispense -- opens SSE first, waits for the server's
   //'connected' acknowledgement, then fires the dispense POST.
   //This guarantees no broadcast events are missed.
   const connectAndDispense = useCallback(
@@ -171,7 +171,7 @@ export function useDispenseStream() {
             return
           }
 
-          //Server confirmed our client is registered — safe to start dispensing
+          //Server confirmed our client is registered -- safe to start dispensing
           if (event.type === 'connected' && !dispatchedDispense) {
             dispatchedDispense = true
 

@@ -12,7 +12,7 @@ import { SPICE_COLORS, SPICE_LABELS } from '../types'
 import type { Recipe } from '../types'
 import { api } from './lib/api'
 
-// Spice densities g/ml — tsp = 4.92ml, tbsp = 14.79ml
+// Spice densities g/ml -- tsp = 4.92ml, tbsp = 14.79ml
 const SPICE_DENSITY_G_PER_ML: Record<number, number> = {
   1: 0.90, // Cumin
   2: 0.95, // Paprika
@@ -133,7 +133,7 @@ function SlotInput({ slot, unit, value, onChange }: SlotInputProps) {
         <FontAwesomeIcon icon={faPlus} style={{ fontSize: 10, color: '#A0A0A0' }} />
       </button>
 
-      {/* Grams equivalent — shown when unit is tsp/tbsp */}
+      {/* Grams equivalent -- shown when unit is tsp/tbsp */}
       <div style={{ width: 44, flexShrink: 0, textAlign: 'right' }}>
         <span className="font-body font-light tabular-nums" style={{
           fontSize: 11,
@@ -225,7 +225,7 @@ export function CustomRecipeScreen({ onSaved, onBack: _onBack }: Props) {
     <div ref={containerRef} className="flex-1 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
       <div className="flex flex-col px-5 pb-safe gap-0">
 
-        {/* ── Name + description ── */}
+        {/*  Name + description  */}
         <div data-s className="pt-2 pb-5">
           <p style={{ fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#C8692A', fontWeight: 600, fontFamily: 'Outfit, sans-serif', marginBottom: 8 }}>
             Blend Name
@@ -250,7 +250,7 @@ export function CustomRecipeScreen({ onSaved, onBack: _onBack }: Props) {
           }} />
         </div>
 
-        {/* ── Unit selector ── */}
+        {/*  Unit selector  */}
         <div data-s className="pb-5">
           <p style={{ fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#B0ABA4', fontWeight: 600, fontFamily: 'Outfit, sans-serif', marginBottom: 12 }}>
             Measure in
@@ -276,7 +276,7 @@ export function CustomRecipeScreen({ onSaved, onBack: _onBack }: Props) {
           )}
         </div>
 
-        {/* ── Live spice bar preview ── */}
+        {/*  Live spice bar preview  */}
         {activeCount > 0 && (
           <div data-s className="mb-4">
             <div className="flex h-2 rounded-full overflow-hidden gap-px">
@@ -300,7 +300,7 @@ export function CustomRecipeScreen({ onSaved, onBack: _onBack }: Props) {
           </div>
         )}
 
-        {/* ── Spice slot inputs ── */}
+        {/*  Spice slot inputs  */}
         <div data-s className="luxury-card px-4 py-1 mb-5">
           <div className="flex items-center justify-between py-3 mb-1"
                style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
@@ -318,7 +318,7 @@ export function CustomRecipeScreen({ onSaved, onBack: _onBack }: Props) {
           ))}
         </div>
 
-        {/* ── Error message ── */}
+        {/*  Error message  */}
         {error && (
           <div data-s className="flex items-center gap-2 mb-4 px-4 py-3 rounded-xl"
                style={{ background: 'rgba(184,56,56,0.1)', border: '1px solid rgba(184,56,56,0.25)' }}>
@@ -327,15 +327,15 @@ export function CustomRecipeScreen({ onSaved, onBack: _onBack }: Props) {
           </div>
         )}
 
-        {/* ── Info note ── */}
+        {/*  Info note  */}
         <div data-s className="mb-6 px-4 py-3 rounded-xl"
              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
           <p className="font-body font-light leading-relaxed" style={{ fontSize: 12, color: '#8A8580' }}>
-            Place an empty bowl on the scale before dispensing — the machine will tare automatically.
+            Place an empty bowl on the scale before dispensing -- the machine will tare automatically.
           </p>
         </div>
 
-        {/* ── Save button ── */}
+        {/*  Save button  */}
         <div data-s className="pb-2">
           <button
             ref={saveRef}

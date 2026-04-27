@@ -121,7 +121,7 @@ export function Bowl({ slots, totalTarget, totalWeight, activeSlot }: Props) {
   // f=0 → baseY (floor), f=1 → mouthY (full to brim)
   const fracToY = (f: number) => baseY - f * depth
 
-  //  Clip path 
+  // Clip path 
   const clip = [
     `M ${cx - mouthHW} ${mouthY}`,
     `C ${cx - mouthHW + 10} ${mouthY + 50}  ${cx - baseHW - 8} ${baseY - 20}  ${cx - baseHW} ${baseY}`,
@@ -137,7 +137,7 @@ export function Bowl({ slots, totalTarget, totalWeight, activeSlot }: Props) {
     `C ${cx + baseHW + 10} ${baseY - 18}  ${cx + mouthHW - 8} ${mouthY + 52}  ${cx + mouthHW} ${mouthY}`,
   ].join(' ')
 
-  //  Layers 
+  // Layers 
   const layers: { slot: number; color: string; topFrac: number; botFrac: number }[] = []
   let cum = 0
   for (const s of slots) {
@@ -153,7 +153,7 @@ export function Bowl({ slots, totalTarget, totalWeight, activeSlot }: Props) {
     cum = Math.min(cum + f, 1)
   }
 
-  //  Drip 
+  // Drip 
   useEffect(() => {
     dripTlRef.current?.kill()
     dripTlRef.current = null
@@ -205,7 +205,7 @@ export function Bowl({ slots, totalTarget, totalWeight, activeSlot }: Props) {
       {/* Exterior bowl body */}
       <path d={outer} fill="#141210" />
 
-      {/*  Interior — all clipped  */}
+      {/*  Interior -- all clipped  */}
       <g clipPath="url(#bowl-clip-v3)">
         {/* Empty base */}
         <rect x={0} y={0} width={W} height={H} fill="#090806" />
@@ -214,7 +214,7 @@ export function Bowl({ slots, totalTarget, totalWeight, activeSlot }: Props) {
         {layers.map((layer, idx) => {
           const yTop  = fracToY(layer.topFrac)
           // For the bottom-most layer, extend the rect all the way to H so it
-          // fills the curved bowl base completely — the clip path handles the shape.
+          // fills the curved bowl base completely -- the clip path handles the shape.
           const yBot  = idx === 0 ? H : fracToY(layer.botFrac)
           const bandH = Math.max(0, yBot - yTop)
           if (bandH < 0.5) return null
@@ -253,7 +253,7 @@ export function Bowl({ slots, totalTarget, totalWeight, activeSlot }: Props) {
         x={cx - 3} y={mouthY - 28}
         width={6} height={14} rx={3} opacity={0} />
 
-      {/* Weight label — placed below the bowl with comfortable padding */}
+      {/* Weight label -- placed below the bowl with comfortable padding */}
       {totalWeight > 0 && (
         <text x={cx} y={H - 6}
           textAnchor="middle" fontSize="11"

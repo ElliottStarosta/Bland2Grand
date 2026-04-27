@@ -6,11 +6,11 @@
 
 // EEPROM layout (lives just after FlowModel's 64 bytes)
 // Addr 64..79 (16 bytes):
-//   uint8_t  slot          (1-based, 1..8)         — byte 0
-//   uint16_t encoderCounts (last known raw angle)   — bytes 1-2
-//   int32_t  stepPosition  (AccelStepper position)  — bytes 3-6
-//   uint8_t  magic         (0xA5 = valid record)    — byte 7
-//   uint8_t  padding[8]                             — bytes 8-15
+// uint8_t  slot          (1-based, 1..8)         -- byte 0
+// uint16_t encoderCounts (last known raw angle)   -- bytes 1-2
+// int32_t  stepPosition  (AccelStepper position)  -- bytes 3-6
+// uint8_t  magic         (0xA5 = valid record)    -- byte 7
+// uint8_t  padding[8]                             -- bytes 8-15
 static constexpr uint16_t CAROUSEL_POS_EEPROM_ADDR = 128;
 static constexpr uint8_t CAROUSEL_POS_MAGIC = 0xA5;
 
@@ -75,9 +75,9 @@ public:
     int32_t stepPosition() const { return _stepPosition; }
 
     // Fuse encoder + step-derived position into a best-estimate slot.
-    // encoderRaw   — current AS5600 rawAngle() reading (0..4095), or 0xFFFF if disconnected
-    // currentSteps — AccelStepper::currentPosition() right now
-    // encoderOk    — pass encoder.isConnected()
+    // encoderRaw   -- current AS5600 rawAngle() reading (0..4095), or 0xFFFF if disconnected
+    // currentSteps -- AccelStepper::currentPosition() right now
+    // encoderOk    -- pass encoder.isConnected()
     // Returns the trusted slot (1-based), and sets encoderFault if disagreement is severe.
     uint8_t fusePosition(uint16_t encoderRaw,
                          int32_t currentSteps,
@@ -101,19 +101,19 @@ public:
 
         if (encoderSlot == stepSlot)
         {
-            return encoderSlot; // Both agree — all good
+            return encoderSlot; // Both agree -- all good
         }
 
-        // Disagreement — check magnitude
+        // Disagreement -- check magnitude
         uint16_t delta = _encoderDiff(encoderRaw, _slotToShaftCounts(encoderSlot));
         if (delta > ENCODER_STEP_AGREE_COUNTS)
         {
-            // Encoder value is far from ANY slot center — likely fault
+            // Encoder value is far from ANY slot center -- likely fault
             encoderFault = true;
             return stepSlot;
         }
 
-        // Minor disagreement — trust encoder (it is more accurate)
+        // Minor disagreement -- trust encoder (it is more accurate)
         return encoderSlot;
     }
 

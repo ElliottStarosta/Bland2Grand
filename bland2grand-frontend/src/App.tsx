@@ -24,7 +24,7 @@ export default function App() {
   const contentRef = useRef<HTMLDivElement>(null);
   const fromFeatured = useRef(false);
 
-  // Idle timer — inside the component
+  // Idle timer -- inside the component
   const { wakeUp } = useIdleTimer(60_000, () => {
     // Don't go idle while dispensing
     if (screen !== "dispensing") setIsIdle(true);

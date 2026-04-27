@@ -11,7 +11,7 @@ public:
     //Construction
     Scale() : _calFactor(1.0f), _lastWeight(0.0f) {}
 
-    //begin() — call once in setup()
+    //begin() -- call once in setup()
     void begin()
     {
         _hx711.begin(PIN_HX711_DOUT, PIN_HX711_SCK);
@@ -26,7 +26,7 @@ public:
         tare();
     }
 
-    //setCalFactor() — units: raw ADC counts per gram
+    //setCalFactor() -- units: raw ADC counts per gram
     void setCalFactor(float factor)
     {
         if (factor > 0.0f)
@@ -38,7 +38,7 @@ public:
 
     float getCalFactor() const { return _calFactor; }
 
-    //tare() — wait for sensor to settle, then zero
+    //tare() -- wait for sensor to settle, then zero
     void tare()
     {
         delay(TARE_SETTLE_MS);
@@ -50,7 +50,7 @@ public:
         _lastWeight = 0.0f;
     }
 
-    //read() — return gram-accurate averaged reading
+    //read() -- return gram-accurate averaged reading
     //Returns 0.0 if the sensor is not ready (non-blocking guard).
     float read()
     {
@@ -66,7 +66,7 @@ public:
         return w;
     }
 
-    //rawRead() — single-sample read for calibration routines
+    //rawRead() -- single-sample read for calibration routines
     long rawRead()
     {
         while (!_hx711.is_ready())

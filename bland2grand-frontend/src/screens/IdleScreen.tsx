@@ -44,7 +44,7 @@ export function useIdleTimer(timeoutMs: number, onIdle: () => void) {
 
   useEffect(() => {
     const reset = () => {
-      if (isIdleRef.current) return // already idle — don't restart until wakeUp()
+      if (isIdleRef.current) return // already idle -- don't restart until wakeUp()
       startTimer()
     }
     const EVENTS = ['mousemove', 'mousedown', 'touchstart', 'keydown', 'scroll', 'wheel']
@@ -182,7 +182,7 @@ function Wordmark() {
   )
 }
 
-// Tap button (visual only — whole screen is the tap target) 
+// Tap button (visual only -- whole screen is the tap target) 
 
 function TapCue() {
   const wrapRef   = useRef<HTMLDivElement>(null)

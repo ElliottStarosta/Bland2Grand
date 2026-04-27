@@ -7,7 +7,7 @@
   "tasks": [
     {
       "id": "P1",
-      "name": "PHASE 1 — Electronics Breadboarding",
+      "name": "PHASE 1 -- Electronics Breadboarding",
       "type": "phase",
       "phase": 1,
       "start": "2026-04-01",
@@ -359,7 +359,7 @@
     },
     {
       "id": "M1",
-      "name": "MILESTONE — All electronics functional on breadboard",
+      "name": "MILESTONE -- All electronics functional on breadboard",
       "type": "milestone",
       "phase": 1,
       "start": "2026-04-10",
@@ -370,7 +370,7 @@
     },
     {
       "id": "P2",
-      "name": "PHASE 2 — Flask Backend and WiFi",
+      "name": "PHASE 2 -- Flask Backend and WiFi",
       "type": "phase",
       "phase": 2,
       "start": "2026-04-13",
@@ -645,7 +645,7 @@
     },
     {
       "id": "M2",
-      "name": "MILESTONE — Full software stack functional over WiFi end-to-end",
+      "name": "MILESTONE -- Full software stack functional over WiFi end-to-end",
       "type": "milestone",
       "phase": 2,
       "start": "2026-04-26",
@@ -656,7 +656,7 @@
     },
     {
       "id": "P3",
-      "name": "PHASE 3 — Mechanical Design and Fabrication",
+      "name": "PHASE 3 -- Mechanical Design and Fabrication",
       "type": "phase",
       "phase": 3,
       "start": "2026-04-27",
@@ -1015,7 +1015,7 @@
       "dur": 7,
       "dep": "19d",
       "progress": 0,
-      "notes": "Full production print run — all mechanical parts."
+      "notes": "Full production print run -- all mechanical parts."
     },
     {
       "id": "20a",
@@ -1140,7 +1140,7 @@
     },
     {
       "id": "M3",
-      "name": "MILESTONE — Full mechanical assembly complete",
+      "name": "MILESTONE -- Full mechanical assembly complete",
       "type": "milestone",
       "phase": 3,
       "start": "2026-05-17",
@@ -1151,7 +1151,7 @@
     },
     {
       "id": "P4",
-      "name": "PHASE 4 — System Integration and Tuning",
+      "name": "PHASE 4 -- System Integration and Tuning",
       "type": "phase",
       "phase": 4,
       "start": "2026-05-18",
@@ -1404,7 +1404,7 @@
     },
     {
       "id": "M4",
-      "name": "MILESTONE — Full integrated system verified, all HRS requirements confirmed",
+      "name": "MILESTONE -- Full integrated system verified, all HRS requirements confirmed",
       "type": "milestone",
       "phase": 4,
       "start": "2026-05-31",

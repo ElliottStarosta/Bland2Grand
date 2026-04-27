@@ -1,6 +1,6 @@
 #pragma once
 #include <Arduino.h>
-#include <AS5600.h> //RobTillaart/AS5600
+#include <AS5600.h> // RobTillaart/AS5600
 #include "Constants.h"
 
 class Encoder
@@ -8,7 +8,7 @@ class Encoder
 public:
     Encoder() : _connected(false) {}
 
-    //begin() — call from setup()
+    //begin() -- call from setup()
     bool begin()
     {
         _enc.begin();
@@ -27,19 +27,19 @@ public:
 
     bool isConnected() const { return _connected; }
 
-    //rawAngle() — 0..4095 counts (full 360° of shaft)
+    //rawAngle() -- 0..4095 counts (full 360° of shaft)
     uint16_t rawAngle()
     {
         return static_cast<uint16_t>(_enc.rawAngle() & 0x0FFF);
     }
 
-    //isAtTarget() — returns true if |measured - target| ≤ tolerance
-    //Handles the 0/4095 wraparound.
+    // isAtTarget() -- returns true if |measured - target| ≤ tolerance
+    // Handles the 0/4095 wraparound.
     bool isAtTarget(uint16_t targetCounts)
     {
         uint16_t current = rawAngle();
         int16_t diff = static_cast<int16_t>(current) - static_cast<int16_t>(targetCounts);
-        //Adjust for wraparound
+        // Adjust for wraparound
         if (diff > static_cast<int16_t>(ENCODER_COUNTS_PER_REV / 2))
             diff -= static_cast<int16_t>(ENCODER_COUNTS_PER_REV);
         if (diff < -static_cast<int16_t>(ENCODER_COUNTS_PER_REV / 2))
@@ -47,7 +47,7 @@ public:
         return abs(diff) <= static_cast<int16_t>(ENCODER_TOLERANCE_COUNTS);
     }
 
-    //signedError() — current − target, range −2047..2047
+    // signedError() -- current − target, range −2047..2047
     int16_t signedError(uint16_t targetCounts)
     {
         uint16_t current = rawAngle();
@@ -59,7 +59,7 @@ public:
         return diff;
     }
 
-    //Unit converters
+    // Unit converters
     static uint16_t degreesToCounts(float degrees)
     {
         return static_cast<uint16_t>(degrees / 360.0f * ENCODER_COUNTS_PER_REV + 0.5f);

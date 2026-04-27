@@ -16,7 +16,7 @@ static constexpr uint8_t PIN_AUGER_DIR = 7;
 static constexpr uint8_t PIN_HX711_DOUT = 9;
 static constexpr uint8_t PIN_HX711_SCK = 10;
 
-//AS5600 encoder is on the hardware I2C bus (A4=SDA, A5=SCL) — no pin constants needed.
+//AS5600 encoder is on the hardware I2C bus (A4=SDA, A5=SCL) -- no pin constants needed.
 
 //Stepper Motor Geometry
 
@@ -54,7 +54,7 @@ static constexpr uint16_t MODULE_1_SHAFT_COUNTS = 512; // ← CALIBRATE THIS VAL
 static constexpr uint8_t ENCODER_TOLERANCE_COUNTS = static_cast<uint8_t>(
     2.0f / 360.0f * ENCODER_COUNTS_PER_REV + 0.5f); //≈ 23 counts
 
-//Homing scan speed (microsteps/s) — slow enough for encoder stability
+//Homing scan speed (microsteps/s) -- slow enough for encoder stability
 static constexpr float HOMING_SPEED_STEPS_S = 200.0f;
 
 //Normal index speed (microsteps/s)
@@ -102,6 +102,9 @@ static constexpr float RAMP_SPEED_STAGE3 = 0.15f; //15%
 
 //After stop: coil disable delay (ms) to prevent unnecessary heating
 static constexpr uint16_t AUGER_COIL_DISABLE_DELAY_MS = 500;
+
+// weight push rate
+static constexpr uint16_t WIFI_PUSH_INTERVAL_MS = 150; 
 
 //Per-spice dispense timeout (ms).  If target not reached within this time
 //the firmware reports a fault and aborts the blend.
@@ -161,3 +164,7 @@ static constexpr float AUGER_PITCH_M = 0.010f;
 //Spice bulk density range
 static constexpr float SPICE_DENSITY_MIN_G_ML = 0.19f; //oregano
 static constexpr float SPICE_DENSITY_MAX_G_ML = 0.55f; //paprika
+
+static constexpr const char* FLASK_SERVER_HOST = "192.168.2.71";
+static constexpr uint16_t FLASK_SERVER_PORT = 5000;
+

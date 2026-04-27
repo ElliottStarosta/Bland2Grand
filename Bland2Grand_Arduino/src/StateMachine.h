@@ -4,7 +4,6 @@
 #include "Carousel.h"
 #include "Auger.h"
 #include "Scale.h"
-#include "Encoder.h"
 #include "FlowModel.h"
 #include "WiFiComm.h"
 
@@ -18,15 +17,32 @@ enum class State
     FAULT
 };
 
+// Recipe slot -- holds everything needed for one spice dispense
+struct RecipeSlot
+{
+    uint8_t slot1Based;         // 1-based carousel slot
+    char name[24];              // spice name (matches Flask SPICE_SLOTS)
+    float grams;                // target grams
+    uint8_t indexInRecipe;      // 0-based position in this recipe
+    uint8_t totalSlotsInRecipe; // total spices in this recipe
+};
+
 class StateMachine
 {
 public:
-    StateMachine(Carousel &carousel, Auger &auger, Scale &scale, FlowModel &model, WiFiComm &wifi)
-        : _carousel(carousel), _auger(auger), _scale(scale), _model(model), _wifi(wifi), _state(State::HOMING), _pendingSlot(0), _pendingGrams(0.0f), _lastCommandTime(0), _dispenseResult(DispenseResult::OK), _actualGrams(0.0f)
+    StateMachine(Carousel &carousel, Auger &auger,
+                 Scale &scale, FlowModel &model, WiFiComm &wifi)
+        : _carousel(carousel), _auger(auger),
+          _scale(scale), _model(model), _wifi(wifi),
+          _state(State::HOMING),
+          _pendingSlot(0), _pendingGrams(0.0f),
+          _dispenseResult(DispenseResult::OK), _actualGrams(0.0f),
+          _slotIndex(0), _totalSlots(0)
     {
+        _recipeName[0] = '\0';
+        _spiceName[0] = '\0';
     }
 
-    // update() — call every loop() iteration
     void update()
     {
         switch (_state)
@@ -64,10 +80,13 @@ private:
     State _state;
     uint8_t _pendingSlot; // 1-based
     float _pendingGrams;
-    uint32_t _lastCommandTime;
+    char _recipeName[48];
+    char _spiceName[24];
+    uint8_t _slotIndex;  // 0-based index into recipe
+    uint8_t _totalSlots; // total spices this recipe
+
     DispenseResult _dispenseResult;
     float _actualGrams;
-    Command _pendingCmd;
 
     // HOMING
     void _handleHoming()
@@ -82,72 +101,99 @@ private:
         else
         {
             Serial.println(F("[SM] FAULT: homing failed"));
+            _wifi.pushFault("Carousel homing failed");
             _transitionTo(State::FAULT);
         }
     }
 
     // IDLE
+    // Flask now sends a richer command:
+    // POST / body: {
+    // "carousel": N,
+    // "grams": X.X,
+    // "recipe_name": "Tacos al Pastor",
+    // "spice_name": "Cumin",
+    // "slot_index": 0,
+    // "total_slots": 5
+    // }
     void _handleIdle()
     {
-        // Watchdog: if last command was long ago and we somehow got stuck, re-home
-        //(Only applies if we've seen at least one command)
-        //(Handled conservatively — don't re-home on first boot)
-
-        Command cmd;
-        if (!_wifi.poll(cmd))
+        // We accept commands on a minimal HTTP server just for the dispense trigger.  All status goes back via push. Keep a tiny server for receiving the START command.
+        WiFiServer &srv = _getServer();
+        WiFiClient client = srv.available();
+        if (!client)
             return;
 
-        _lastCommandTime = millis();
-
-        // Health check
-        if (cmd.isHealth)
+        String req = "";
+        uint32_t t = millis();
+        while (client.connected() && millis() - t < 2000)
         {
-            _wifi.sendHealthResponse(_carousel.currentSlot(), _carousel.isHomed());
-            return;
+            if (client.available())
+            {
+                char c = client.read();
+                req += c;
+                if (req.endsWith("\r\n\r\n"))
+                    break;
+            }
         }
 
-        // Model info
-        if (cmd.isModelInfo)
+        if (req.startsWith("GET /health"))
         {
-            uint8_t s = cmd.diagSlot - 1; // to 0-based
-            _wifi.sendModelInfoResponse(
-                cmd.diagSlot,
-                _model.getSlope(s),
-                _model.getCoast(s),
-                _model.getSamples(s));
-            return;
-        }
-
-        // Reset model
-        if (cmd.isResetModel)
-        {
-            uint8_t s = cmd.diagSlot - 1;
-            _model.resetSlot(s);
-            Serial.print(F("[SM] Reset model for slot "));
-            Serial.println(cmd.diagSlot);
-            _wifi.sendOkResponse();
+            client.println(F("HTTP/1.1 200 OK"));
+            client.println(F("Content-Type: application/json"));
+            client.println(F("Connection: close\r\n"));
+            client.print(F("{\"status\":\"ok\",\"slot\":"));
+            client.print(_carousel.currentSlot());
+            client.print(F(",\"homed\":"));
+            client.print(_carousel.isHomed() ? "true" : "false");
+            client.println(F("}"));
+            client.stop();
             return;
         }
 
-        // Dispense command
-        if (cmd.valid)
+        if (req.startsWith("POST /"))
         {
-            _pendingSlot = cmd.carousel;
-            _pendingGrams = cmd.grams;
-            _pendingCmd = cmd;
-            Serial.print(F("[SM] Dispense → slot "));
-            Serial.print(_pendingSlot);
-            Serial.print(F("  grams "));
-            Serial.println(_pendingGrams);
-            _transitionTo(State::INDEXING);
+            // Read body
+            String body = "";
+            uint32_t bt = millis();
+            while (client.connected() && millis() - bt < 500)
+            {
+                while (client.available())
+                    body += (char)client.read();
+                if (body.length() > 0)
+                    break;
+                delay(5);
+            }
+
+            StaticJsonDocument<256> doc;
+            if (deserializeJson(doc, body) == DeserializationError::Ok &&
+                doc.containsKey("carousel") && doc.containsKey("grams"))
+            {
+                _pendingSlot = doc["carousel"].as<uint8_t>();
+                _pendingGrams = doc["grams"].as<float>();
+                _slotIndex = doc["slot_index"] | 0;
+                _totalSlots = doc["total_slots"] | 1;
+
+                const char *rn = doc["recipe_name"] | "";
+                const char *sn = doc["spice_name"] | "";
+                strncpy(_recipeName, rn, sizeof(_recipeName) - 1);
+                strncpy(_spiceName, sn, sizeof(_spiceName) - 1);
+
+                client.println(F("HTTP/1.1 200 OK"));
+                client.println(F("Content-Type: application/json"));
+                client.println(F("Connection: close\r\n"));
+                client.println(F("{\"status\":\"accepted\"}"));
+                client.stop();
+
+                _transitionTo(State::INDEXING);
+                return;
+            }
         }
 
-        if (cmd.isWeightQuery)
-        {
-            float w = _scale.read();
-            _wifi.sendWeightResponse(w);
-            return;
-        }
+        client.println(F("HTTP/1.1 400 Bad Request"));
+        client.println(F("Connection: close\r\n"));
+        client.println(F("{\"error\":\"bad request\"}"));
+        client.stop();
     }
 
     // INDEXING
@@ -156,15 +202,17 @@ private:
         Serial.print(F("[SM] Indexing to slot "));
         Serial.println(_pendingSlot);
 
+        // Push "rotating" status before we block on the move
+        _wifi.pushIndexing(_pendingSlot, _spiceName, _slotIndex, _totalSlots);
+
         bool ok = _carousel.indexTo(_pendingSlot);
         if (!ok)
         {
-            Serial.println(F("[SM] FAULT: index failed"));
+            _wifi.pushFault("Carousel index failed");
             _transitionTo(State::FAULT);
             return;
         }
 
-        Serial.println(F("[SM] Index OK → DISPENSING"));
         _auger.enableCoils();
         _transitionTo(State::DISPENSING);
     }
@@ -172,15 +220,21 @@ private:
     // DISPENSING
     void _handleDispensing()
     {
-        uint8_t slot0 = _pendingSlot - 1; // 0-based for FlowModel
+        uint8_t slot0 = _pendingSlot - 1;
 
         Serial.print(F("[SM] Dispensing "));
         Serial.print(_pendingGrams);
         Serial.println(F(" g..."));
 
-        _dispenseResult = _auger.dispense(slot0, _pendingGrams, _actualGrams);
+        // Tell Flask/frontend we're starting this spice
+        _wifi.pushDispenseStart(
+            _pendingSlot, _spiceName,
+            _pendingGrams, _slotIndex, _totalSlots);
 
-        // Save updated regression model to EEPROM
+        _dispenseResult = _auger.dispense(
+            slot0, _pendingSlot, _spiceName,
+            _pendingGrams, _actualGrams);
+
         _model.saveToEEPROM(slot0);
 
         Serial.print(F("[SM] Dispense done. actual="));
@@ -210,9 +264,19 @@ private:
             break;
         }
 
-        _wifi.sendDispenseResponse(statusStr, _actualGrams);
+        // Push this spice's result
+        _wifi.pushSpiceComplete(
+            _pendingSlot, _spiceName,
+            _actualGrams, _pendingGrams,
+            statusStr, _slotIndex);
 
-        Serial.print(F("[SM] Response sent: "));
+        // If this was the last spice, push session complete
+        if (_slotIndex + 1 >= _totalSlots)
+        {
+            _wifi.pushSessionComplete(_recipeName);
+        }
+
+        Serial.print(F("[SM] Done: "));
         Serial.println(statusStr);
 
         _transitionTo(State::IDLE);
@@ -221,20 +285,28 @@ private:
     // FAULT
     void _handleFault()
     {
-        // Attempt to send fault to Flask, then wait for manual reset (power cycle)
         static bool faultSent = false;
         if (!faultSent)
         {
-            _wifi.sendDispenseResponse("fault", 0.0f);
+            _wifi.pushFault("Machine fault -- power cycle required");
             faultSent = true;
-            Serial.println(F("[SM] FAULT state — power cycle required."));
+            Serial.println(F("[SM] FAULT -- power cycle required."));
         }
-        delay(5000); // Prevent busy-loop; fault stays here until power cycle
+        delay(5000);
     }
 
-    // _transitionTo()
-    void _transitionTo(State next)
+    void _transitionTo(State next) { _state = next; }
+
+    // Lazy-initialised server for receiving dispense commands
+    WiFiServer &_getServer()
     {
-        _state = next;
+        static WiFiServer server(HTTP_PORT);
+        static bool started = false;
+        if (!started)
+        {
+            server.begin();
+            started = true;
+        }
+        return server;
     }
 };

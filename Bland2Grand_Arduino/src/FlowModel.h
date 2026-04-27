@@ -12,7 +12,7 @@ struct SlotModel
     float coast_g = 0.3f; //estimated in-flight grams (default 0.3 g)
     uint32_t n_samples = 0; //total data points used for regression
 
-    //Online least-squares accumulators (not persisted — rebuilt on boot)
+    //Online least-squares accumulators (not persisted -- rebuilt on boot)
     double sum_x = 0.0;
     double sum_y = 0.0;
     double sum_xx = 0.0;
@@ -25,7 +25,7 @@ class FlowModel
 public:
     FlowModel() {}
 
-    //begin() — load models from EEPROM 
+    //begin() -- load models from EEPROM 
     void begin()
     {
         for (uint8_t slot = 0; slot < CAROUSEL_SLOT_COUNT; slot++)
@@ -34,7 +34,7 @@ public:
         }
     }
 
-    //addObservation() — call after each complete auger cycle 
+    //addObservation() -- call after each complete auger cycle 
     //slot:   0-based slot index
     //cycles: total auger cycles completed so far in this dispense
     //weight: weight currently in bowl (grams)
@@ -67,7 +67,7 @@ public:
         m.n_samples++;
     }
 
-    //recordCoast() — call after dispense stops, with the measured overshoot
+    //recordCoast() -- call after dispense stops, with the measured overshoot
     //coast_measured: (actual_weight - weight_at_stop_command), in grams.
     //Stored as exponential moving average (α = 0.3) for stability.
     void recordCoast(uint8_t slot, float coast_measured)
@@ -81,7 +81,7 @@ public:
         m.coast_g = constrain(m.coast_g, 0.0f, MAX_COAST_GRAMS);
     }
 
-    //predictStopWeight() — effective target weight to send stop command
+    //predictStopWeight() -- effective target weight to send stop command
     //The motor is stopped when weight >= predictStopWeight(), so that in-flight
     //spice brings the final reading to exactly targetGrams.
     float predictStopWeight(uint8_t slot, float targetGrams) const
@@ -94,7 +94,7 @@ public:
         return max(stop, targetGrams * 0.80f);
     }
 
-    //cyclesNeeded() — how many more auger cycles to reach remaining grams
+    //cyclesNeeded() -- how many more auger cycles to reach remaining grams
     //Returns a large number if slope is invalid / not yet calibrated.
     float cyclesNeeded(uint8_t slot, float remainingGrams) const
     {
@@ -106,7 +106,7 @@ public:
         return remainingGrams / s;
     }
 
-    //isCalibrated() — true if the model has at least CALIB_POINTS_MIN data points
+    //isCalibrated() -- true if the model has at least CALIB_POINTS_MIN data points
     bool isCalibrated(uint8_t slot) const
     {
         if (slot >= CAROUSEL_SLOT_COUNT)
@@ -114,12 +114,12 @@ public:
         return _models[slot].n_samples >= CALIB_POINTS_MIN;
     }
 
-    //slope() / coast() — accessors 
+    //slope() / coast() -- accessors 
     float getSlope(uint8_t slot) const { return (slot < CAROUSEL_SLOT_COUNT) ? _models[slot].slope : 1.0f; }
     float getCoast(uint8_t slot) const { return (slot < CAROUSEL_SLOT_COUNT) ? _models[slot].coast_g : 0.3f; }
     uint32_t getSamples(uint8_t slot) const { return (slot < CAROUSEL_SLOT_COUNT) ? _models[slot].n_samples : 0; }
 
-    //saveToEEPROM() — persist a single slot's model 
+    //saveToEEPROM() -- persist a single slot's model 
     void saveToEEPROM(uint8_t slot)
     {
         if (slot >= CAROUSEL_SLOT_COUNT)
@@ -132,7 +132,7 @@ public:
         EEPROM.put(addr + 12, m.n_samples);
     }
 
-    //resetSlot() — clear all learning for one slot (after refill etc.) 
+    //resetSlot() -- clear all learning for one slot (after refill etc.) 
     void resetSlot(uint8_t slot)
     {
         if (slot >= CAROUSEL_SLOT_COUNT)

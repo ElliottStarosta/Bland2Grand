@@ -7,7 +7,7 @@ from typing import Optional
 import requests
 from config import ARDUINO_URL, MOCK_ARDUINO, SPICE_SLOTS
 
-# SSE client registry 
+# SSE client registry
 
 _sse_clients: list[queue.Queue] = []
 _clients_lock = threading.Lock()
@@ -38,9 +38,10 @@ def _broadcast(event: dict) -> None:
                 pass
 
 
-# Completion signal from Arduino 
+# Completion signal from Arduino
 # When Arduino pushes /api/arduino/spice-complete, Flask sets this
 # event so the dispense loop knows to move to the next spice.
+
 
 class _SpiceCompleteSignal:
     def __init__(self):
@@ -68,7 +69,8 @@ class _SpiceCompleteSignal:
 _spice_signal = _SpiceCompleteSignal()
 
 
-# Session state 
+# Session state
+
 
 class DispenseSession:
     def __init__(self) -> None:
@@ -83,37 +85,44 @@ class DispenseSession:
 _session = DispenseSession()
 
 
-# Arduino push receivers 
+# Arduino push receivers
 # Called directly by Flask route handlers in app.py.
 
+
 def handle_arduino_indexing(data: dict) -> None:
-    _broadcast({
-        "type":        "indexing",
-        "slot":        data.get("slot"),
-        "spice_name":  data.get("spice_name", ""),
-        "slot_index":  data.get("slot_index", 0),
-        "total_slots": data.get("total_slots", 1),
-    })
+    _broadcast(
+        {
+            "type": "indexing",
+            "slot": data.get("slot"),
+            "spice_name": data.get("spice_name", ""),
+            "slot_index": data.get("slot_index", 0),
+            "total_slots": data.get("total_slots", 1),
+        }
+    )
 
 
 def handle_arduino_dispense_start(data: dict) -> None:
-    _broadcast({
-        "type":          "dispensing_start",
-        "slot":          data.get("slot"),
-        "spice_name":    data.get("spice_name", ""),
-        "target_weight": data.get("target_weight", 0.0),
-        "slot_index":    data.get("slot_index", 0),
-        "total_slots":   data.get("total_slots", 1),
-    })
+    _broadcast(
+        {
+            "type": "dispensing_start",
+            "slot": data.get("slot"),
+            "spice_name": data.get("spice_name", ""),
+            "target_weight": data.get("target_weight", 0.0),
+            "slot_index": data.get("slot_index", 0),
+            "total_slots": data.get("total_slots", 1),
+        }
+    )
 
 
 def handle_arduino_weight_push(data: dict) -> None:
-    _broadcast({
-        "type":           "weight_update",
-        "slot":           data.get("slot"),
-        "current_weight": data.get("current_weight", 0.0),
-        "target_weight":  data.get("target_weight", 0.0),
-    })
+    _broadcast(
+        {
+            "type": "weight_update",
+            "slot": data.get("slot"),
+            "current_weight": data.get("current_weight", 0.0),
+            "target_weight": data.get("target_weight", 0.0),
+        }
+    )
 
 
 def handle_arduino_spice_complete(data: dict) -> None:
@@ -121,39 +130,46 @@ def handle_arduino_spice_complete(data: dict) -> None:
     Arduino finished one spice. Broadcast to frontend AND
     unblock the dispense loop so it can send the next spice command.
     """
-    _broadcast({
-        "type":       "spice_complete",
-        "slot":       data.get("slot"),
-        "spice_name": data.get("spice_name", ""),
-        "actual":     data.get("actual", 0.0),
-        "target":     data.get("target", 0.0),
-        "status":     data.get("status", "done"),
-        "slot_index": data.get("slot_index", 0),
-    })
+    _broadcast(
+        {
+            "type": "spice_complete",
+            "slot": data.get("slot"),
+            "spice_name": data.get("spice_name", ""),
+            "actual": data.get("actual", 0.0),
+            "target": data.get("target", 0.0),
+            "status": data.get("status", "done"),
+            "slot_index": data.get("slot_index", 0),
+        }
+    )
     # Unblock the waiting dispense loop
     _spice_signal.signal(data)
 
 
 def handle_arduino_session_complete(data: dict) -> None:
     _session.active = False
-    _broadcast({
-        "type":        "session_complete",
-        "recipe_name": data.get("recipe_name", ""),
-        "completed":   [],
-    })
+    _broadcast(
+        {
+            "type": "session_complete",
+            "recipe_name": data.get("recipe_name", ""),
+            "completed": [],
+        }
+    )
 
 
 def handle_arduino_fault(data: dict) -> None:
     _session.active = False
     _spice_signal.signal({"status": "fault"})  # unblock loop on fault too
-    _broadcast({
-        "type":      "session_error",
-        "message":   data.get("message", "Arduino fault"),
-        "completed": [],
-    })
+    _broadcast(
+        {
+            "type": "session_error",
+            "message": data.get("message", "Arduino fault"),
+            "completed": [],
+        }
+    )
 
 
-# Mock helpers 
+# Mock helpers
+
 
 def _mock_dispense_spice(slot: int, target_grams: float) -> dict:
     current = 0.0
@@ -175,18 +191,21 @@ def _mock_dispense_spice(slot: int, target_grams: float) -> dict:
         step = target_grams * 0.04 * speed
         current = min(current + max(0.0, step + noise), target_grams)
 
-        _broadcast({
-            "type":           "weight_update",
-            "slot":           slot,
-            "current_weight": round(current, 2),
-            "target_weight":  round(target_grams, 2),
-        })
+        _broadcast(
+            {
+                "type": "weight_update",
+                "slot": slot,
+                "current_weight": round(current, 2),
+                "target_weight": round(target_grams, 2),
+            }
+        )
         time.sleep(sleep_t)
 
     return {"status": "done", "actual": round(current, 2)}
 
 
-# Main dispense orchestration 
+# Main dispense orchestration
+
 
 def start_dispense(recipe: dict, serving_count: int) -> tuple[bool, str]:
     if _session.busy:
@@ -210,56 +229,63 @@ def start_dispense(recipe: dict, serving_count: int) -> tuple[bool, str]:
         time.sleep(0.3)
 
         try:
-            # Tell frontend the session is starting 
-            _broadcast({
-                "type":        "session_start",
-                "recipe_name": recipe["name"],
-                "total_slots": len(targets),
-                "slots": [
-                    {"slot": s, "name": n, "target": g}
-                    for s, n, g in targets
-                ],
-            })
+            # Tell frontend the session is starting
+            _broadcast(
+                {
+                    "type": "session_start",
+                    "recipe_name": recipe["name"],
+                    "total_slots": len(targets),
+                    "slots": [
+                        {"slot": s, "name": n, "target": g} for s, n, g in targets
+                    ],
+                }
+            )
 
             completed: list[dict] = []
 
-            # Loop through each spice ONE AT A TIME 
+            # Loop through each spice ONE AT A TIME
             for idx, (slot, name, target_grams) in enumerate(targets):
 
                 if MOCK_ARDUINO:
-                    # MOCK MODE 
-                    _broadcast({
-                        "type":        "indexing",
-                        "slot":        slot,
-                        "spice_name":  name,
-                        "slot_index":  idx,
-                        "total_slots": len(targets),
-                    })
+                    # MOCK MODE
+                    _broadcast(
+                        {
+                            "type": "indexing",
+                            "slot": slot,
+                            "spice_name": name,
+                            "slot_index": idx,
+                            "total_slots": len(targets),
+                        }
+                    )
                     time.sleep(random.uniform(0.8, 1.2))
 
-                    _broadcast({
-                        "type":          "dispensing_start",
-                        "slot":          slot,
-                        "spice_name":    name,
-                        "target_weight": target_grams,
-                        "slot_index":    idx,
-                        "total_slots":   len(targets),
-                    })
+                    _broadcast(
+                        {
+                            "type": "dispensing_start",
+                            "slot": slot,
+                            "spice_name": name,
+                            "target_weight": target_grams,
+                            "slot_index": idx,
+                            "total_slots": len(targets),
+                        }
+                    )
 
                     result = _mock_dispense_spice(slot, target_grams)
 
-                    _broadcast({
-                        "type":       "spice_complete",
-                        "slot":       slot,
-                        "spice_name": name,
-                        "actual":     result["actual"],
-                        "target":     target_grams,
-                        "status":     result["status"],
-                        "slot_index": idx,
-                    })
+                    _broadcast(
+                        {
+                            "type": "spice_complete",
+                            "slot": slot,
+                            "spice_name": name,
+                            "actual": result["actual"],
+                            "target": target_grams,
+                            "status": result["status"],
+                            "slot_index": idx,
+                        }
+                    )
 
                 else:
-                    # REAL ARDUINO MODE 
+                    # REAL ARDUINO MODE
 
                     # Reset the signal BEFORE sending the command,
                     # so we don't miss a very fast response
@@ -272,11 +298,11 @@ def start_dispense(recipe: dict, serving_count: int) -> tuple[bool, str]:
                         resp = requests.post(
                             f"{ARDUINO_URL}/",
                             json={
-                                "carousel":    slot,
-                                "grams":       target_grams,
+                                "carousel": slot,
+                                "grams": target_grams,
                                 "recipe_name": recipe["name"],
-                                "spice_name":  name,
-                                "slot_index":  idx,
+                                "spice_name": name,
+                                "slot_index": idx,
                                 "total_slots": len(targets),
                             },
                             timeout=10,  # just waiting for "accepted" ACK
@@ -286,11 +312,13 @@ def start_dispense(recipe: dict, serving_count: int) -> tuple[bool, str]:
 
                     except Exception as exc:
                         print(f"[Dispense] Failed to send command to Arduino: {exc}")
-                        _broadcast({
-                            "type":      "session_error",
-                            "message":   f"Could not reach Arduino: {exc}",
-                            "completed": completed,
-                        })
+                        _broadcast(
+                            {
+                                "type": "session_error",
+                                "message": f"Could not reach Arduino: {exc}",
+                                "completed": completed,
+                            }
+                        )
                         return
 
                     # NOW BLOCK HERE, waiting for Arduino to push back
@@ -300,40 +328,50 @@ def start_dispense(recipe: dict, serving_count: int) -> tuple[bool, str]:
                     finished = _spice_signal.wait(timeout_s=SPICE_TIMEOUT_S)
 
                     if not finished:
-                        print(f"[Dispense] Timeout waiting for spice {name} (slot {slot})")
-                        _broadcast({
-                            "type":      "session_error",
-                            "message":   f"Timeout waiting for {name}",
-                            "completed": completed,
-                        })
+                        print(
+                            f"[Dispense] Timeout waiting for spice {name} (slot {slot})"
+                        )
+                        _broadcast(
+                            {
+                                "type": "session_error",
+                                "message": f"Timeout waiting for {name}",
+                                "completed": completed,
+                            }
+                        )
                         return
 
                     result = _spice_signal.result
 
-                # Accumulate result 
-                completed.append({
-                    "slot":   slot,
-                    "name":   name,
-                    "target": target_grams,
-                    "actual": result.get("actual", 0.0),
-                    "status": result.get("status", "done"),
-                })
+                # Accumulate result
+                completed.append(
+                    {
+                        "slot": slot,
+                        "name": name,
+                        "target": target_grams,
+                        "actual": result.get("actual", 0.0),
+                        "status": result.get("status", "done"),
+                    }
+                )
 
-                # Abort on fault 
+                # Abort on fault
                 if result.get("status") in ("timeout", "overload", "fault"):
-                    _broadcast({
-                        "type":      "session_error",
-                        "message":   f"{name} failed: {result.get('status')}",
-                        "completed": completed,
-                    })
+                    _broadcast(
+                        {
+                            "type": "session_error",
+                            "message": f"{name} failed: {result.get('status')}",
+                            "completed": completed,
+                        }
+                    )
                     return
 
-            # All spices done 
-            _broadcast({
-                "type":        "session_complete",
-                "recipe_name": recipe["name"],
-                "completed":   completed,
-            })
+            # All spices done
+            _broadcast(
+                {
+                    "type": "session_complete",
+                    "recipe_name": recipe["name"],
+                    "completed": completed,
+                }
+            )
 
         except Exception as exc:
             print(f"[Dispense] Unhandled error: {exc}")

@@ -17,10 +17,6 @@ from flask_cors import CORS
 
 from config import FLASK_PORT, MOCK_ARDUINO
 from dispense import (
-    init_db, 
-    get_recipe_by_id, 
-    save_recipe, 
-    update_calibration,
     register_sse_client, 
     unregister_sse_client, 
     start_dispense, 
@@ -37,7 +33,7 @@ from search import find_recipes
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-init_db()
+# init_db()
 
 
 # Health

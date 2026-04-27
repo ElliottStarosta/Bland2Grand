@@ -272,7 +272,7 @@
   }
 
   /* ═══════════════════════════════════════════
-    ROWS — SHARED
+    ROWS -- SHARED
   ═══════════════════════════════════════════ */
   .row, .grow {
     height: var(--row-h);
@@ -717,7 +717,7 @@
   .form-field textarea { resize: vertical; min-height: 56px; }
   .form-field select option { background: var(--bg3); }
 
-  /* progress slider — 10% steps, filled track, tick labels */
+  /* progress slider -- 10% steps, filled track, tick labels */
   .prog-val-pill {
     display: inline-block;
     font-family: var(--font-mono);
@@ -860,7 +860,7 @@
   ::-webkit-scrollbar-thumb:hover { background: var(--text3); }
 
   /* ═══════════════════════════════════════════
-    RESPONSIVE — slightly smaller at narrow width
+    RESPONSIVE -- slightly smaller at narrow width
   ═══════════════════════════════════════════ */
   @media (max-width: 900px) {
     :root {

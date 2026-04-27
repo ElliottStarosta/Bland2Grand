@@ -8,7 +8,7 @@
 #include "WiFiComm.h"
 #include "StateMachine.h"
 
-// WiFi credentials — edit before flashing
+// WiFi credentials -- edit before flashing
 static const char WIFI_SSID[] = "YOUR_SSID_HERE";
 static const char WIFI_PASSWORD[] = "YOUR_PASSWORD_HERE";
 
@@ -17,8 +17,8 @@ Scale scale;
 Encoder encoder;
 FlowModel model;
 Carousel carousel(encoder);
-Auger auger(scale, model);
 WiFiComm wifi;
+Auger auger(scale, model, wifi);
 StateMachine sm(carousel, auger, scale, model, wifi);
 
 void setup()

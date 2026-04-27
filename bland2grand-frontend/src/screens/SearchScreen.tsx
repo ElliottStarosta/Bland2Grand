@@ -107,7 +107,7 @@ function AiLoadingOverlay({ query }: { query: string }) {
       </div>
       <div className="text-center">
         <p className="text-xs text-muted font-body uppercase tracking-widest font-semibold mb-1">
-          No match — generating blend for
+          No match -- generating blend for
         </p>
         <p className="font-display text-xl font-semibold text-txt">&ldquo;{query}&rdquo;</p>
       </div>
@@ -252,7 +252,7 @@ export function SearchScreen({ onResults, onSelect, onCustom }: Props) {
     if (!v.trim()) { setError(""); setAiLoading(false); setLoading(false); }
   };
 
-  // Satisfying spring click — identical pattern to FeaturedCard / SpiceCard
+  // Satisfying spring click -- identical pattern to FeaturedCard / SpiceCard
   const handleCustomClick = () => {
     const btn = customBtnRef.current;
     if (!btn) return;
