@@ -2,8 +2,8 @@
 """
 Bland2Grand dev server
   - Serves index.html, styles.css, main.js, tasks.json as static files
-  - POST /save  { tasks: [...] }  → writes tasks.json to disk
-  - GET  /ping                    → health check
+  - POST /save  { tasks: [...] }  -> writes tasks.json to disk
+  - GET  /ping                    -> health check
 
 Run:  python3 server.py
 Then open:  http://localhost:5500 (or PORT override)
@@ -100,7 +100,7 @@ class Handler(BaseHTTPRequestHandler):
 
 if __name__ == '__main__':
     server = HTTPServer(('', PORT), Handler)
-    print(f"\n  Bland2Grand server running → http://localhost:{PORT}\n")
+    print(f"\n  Bland2Grand server running -> http://localhost:{PORT}\n")
     try:
         server.serve_forever()
     except KeyboardInterrupt:

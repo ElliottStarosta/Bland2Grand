@@ -12,30 +12,35 @@ def init_db() -> None:
     conn = get_connection()
     cur = conn.cursor()
 
-    cur.execute("""
+    cur.execute(
+        """
         CREATE TABLE IF NOT EXISTS recipes (
-            id           INTEGER PRIMARY KEY AUTOINCREMENT,
-            name         TEXT    NOT NULL UNIQUE,
-            category     TEXT    DEFAULT 'General',
-            description  TEXT    DEFAULT '',
-            s1_cumin          REAL DEFAULT 0,
-            s2_paprika        REAL DEFAULT 0,
-            s3_garlic_powder  REAL DEFAULT 0,
-            s4_chili_powder   REAL DEFAULT 0,
-            s5_oregano        REAL DEFAULT 0,
-            s6_onion_powder   REAL DEFAULT 0,
-            s7_black_pepper   REAL DEFAULT 0,
-            s8_cayenne        REAL DEFAULT 0
-        )
-    """)
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE,
+            category TEXT DEFAULT 'General',
+            description TEXT DEFAULT '',
 
-    cur.execute("""
+            s1_cumin REAL DEFAULT 0,
+            s2_paprika REAL DEFAULT 0,
+            s3_garlic_powder REAL DEFAULT 0,
+            s4_chili_powder REAL DEFAULT 0,
+            s5_oregano REAL DEFAULT 0,
+            s6_onion_powder REAL DEFAULT 0,
+            s7_black_pepper REAL DEFAULT 0,
+            s8_cayenne REAL DEFAULT 0
+        )
+    """
+    )
+
+    cur.execute(
+        """
         CREATE TABLE IF NOT EXISTS calibration (
-            slot       INTEGER PRIMARY KEY,
+            slot INTEGER PRIMARY KEY,
             spice_name TEXT,
             cal_factor REAL DEFAULT 1000.0
         )
-    """)
+    """
+    )
 
     for slot, name in SPICE_SLOTS.items():
         cur.execute(
@@ -48,7 +53,6 @@ def init_db() -> None:
 
 
 # Column name helpers
-
 _SLOT_TO_COL = {
     1: "s1_cumin",
     2: "s2_paprika",
@@ -68,7 +72,11 @@ def _recipe_to_dict(row: sqlite3.Row) -> dict:
         g = row[col]
         if g and g > 0:
             spices.append(
-                {"slot": slot, "name": SPICE_SLOTS[slot], "grams_per_serving": round(g, 2)}
+                {
+                    "slot": slot,
+                    "name": SPICE_SLOTS[slot],
+                    "grams_per_serving": round(g, 2),
+                }
             )
     return {
         "id": row["id"],
@@ -80,7 +88,6 @@ def _recipe_to_dict(row: sqlite3.Row) -> dict:
 
 
 # Public API
-
 def search_recipes(query: str, limit: int = 6) -> list[dict]:
     conn = get_connection()
     rows = conn.execute(
@@ -118,7 +125,9 @@ def get_recipe_by_name(name: str) -> dict | None:
     return _recipe_to_dict(row) if row else None
 
 
-def save_recipe(name: str, spices: dict, category: str = "AI Generated", description: str = "") -> int:
+def save_recipe(
+    name: str, spices: dict, category: str = "AI Generated", description: str = ""
+) -> int:
     """spices: {slot_str: grams, …}  e.g. {"1": 2.0, "2": 1.5, …}"""
     conn = get_connection()
     cur = conn.cursor()
@@ -129,7 +138,9 @@ def save_recipe(name: str, spices: dict, category: str = "AI Generated", descrip
             s5_oregano, s6_onion_powder, s7_black_pepper, s8_cayenne)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (
-            name, category, description,
+            name,
+            category,
+            description,
             float(spices.get("1", 0)),
             float(spices.get("2", 0)),
             float(spices.get("3", 0)),

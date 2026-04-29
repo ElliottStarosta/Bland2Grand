@@ -28,7 +28,7 @@ static constexpr uint16_t STEPS_PER_REV = static_cast<uint16_t>(
 
 //Carousel Kinematics
 
-//External pinion/ring gear ratio: ring=96 teeth, pinion=48 teeth → GR = 2
+//External pinion/ring gear ratio: ring=96 teeth, pinion=48 teeth -> GR = 2
 static constexpr float CAROUSEL_GEAR_RATIO = 2.0f;
 static constexpr uint8_t CAROUSEL_SLOT_COUNT = 8;
 static constexpr float CAROUSEL_SLOT_DEG = 360.0f / CAROUSEL_SLOT_COUNT; //45°
@@ -92,9 +92,9 @@ static constexpr float BACK_PURGE_SPEED_STEPS_S = 800.0f; //moderate speed for c
 static constexpr float AUGER_FULL_SPEED_STEPS_S = 1200.0f;
 
 //Stage boundaries (weight ratio thresholds)
-static constexpr float RAMP_STAGE2_THRESHOLD = 0.80f; //below this → full speed
-static constexpr float RAMP_STAGE3_THRESHOLD = 0.95f; //below this → 50% speed
-                                                      //above 0.95 → 15% speed
+static constexpr float RAMP_STAGE2_THRESHOLD = 0.80f; //below this -> full speed
+static constexpr float RAMP_STAGE3_THRESHOLD = 0.95f; //below this -> 50% speed
+                                                      //above 0.95 -> 15% speed
 
 static constexpr float RAMP_SPEED_STAGE1 = 1.00f; //100%
 static constexpr float RAMP_SPEED_STAGE2 = 0.50f; //50%

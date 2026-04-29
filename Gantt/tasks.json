@@ -282,7 +282,7 @@
     },
     {
       "id": "6b",
-      "name": "Connect LC1 4-wire to U3: E+ red, E- black, A+ green, A- white; DOUT→D9, SCK→D10",
+      "name": "Connect LC1 4-wire to U3: E+ red, E- black, A+ green, A- white; DOUT->D9, SCK->D10",
       "type": "subtask",
       "phase": 1,
       "start": "2026-04-05",
@@ -623,7 +623,7 @@
     },
     {
       "id": "12a",
-      "name": "Full flow: phone→search→blend→serving→Flask→U1→motor→response",
+      "name": "Full flow: phone->search->blend->serving->Flask->U1->motor->response",
       "type": "subtask",
       "phase": 2,
       "start": "2026-04-22",
@@ -1327,7 +1327,7 @@
     },
     {
       "id": "25a",
-      "name": "Full end-to-end: phone→WiFi→Flask→U1→carousel→auger→bowl",
+      "name": "Full end-to-end: phone->WiFi->Flask->U1->carousel->auger->bowl",
       "type": "subtask",
       "phase": 4,
       "start": "2026-05-25",

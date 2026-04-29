@@ -123,7 +123,7 @@ private:
     uint16_t _encoderCounts = 0;
     int32_t _stepPosition = 0;
 
-    // Convert 1-based slot → expected shaft encoder counts
+    // Convert 1-based slot -> expected shaft encoder counts
     static uint16_t _slotToShaftCounts(uint8_t slot)
     {
         uint32_t c = MODULE_1_SHAFT_COUNTS + static_cast<uint32_t>(slot - 1) * ENCODER_COUNTS_PER_SLOT;

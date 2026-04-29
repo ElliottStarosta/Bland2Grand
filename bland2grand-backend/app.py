@@ -1,13 +1,13 @@
 """
 Bland2Grand Flask Backend
-=========================
+
 Endpoints:
   GET  /api/search?q=...             Search recipes (local -> AI fallback)
   POST /api/dispense                 Start dispense session
   GET  /api/status/stream            SSE stream for real-time dispense updates
   POST /api/calibrate                Update per-slot calibration factor
   POST /api/recipe                   Save a custom recipe
-  GET  /api/recipes/:id              Fetch single recipe by ID
+  GET  /api/recipes/<id>             Fetch single recipe by ID
   GET  /api/health                   Health check
 """
 
@@ -16,10 +16,11 @@ from flask import Flask, Response, jsonify, request, stream_with_context
 from flask_cors import CORS
 
 from config import FLASK_PORT, MOCK_ARDUINO
+from database import init_db, get_recipe_by_id, save_recipe, update_calibration
 from dispense import (
-    register_sse_client, 
-    unregister_sse_client, 
-    start_dispense, 
+    register_sse_client,
+    unregister_sse_client,
+    start_dispense,
     is_busy,
     handle_arduino_indexing,
     handle_arduino_dispense_start,
@@ -33,30 +34,26 @@ from search import find_recipes
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-# init_db()
+init_db()
 
 
-# Health
+# Health 
 @app.get("/api/health")
 def health():
     return jsonify({"status": "ok", "mock_arduino": MOCK_ARDUINO})
 
 
-# Search
-
+# Search 
 @app.get("/api/search")
 def search():
     query = request.args.get("q", "").strip()
     if not query:
         return jsonify({"results": []})
-
     results = find_recipes(query)
     return jsonify({"results": results, "count": len(results)})
 
 
-# Recipe fetch
-
-
+# Recipe fetch 
 @app.get("/api/recipes/<int:recipe_id>")
 def get_recipe(recipe_id: int):
     recipe = get_recipe_by_id(recipe_id)
@@ -65,7 +62,7 @@ def get_recipe(recipe_id: int):
     return jsonify(recipe)
 
 
-# Dispense
+# Dispense 
 @app.post("/api/dispense")
 def dispense():
     if is_busy():
@@ -88,18 +85,15 @@ def dispense():
     if not success:
         return jsonify({"error": message}), 400
 
-    return jsonify(
-        {"status": "started", "recipe": recipe["name"], "servings": serving_count}
-    )
+    return jsonify({"status": "started", "recipe": recipe["name"], "servings": serving_count})
 
 
-# SSE status stream
+# SSE status stream 
 @app.get("/api/status/stream")
 def status_stream():
     def generate():
         q = register_sse_client()
         try:
-            # Send initial connection acknowledgement
             yield f"data: {json.dumps({'type': 'connected'})}\n\n"
             while True:
                 try:
@@ -108,7 +102,6 @@ def status_stream():
                     if event.get("type") in ("session_complete", "session_error"):
                         break
                 except Exception:
-                    # heartbeat on timeout
                     yield f"data: {json.dumps({'type': 'heartbeat'})}\n\n"
         except GeneratorExit:
             pass
@@ -116,19 +109,19 @@ def status_stream():
             unregister_sse_client(q)
 
     return Response(
-    stream_with_context(generate()),
-    mimetype="text/event-stream",
-    headers={
-        "Cache-Control": "no-cache",
-        "X-Accel-Buffering": "no",
-        "Connection": "keep-alive",
-        "Content-Type": "text/event-stream",
-        "X-Content-Type-Options": "nosniff",
+        stream_with_context(generate()),
+        mimetype="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+            "Content-Type": "text/event-stream",
+            "X-Content-Type-Options": "nosniff",
         },
     )
 
 
-# Calibration
+# Calibration 
 @app.post("/api/calibrate")
 def calibrate():
     body = request.get_json(silent=True) or {}
@@ -142,25 +135,24 @@ def calibrate():
     return jsonify({"status": "ok", "slot": slot, "cal_factor": cal_factor})
 
 
-# Custom recipe
+# Custom recipe 
 @app.post("/api/recipe")
 def create_recipe():
     body = request.get_json(silent=True) or {}
     name = (body.get("name") or "").strip()
-    spices: dict = body.get("spices", {})  # {"1": g, …}
+    spices: dict = body.get("spices", {})
     description = (body.get("description") or "").strip()
 
     if not name:
         return jsonify({"error": "name is required."}), 400
 
-    # Ensure all 8 slots present with defaults
     normalized = {str(i): float(spices.get(str(i), 0)) for i in range(1, 9)}
-    recipe_id = save_recipe(
-        name, normalized, category="Custom", description=description
-    )
+    recipe_id = save_recipe(name, normalized, category="Custom", description=description)
     recipe = get_recipe_by_id(recipe_id)
     return jsonify({"status": "created", "recipe": recipe}), 201
 
+
+# Arduino push endpoints 
 @app.post("/api/arduino/indexing")
 def arduino_indexing():
     data = request.get_json(silent=True) or {}
@@ -192,8 +184,7 @@ def arduino_spice_complete():
 @app.post("/api/arduino/session-complete")
 def arduino_session_complete():
     data = request.get_json(silent=True) or {}
-    # recipe_name comes from the session state tracked in dispense.py
-    handle_arduino_session_complete(data, data.get("recipe_name", ""))
+    handle_arduino_session_complete(data)
     return jsonify({"ok": True})
 
 
@@ -203,8 +194,9 @@ def arduino_fault():
     handle_arduino_fault(data)
     return jsonify({"ok": True})
 
-# Entry point
+
+# Entry point 
 if __name__ == "__main__":
     print(f"[Bland2Grand] Starting Flask on port {FLASK_PORT}")
-    print(f"[Bland2Grand] Arduino    mode: {'MOCK' if MOCK_ARDUINO else 'REAL'}")
+    print(f"[Bland2Grand] Arduino mode: {'MOCK' if MOCK_ARDUINO else 'REAL'}")
     app.run(host="0.0.0.0", port=FLASK_PORT, threaded=True, debug=False)

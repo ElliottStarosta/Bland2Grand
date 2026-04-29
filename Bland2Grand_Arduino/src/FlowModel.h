@@ -156,7 +156,7 @@ private:
         EEPROM.get(addr + 8, c);
         EEPROM.get(addr + 12, n);
 
-        //Validate: NaN / Inf / obviously wrong values → use defaults
+        //Validate: NaN / Inf / obviously wrong values -> use defaults
         bool valid = !isnan(s) && !isinf(s) && s > 0.001f && s < 50.0f && !isnan(i) && !isinf(i) && !isnan(c) && !isinf(c) && c >= 0.0f && c <= MAX_COAST_GRAMS;
 
         if (valid)

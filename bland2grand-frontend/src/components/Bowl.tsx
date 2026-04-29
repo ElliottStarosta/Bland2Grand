@@ -118,7 +118,7 @@ export function Bowl({ slots, totalTarget, totalWeight, activeSlot }: Props) {
 
   const depth = baseY - mouthY
 
-  // f=0 → baseY (floor), f=1 → mouthY (full to brim)
+  // f=0 -> baseY (floor), f=1 -> mouthY (full to brim)
   const fracToY = (f: number) => baseY - f * depth
 
   // Clip path 

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { Header } from "./components/Header";
 import { IdleScreen, useIdleTimer } from "./screens/IdleScreen";
@@ -23,11 +23,15 @@ export default function App() {
   const { session, connect, reset: resetSession, setSession } = useDispenseStream();
   const contentRef = useRef<HTMLDivElement>(null);
   const fromFeatured = useRef(false);
+  const screenRef = useRef<Screen>(screen)
+
+
+  useEffect(() => { screenRef.current = screen }, [screen]);
 
   // Idle timer -- inside the component
   const { wakeUp } = useIdleTimer(60_000, () => {
     // Don't go idle while dispensing
-    if (screen !== "dispensing") setIsIdle(true);
+      if (screenRef.current !== 'dispensing') setIsIdle(true)
   });
 
   const handleWake = useCallback(() => {

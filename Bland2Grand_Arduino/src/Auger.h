@@ -18,8 +18,7 @@ class Auger
 {
 public:
     Auger(Scale &scale, FlowModel &model, WiFiComm &wifi)
-        : _stepper(AccelStepper::DRIVER, PIN_AUGER_STEP, PIN_AUGER_DIR),
-          _scale(scale), _model(model), _wifi(wifi)
+        : _stepper(AccelStepper::DRIVER, PIN_AUGER_STEP, PIN_AUGER_DIR), _scale(scale), _model(model), _wifi(wifi)
     {
     }
 
@@ -31,9 +30,9 @@ public:
     }
 
     // slot:        0-based slot index (for FlowModel)
-    // slot1Based:  1-based slot number (for WiFi messages)
-    // spiceName:   name string for status messages
-    // targetGrams: target weight
+    // slot1Based:  1-based slot number (for WiFi push messages)
+    // spiceName:   display name for status messages
+    // targetGrams: mass to dispense
     // actual_g:    set on exit to final scale reading
     DispenseResult dispense(uint8_t slot, uint8_t slot1Based,
                             const char *spiceName,
@@ -70,15 +69,14 @@ public:
 
             uint32_t now = millis();
 
-            // Push weight update every 150ms (fire and forget) 
+            // Push live weight to Flask every WIFI_PUSH_INTERVAL_MS
             if (now - lastWifiPush >= WIFI_PUSH_INTERVAL_MS)
             {
                 lastWifiPush = now;
-                // Use cached currentWeight -- don't block for a scale read here
                 _wifi.pushWeightUpdate(slot1Based, currentWeight, targetGrams);
             }
 
-            // Scale poll every SCALE_POLL_MS 
+            // Poll scale every SCALE_POLL_MS
             if (now - lastScalePoll >= SCALE_POLL_MS)
             {
                 if (!_scale.isReady())
@@ -146,23 +144,27 @@ private:
     FlowModel &_model;
     WiFiComm &_wifi;
 
+    // Three-stage closed-loop speed ramp based on weight ratio
     void _setAugerSpeed(float current, float target)
     {
         float ratio = (target > 0.0f) ? (current / target) : 0.0f;
         float speedFraction;
 
         if (ratio < RAMP_STAGE2_THRESHOLD)
-            speedFraction = RAMP_SPEED_STAGE1;
+            speedFraction = RAMP_SPEED_STAGE1; // 100 %
         else if (ratio < RAMP_STAGE3_THRESHOLD)
-            speedFraction = RAMP_SPEED_STAGE2;
+            speedFraction = RAMP_SPEED_STAGE2; //  50 %
         else
-            speedFraction = RAMP_SPEED_STAGE3;
+            speedFraction = RAMP_SPEED_STAGE3; //  15 %
 
         float speed = AUGER_FULL_SPEED_STEPS_S * speedFraction;
         _stepper.setMaxSpeed(speed);
         _stepper.setSpeed(speed);
     }
 
+    // Hard stop, reverse the exact number of steps taken, then disable coils.
+    // Reversing the dispensed step count sweeps powder back up the helix and
+    // re-parks the toothless arc of the half-spur gear (mechanical cutoff).
     void _stopAndPurge(long stepsToReverse)
     {
         _stepper.stop();
@@ -178,8 +180,10 @@ private:
                 _stepper.run();
         }
 
+        // Restore forward settings for next dispense
         _stepper.setMaxSpeed(AUGER_FULL_SPEED_STEPS_S);
         _stepper.setAcceleration(AUGER_FULL_SPEED_STEPS_S * 2.0f);
+
         delay(AUGER_COIL_DISABLE_DELAY_MS);
         disableCoils();
     }

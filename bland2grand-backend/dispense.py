@@ -7,8 +7,8 @@ from typing import Optional
 import requests
 from config import ARDUINO_URL, MOCK_ARDUINO, SPICE_SLOTS
 
-# SSE client registry
 
+# SSE client registry
 _sse_clients: list[queue.Queue] = []
 _clients_lock = threading.Lock()
 
@@ -29,7 +29,7 @@ def unregister_sse_client(q: queue.Queue) -> None:
 
 
 def _broadcast(event: dict) -> None:
-    print(f"[Broadcast] {event['type']} → {len(_sse_clients)} clients")
+    print(f"[Broadcast] {event['type']} -> {len(_sse_clients)} clients")
     with _clients_lock:
         for q in _sse_clients:
             try:
@@ -38,22 +38,16 @@ def _broadcast(event: dict) -> None:
                 pass
 
 
-# Completion signal from Arduino
-# When Arduino pushes /api/arduino/spice-complete, Flask sets this
-# event so the dispense loop knows to move to the next spice.
-
-
+# Spice-complete signal
 class _SpiceCompleteSignal:
     def __init__(self):
         self._event = threading.Event()
         self._result: dict = {}
 
     def wait(self, timeout_s: float) -> bool:
-        """Block until Arduino signals done, or timeout. Returns True if done."""
         return self._event.wait(timeout=timeout_s)
 
     def signal(self, result: dict) -> None:
-        """Called by the Arduino push handler to unblock the dispense loop."""
         self._result = result
         self._event.set()
 
@@ -70,8 +64,6 @@ _spice_signal = _SpiceCompleteSignal()
 
 
 # Session state
-
-
 class DispenseSession:
     def __init__(self) -> None:
         self.active = False
@@ -86,9 +78,6 @@ _session = DispenseSession()
 
 
 # Arduino push receivers
-# Called directly by Flask route handlers in app.py.
-
-
 def handle_arduino_indexing(data: dict) -> None:
     _broadcast(
         {
@@ -126,10 +115,7 @@ def handle_arduino_weight_push(data: dict) -> None:
 
 
 def handle_arduino_spice_complete(data: dict) -> None:
-    """
-    Arduino finished one spice. Broadcast to frontend AND
-    unblock the dispense loop so it can send the next spice command.
-    """
+    """Arduino finished one spice -- broadcast and unblock the dispense loop."""
     _broadcast(
         {
             "type": "spice_complete",
@@ -141,11 +127,11 @@ def handle_arduino_spice_complete(data: dict) -> None:
             "slot_index": data.get("slot_index", 0),
         }
     )
-    # Unblock the waiting dispense loop
     _spice_signal.signal(data)
 
 
 def handle_arduino_session_complete(data: dict) -> None:
+    """Arduino signals the full session is done (all spices dispensed)."""
     _session.active = False
     _broadcast(
         {
@@ -169,8 +155,6 @@ def handle_arduino_fault(data: dict) -> None:
 
 
 # Mock helpers
-
-
 def _mock_dispense_spice(slot: int, target_grams: float) -> dict:
     current = 0.0
     timeout_at = time.time() + 60
@@ -205,8 +189,6 @@ def _mock_dispense_spice(slot: int, target_grams: float) -> dict:
 
 
 # Main dispense orchestration
-
-
 def start_dispense(recipe: dict, serving_count: int) -> tuple[bool, str]:
     if _session.busy:
         return False, "A dispense is already in progress."
@@ -229,7 +211,6 @@ def start_dispense(recipe: dict, serving_count: int) -> tuple[bool, str]:
         time.sleep(0.3)
 
         try:
-            # Tell frontend the session is starting
             _broadcast(
                 {
                     "type": "session_start",
@@ -243,11 +224,10 @@ def start_dispense(recipe: dict, serving_count: int) -> tuple[bool, str]:
 
             completed: list[dict] = []
 
-            # Loop through each spice ONE AT A TIME
             for idx, (slot, name, target_grams) in enumerate(targets):
 
                 if MOCK_ARDUINO:
-                    # MOCK MODE
+                    # Mock mode -- simulate the full dispense locally
                     _broadcast(
                         {
                             "type": "indexing",
@@ -285,15 +265,9 @@ def start_dispense(recipe: dict, serving_count: int) -> tuple[bool, str]:
                     )
 
                 else:
-                    # REAL ARDUINO MODE
-
-                    # Reset the signal BEFORE sending the command,
-                    # so we don't miss a very fast response
+                    # Real Arduino mode
                     _spice_signal.reset()
 
-                    # Send this single spice command to the Arduino.
-                    # Arduino responds "accepted" immediately (within ~5ms),
-                    # then goes off and does the physical work.
                     try:
                         resp = requests.post(
                             f"{ARDUINO_URL}/",
@@ -321,9 +295,6 @@ def start_dispense(recipe: dict, serving_count: int) -> tuple[bool, str]:
                         )
                         return
 
-                    # NOW BLOCK HERE, waiting for Arduino to push back
-                    # /api/arduino/spice-complete (which calls _spice_signal.signal())
-                    # Timeout = dispense timeout + carousel time + buffer
                     SPICE_TIMEOUT_S = 120
                     finished = _spice_signal.wait(timeout_s=SPICE_TIMEOUT_S)
 
@@ -342,7 +313,6 @@ def start_dispense(recipe: dict, serving_count: int) -> tuple[bool, str]:
 
                     result = _spice_signal.result
 
-                # Accumulate result
                 completed.append(
                     {
                         "slot": slot,
@@ -353,7 +323,6 @@ def start_dispense(recipe: dict, serving_count: int) -> tuple[bool, str]:
                     }
                 )
 
-                # Abort on fault
                 if result.get("status") in ("timeout", "overload", "fault"):
                     _broadcast(
                         {

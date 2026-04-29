@@ -95,7 +95,7 @@ private:
         bool ok = _carousel.home();
         if (ok)
         {
-            Serial.println(F("[SM] Homing complete → IDLE"));
+            Serial.println(F("[SM] Homing complete -> IDLE"));
             _transitionTo(State::IDLE);
         }
         else
