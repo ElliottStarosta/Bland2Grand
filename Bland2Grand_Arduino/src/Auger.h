@@ -153,9 +153,9 @@ private:
         if (ratio < RAMP_STAGE2_THRESHOLD)
             speedFraction = RAMP_SPEED_STAGE1; // 100 %
         else if (ratio < RAMP_STAGE3_THRESHOLD)
-            speedFraction = RAMP_SPEED_STAGE2; //  50 %
+            speedFraction = RAMP_SPEED_STAGE2; // 50 %
         else
-            speedFraction = RAMP_SPEED_STAGE3; //  15 %
+            speedFraction = RAMP_SPEED_STAGE3; // 15 %
 
         float speed = AUGER_FULL_SPEED_STEPS_S * speedFraction;
         _stepper.setMaxSpeed(speed);

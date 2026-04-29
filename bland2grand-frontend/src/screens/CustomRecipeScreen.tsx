@@ -12,7 +12,7 @@ import { SPICE_COLORS, SPICE_LABELS } from '../types'
 import type { Recipe } from '../types'
 import { api } from './lib/api'
 
-// ─── Imported from index.ts ──────────────────────────────────────────────────
+// Imported from index.ts 
 import {
   SPICE_DENSITY_G_PER_ML,
   TSP_ML,
@@ -22,7 +22,7 @@ import {
   UNIT_CYCLE,
 } from '../types'
 import type { Unit } from '../types'
-// ─────────────────────────────────────────────────────────────────────────────
+// 
 
 function toGrams(value: number, unit: Unit, slot: number): number {
   const density = SPICE_DENSITY_G_PER_ML[slot] ?? 0.85
@@ -37,7 +37,7 @@ function fmtVal(value: number): string {
   return value.toFixed(2).replace(/\.?0+$/, '')
 }
 
-// ─── Reusable spring-press button ────────────────────────────────────────────
+// Reusable spring-press button 
 function PressButton({
   onClick, disabled = false, children, className = '', style = {},
 }: {
@@ -76,7 +76,7 @@ function PressButton({
   )
 }
 
-// ─── Bubble unit picker ───────────────────────────────────────────────────────
+// Bubble unit picker 
 interface UnitPickerProps {
   unit: Unit
   isActive: boolean
@@ -257,7 +257,7 @@ function UnitPicker({ unit, isActive, color, onSelect }: UnitPickerProps) {
   )
 }
 
-// ─── Slot input ───────────────────────────────────────────────────────────────
+// Slot input 
 interface SlotInputProps {
   slot: number
   unit: Unit
@@ -403,7 +403,7 @@ function SlotInput({ slot, unit, value, onChange, onUnitChange }: SlotInputProps
   )
 }
 
-// ─── Main screen ─────────────────────────────────────────────────────────────
+// Main screen 
 interface Props {
   onSaved: (recipe: Recipe) => void
   onBack: () => void
