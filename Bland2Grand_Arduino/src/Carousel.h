@@ -16,7 +16,7 @@ public:
     void begin()
     {
         _stepper.setMaxSpeed(INDEX_SPEED_STEPS_S);
-        _stepper.setAcceleration(INDEX_SPEED_STEPS_S * 2.0f);
+        _stepper.setAcceleration(INDEX_ACCEL_STEPS_S2);
         _stepper.setCurrentPosition(0);
 
         // Attempt to restore last known position from EEPROM.
@@ -29,6 +29,7 @@ public:
             _stepper.setCurrentPosition(_pos.stepPosition());
         }
     }
+
     bool home()
     {
         _stepper.setMaxSpeed(HOMING_SPEED_STEPS_S);
@@ -53,7 +54,7 @@ public:
                                   _stepper.currentPosition());
 
                 _stepper.setMaxSpeed(INDEX_SPEED_STEPS_S);
-                _stepper.setAcceleration(INDEX_SPEED_STEPS_S * 2.0f);
+                _stepper.setAcceleration(INDEX_ACCEL_STEPS_S2);
                 delay(INDEX_SETTLE_MS);
                 return true;
             }
@@ -63,11 +64,10 @@ public:
         }
 
         _stepper.setMaxSpeed(INDEX_SPEED_STEPS_S);
-        _stepper.setAcceleration(INDEX_SPEED_STEPS_S * 2.0f);
+        _stepper.setAcceleration(INDEX_ACCEL_STEPS_S2);
         return false;
     }
 
-    // indexTo(targetSlot) -- blocking; returns true on success
     bool indexTo(uint8_t targetSlot)
     {
         if (targetSlot < 1 || targetSlot > CAROUSEL_SLOT_COUNT)

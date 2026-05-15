@@ -134,7 +134,7 @@ export const SPICE_DENSITY_G_PER_ML: Record<number, number> = {
   1: 0.5, // Cumin (ground)
   2: 0.45, // Paprika
   3: 0.55, // Garlic Powder
-  4: 0.5, // Chili Powder
+  4: 0.5, // Chili Powder -. TODO: CHANGE FOR SALT
   5: 0.3, // Oregano (dried, fluffy)
   6: 0.5, // Onion Powder
   7: 0.6, // Black Pepper (ground)

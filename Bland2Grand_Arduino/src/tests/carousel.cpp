@@ -9,12 +9,15 @@ uint8_t currentSlot = 1; // assume starting at slot 1
 
 void setup()
 {
+    
     Serial.begin(9600);
-    while (!Serial && millis() < 3000) {}
+    while (!Serial && millis() < 3000)
+    {
+    }
 
     stepper.setMaxSpeed(INDEX_SPEED_STEPS_S);
-    stepper.setAcceleration(INDEX_SPEED_STEPS_S * 2.0f);
-    stepper.setMinPulseWidth(10);
+    stepper.setAcceleration(INDEX_ACCEL_STEPS_S2);
+    stepper.setMinPulseWidth(20);
     stepper.setCurrentPosition(0);
 
     Serial.println("=== Carousel Debug Test ===");
@@ -29,7 +32,8 @@ void loop()
     {
         uint8_t targetSlot = Serial.parseInt();
 
-        while (Serial.available()) Serial.read(); // clear buffer
+        while (Serial.available())
+            Serial.read(); // clear buffer
 
         if (targetSlot < 1 || targetSlot > NUM_SLOTS)
         {

@@ -8,17 +8,15 @@ class Encoder
 public:
     Encoder() : _connected(false) {}
 
-    //begin() -- call from setup()
     bool begin()
     {
         _enc.begin();
-        //Verify connection: AS5600 should return a non-zero status
-        //(status bit 0x20 = magnet detected)
-        delay(50); //allow chip to settle
+        //Verify connection: AS5600 should return a non-zero status (status bit 0x20 = magnet detected)
+        delay(50); // allow chip to settle
         _connected = (_enc.getAddress() != 0) || (_enc.isConnected());
         if (!_connected)
         {
-            //Try once more after a short wait
+            // Try once more after a short wait
             delay(200);
             _connected = _enc.isConnected();
         }
@@ -27,18 +25,19 @@ public:
 
     bool isConnected() const { return _connected; }
 
-    //rawAngle() -- 0..4095 counts (full 360° of shaft)
+    // rawAngle() -- 0..4095 counts (full 360° of shaft)
     uint16_t rawAngle()
     {
         return static_cast<uint16_t>(_enc.rawAngle() & 0x0FFF);
     }
 
-    // isAtTarget() -- returns true if |measured - target| ≤ tolerance
+    // isAtTarget() -- returns true if |measured - target| <= tolerance
     // Handles the 0/4095 wraparound.
     bool isAtTarget(uint16_t targetCounts)
     {
         uint16_t current = rawAngle();
         int16_t diff = static_cast<int16_t>(current) - static_cast<int16_t>(targetCounts);
+        
         // Adjust for wraparound
         if (diff > static_cast<int16_t>(ENCODER_COUNTS_PER_REV / 2))
             diff -= static_cast<int16_t>(ENCODER_COUNTS_PER_REV);
@@ -47,7 +46,7 @@ public:
         return abs(diff) <= static_cast<int16_t>(ENCODER_TOLERANCE_COUNTS);
     }
 
-    // signedError() -- current − target, range −2047..2047
+    // current − target, range −2047..2047
     int16_t signedError(uint16_t targetCounts)
     {
         uint16_t current = rawAngle();

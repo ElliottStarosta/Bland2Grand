@@ -1,30 +1,35 @@
-from database import search_recipes, search_recipes_by_category, save_recipe, get_recipe_by_id
+from database import (
+    search_recipes,
+    search_recipes_by_category,
+    save_recipe,
+    get_recipe_by_id,
+)
 from ai_client import get_blend_for_dish
 from config import OPENROUTER_API_KEY
 
 # Known category keywords -- if the query matches one, search by category instead
 CATEGORY_ALIASES = {
-    "mexican":        "Mexican",
-    "indian":         "Indian",
-    "italian":        "Italian",
-    "bbq":            "BBQ",
-    "cajun":          "Cajun",
-    "mediterranean":  "Mediterranean",
+    "mexican": "Mexican",
+    "indian": "Indian",
+    "italian": "Italian",
+    "bbq": "BBQ",
+    "cajun": "Cajun",
+    "mediterranean": "Mediterranean",
     "middle eastern": "Middle Eastern",
-    "vegetarian":     "Vegetarian",
-    "vegan":          "Vegetarian",
-    "seafood":        "Seafood",
-    "breakfast":      "Breakfast",
-    "asian":          "Asian",
-    "caribbean":      "Caribbean",
-    "latin":          "Latin",
-    "moroccan":       "Moroccan",
-    "turkish":        "Turkish",
-    "levantine":      "Levantine",
-    "north african":  "North African",
-    "british":        "British",
-    "american":       "American",
-    "holiday":        "Holiday",
+    "vegetarian": "Vegetarian",
+    "vegan": "Vegetarian",
+    "seafood": "Seafood",
+    "breakfast": "Breakfast",
+    "asian": "Asian",
+    "caribbean": "Caribbean",
+    "latin": "Latin",
+    "moroccan": "Moroccan",
+    "turkish": "Turkish",
+    "levantine": "Levantine",
+    "north african": "North African",
+    "british": "British",
+    "american": "American",
+    "holiday": "Holiday",
 }
 
 
@@ -56,7 +61,9 @@ def find_recipes(query: str) -> list[dict]:
         return []
 
     if not OPENROUTER_API_KEY:
-        print("[Search] No local results and OpenRouter API key not set, skipping AI fallback.")
+        print(
+            "[Search] No local results and OpenRouter API key not set, skipping AI fallback."
+        )
         return []
 
     try:

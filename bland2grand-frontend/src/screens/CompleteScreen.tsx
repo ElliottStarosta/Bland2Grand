@@ -51,7 +51,8 @@ export function CompleteScreen({ session, onReset }: Props) {
   const totalActual = completedSlots.reduce((sum, s) => sum + (s.actual ?? s.current), 0)
 
   return (
-    <div className="flex-1 flex flex-col items-center px-5 pb-safe">
+    <div className="flex-1 min-h-0 overflow-y-auto flex flex-col items-center px-5">
+
 
       {/*  Icon  */}
       <div
@@ -179,6 +180,7 @@ export function CompleteScreen({ session, onReset }: Props) {
         <FontAwesomeIcon icon={faArrowRotateLeft} style={{ fontSize: 14 }} />
         Start a new blend
       </button>
+      <div style={{ height: 24, flexShrink: 0 }} />
     </div>
   )
 }

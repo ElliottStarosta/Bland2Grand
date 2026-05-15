@@ -14,9 +14,7 @@
 static constexpr uint16_t CAROUSEL_POS_EEPROM_ADDR = 128;
 static constexpr uint8_t CAROUSEL_POS_MAGIC = 0xA5;
 
-// How far encoder and step-derived positions may disagree before we trust
-// only the encoder (in encoder counts, ~1 slot = 1024 counts).
-// If the discrepancy is larger than this we assume the encoder has failed.
+// How far encoder and step-derived positions may disagree before we trust only the encoder (in encoder counts, ~1 slot = 1024 counts). If the discrepancy is larger than this we assume the encoder has failed.
 static constexpr uint16_t ENCODER_STEP_AGREE_COUNTS = 200; // ~18° at the shaft
 
 struct SavedCarouselPos

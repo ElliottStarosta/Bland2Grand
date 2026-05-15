@@ -3,16 +3,16 @@
 #include <EEPROM.h>
 #include "Constants.h"
 
-static constexpr uint8_t EEPROM_SLOT_STRIDE = 16; //bytes per slot in EEPROM
+static constexpr uint8_t EEPROM_SLOT_STRIDE = 16; // bytes per slot in EEPROM
 
 struct SlotModel
 {
-    float slope = 1.0f; //g / auger cycle (default 1 g/cycle = conservative)
-    float intercept = 0.0f; //g at cycle 0
-    float coast_g = 0.3f; //estimated in-flight grams (default 0.3 g)
-    uint32_t n_samples = 0; //total data points used for regression
+    float slope = 1.0f;     // g / auger cycle (default 1 g/cycle = conservative)
+    float intercept = 0.0f; // g at cycle 0
+    float coast_g = 0.3f;   // estimated in-flight grams (default 0.3 g)
+    uint32_t n_samples = 0; // total data points used for regression
 
-    //Online least-squares accumulators (not persisted -- rebuilt on boot)
+    // Online least-squares accumulators (not persisted -- rebuilt on boot)
     double sum_x = 0.0;
     double sum_y = 0.0;
     double sum_xx = 0.0;
@@ -25,7 +25,7 @@ class FlowModel
 public:
     FlowModel() {}
 
-    //begin() -- load models from EEPROM 
+    // begin() -- load models from EEPROM
     void begin()
     {
         for (uint8_t slot = 0; slot < CAROUSEL_SLOT_COUNT; slot++)
@@ -34,10 +34,10 @@ public:
         }
     }
 
-    //addObservation() -- call after each complete auger cycle 
-    //slot:   0-based slot index
-    //cycles: total auger cycles completed so far in this dispense
-    //weight: weight currently in bowl (grams)
+    // addObservation() -- call after each complete auger cycle
+    // slot:   0-based slot index
+    // cycles: total auger cycles completed so far in this dispense
+    // weight: weight currently in bowl (grams)
     void addObservation(uint8_t slot, float cycles, float weight)
     {
         if (slot >= CAROUSEL_SLOT_COUNT)
@@ -53,7 +53,7 @@ public:
         m.sum_xy += x * y;
         m.n_acc++;
 
-        //Need at least 2 points for a meaningful line
+        // Need at least 2 points for a meaningful line
         if (m.n_acc >= 2)
         {
             double denom = (double)m.n_acc * m.sum_xx - m.sum_x * m.sum_x;
@@ -65,11 +65,12 @@ public:
         }
 
         m.n_samples++;
+        if (m.n_samples % 20 == 0) saveToEEPROM(slot);
     }
 
-    //recordCoast() -- call after dispense stops, with the measured overshoot
-    //coast_measured: (actual_weight - weight_at_stop_command), in grams.
-    //Stored as exponential moving average (α = 0.3) for stability.
+    // recordCoast() -- call after dispense stops, with the measured overshoot
+    // coast_measured: (actual_weight - weight_at_stop_command), in grams.
+    // Stored as exponential moving average (α = 0.3) for stability.
     void recordCoast(uint8_t slot, float coast_measured)
     {
         if (slot >= CAROUSEL_SLOT_COUNT)
@@ -77,25 +78,25 @@ public:
         constexpr float ALPHA = 0.30f;
         SlotModel &m = _models[slot];
         m.coast_g = ALPHA * coast_measured + (1.0f - ALPHA) * m.coast_g;
-        //Clamp to reasonable range
+        // Clamp to reasonable range
         m.coast_g = constrain(m.coast_g, 0.0f, MAX_COAST_GRAMS);
     }
 
-    //predictStopWeight() -- effective target weight to send stop command
-    //The motor is stopped when weight >= predictStopWeight(), so that in-flight
-    //spice brings the final reading to exactly targetGrams.
+    // predictStopWeight() -- effective target weight to send stop command
+    // The motor is stopped when weight >= predictStopWeight(), so that in-flight
+    // spice brings the final reading to exactly targetGrams.
     float predictStopWeight(uint8_t slot, float targetGrams) const
     {
         if (slot >= CAROUSEL_SLOT_COUNT)
             return targetGrams;
         float coast = _models[slot].coast_g;
         float stop = targetGrams - coast;
-        //Never go below 80% of target (safety guard for bad coast estimates)
+        // Never go below 80% of target (safety guard for bad coast estimates)
         return max(stop, targetGrams * 0.80f);
     }
 
-    //cyclesNeeded() -- how many more auger cycles to reach remaining grams
-    //Returns a large number if slope is invalid / not yet calibrated.
+    // cyclesNeeded() -- how many more auger cycles to reach remaining grams
+    // Returns a large number if slope is invalid / not yet calibrated.
     float cyclesNeeded(uint8_t slot, float remainingGrams) const
     {
         if (slot >= CAROUSEL_SLOT_COUNT)
@@ -106,7 +107,7 @@ public:
         return remainingGrams / s;
     }
 
-    //isCalibrated() -- true if the model has at least CALIB_POINTS_MIN data points
+    // isCalibrated() -- true if the model has at least CALIB_POINTS_MIN data points
     bool isCalibrated(uint8_t slot) const
     {
         if (slot >= CAROUSEL_SLOT_COUNT)
@@ -114,12 +115,12 @@ public:
         return _models[slot].n_samples >= CALIB_POINTS_MIN;
     }
 
-    //slope() / coast() -- accessors 
+    // slope() / coast() -- accessors
     float getSlope(uint8_t slot) const { return (slot < CAROUSEL_SLOT_COUNT) ? _models[slot].slope : 1.0f; }
     float getCoast(uint8_t slot) const { return (slot < CAROUSEL_SLOT_COUNT) ? _models[slot].coast_g : 0.3f; }
     uint32_t getSamples(uint8_t slot) const { return (slot < CAROUSEL_SLOT_COUNT) ? _models[slot].n_samples : 0; }
 
-    //saveToEEPROM() -- persist a single slot's model 
+    // saveToEEPROM() -- persist a single slot's model
     void saveToEEPROM(uint8_t slot)
     {
         if (slot >= CAROUSEL_SLOT_COUNT)
@@ -132,7 +133,7 @@ public:
         EEPROM.put(addr + 12, m.n_samples);
     }
 
-    //resetSlot() -- clear all learning for one slot (after refill etc.) 
+    // resetSlot() -- clear all learning for one slot (after refill etc.)
     void resetSlot(uint8_t slot)
     {
         if (slot >= CAROUSEL_SLOT_COUNT)
@@ -156,8 +157,12 @@ private:
         EEPROM.get(addr + 8, c);
         EEPROM.get(addr + 12, n);
 
-        //Validate: NaN / Inf / obviously wrong values -> use defaults
-        bool valid = !isnan(s) && !isinf(s) && s > 0.001f && s < 50.0f && !isnan(i) && !isinf(i) && !isnan(c) && !isinf(c) && c >= 0.0f && c <= MAX_COAST_GRAMS;
+        bool valid_slope = !isnan(s) && !isinf(s) && s > 0.001f && s < 50.0f;
+        bool valid_intercept = !isnan(i) && !isinf(i);
+        bool valid_coast = !isnan(c) && !isinf(c) && c >= 0.0f && c <= MAX_COAST_GRAMS;
+        bool valid_n = (n < 1000000UL);
+
+        bool valid = valid_slope && valid_intercept && valid_coast && valid_n;
 
         if (valid)
         {
@@ -168,7 +173,7 @@ private:
         }
         else
         {
-            m = SlotModel{}; //defaults
+            m = SlotModel{}; // defaults
         }
     }
 };
