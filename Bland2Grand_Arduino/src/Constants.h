@@ -80,6 +80,7 @@ static constexpr float BACK_PURGE_SPEED_STEPS_S = 800.0f; // moderate speed for 
 
 //Dispense Speed Ramp
 
+
 // Three-stage closed-loop ramp-down keyed to (current_weight / target_weight). Speeds are fractions of AUGER_FULL_SPEED_STEPS_S.
 static constexpr float AUGER_FULL_SPEED_STEPS_S = 1200.0f;
 

@@ -23,7 +23,7 @@ def init_db() -> None:
             s1_cumin REAL DEFAULT 0,
             s2_paprika REAL DEFAULT 0,
             s3_garlic_powder REAL DEFAULT 0,
-            s4_chili_powder REAL DEFAULT 0,
+            s4_salt REAL DEFAULT 0,
             s5_oregano REAL DEFAULT 0,
             s6_onion_powder REAL DEFAULT 0,
             s7_black_pepper REAL DEFAULT 0,
@@ -48,8 +48,24 @@ def init_db() -> None:
             (slot, name, 1000.0),
         )
 
+    _ensure_recipe_columns(cur)
+
     conn.commit()
     conn.close()
+
+
+def _ensure_recipe_columns(cur: sqlite3.Cursor) -> None:
+    """Add any missing spice columns to the recipes table for older databases."""
+    existing_cols = {row[1] for row in cur.execute("PRAGMA table_info(recipes)").fetchall()}
+
+    if "s4_salt" not in existing_cols and "s4_chili_powder" in existing_cols:
+        cur.execute("ALTER TABLE recipes ADD COLUMN s4_salt REAL DEFAULT 0")
+        cur.execute("UPDATE recipes SET s4_salt = s4_chili_powder WHERE s4_chili_powder IS NOT NULL")
+        existing_cols.add("s4_salt")
+
+    for col in _SLOT_TO_COL.values():
+        if col not in existing_cols:
+            cur.execute(f"ALTER TABLE recipes ADD COLUMN {col} REAL DEFAULT 0")
 
 
 # Column name helpers
@@ -57,7 +73,7 @@ _SLOT_TO_COL = {
     1: "s1_cumin",
     2: "s2_paprika",
     3: "s3_garlic_powder",
-    4: "s4_chili_powder",
+    4: "s4_salt",
     5: "s5_oregano",
     6: "s6_onion_powder",
     7: "s7_black_pepper",
@@ -69,7 +85,13 @@ def _recipe_to_dict(row: sqlite3.Row) -> dict:
     """Convert a DB row into the JSON-serialisable recipe format."""
     spices = []
     for slot, col in _SLOT_TO_COL.items():
-        g = row[col]
+        try:
+            g = row[col]
+        except IndexError:
+            if col == "s4_salt" and "s4_chili_powder" in row.keys():
+                g = row["s4_chili_powder"]
+            else:
+                g = 0
         if g and g > 0:
             spices.append(
                 {
@@ -134,7 +156,7 @@ def save_recipe(
     cur.execute(
         """INSERT OR REPLACE INTO recipes
            (name, category, description,
-            s1_cumin, s2_paprika, s3_garlic_powder, s4_chili_powder,
+            s1_cumin, s2_paprika, s3_garlic_powder, s4_salt,
             s5_oregano, s6_onion_powder, s7_black_pepper, s8_cayenne)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (

@@ -154,7 +154,7 @@ All design tokens are CSS custom properties defined in `index.css` and mirrored 
 | 1 | Cumin | `#8B6914` warm brown |
 | 2 | Paprika | `#C94020` deep red |
 | 3 | Garlic Powder | `#D4C57A` pale gold |
-| 4 | Chili Powder | `#7B1F1F` dark red |
+| 4 | Salt | `#E8EEF2` dark red |
 | 5 | Oregano | `#4E7C55` forest green |
 | 6 | Onion Powder | `#D4A870` sandy tan |
 | 7 | Black Pepper | `#6f009a` deep purple |

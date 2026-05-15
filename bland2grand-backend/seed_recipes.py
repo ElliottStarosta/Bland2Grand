@@ -5,7 +5,7 @@ Slot mapping:
     1 = Cumin          5 = Oregano
     2 = Paprika        6 = Onion Powder
     3 = Garlic Powder  7 = Black Pepper
-    4 = Chili Powder   8 = Cayenne
+    4 = Salt   8 = Cayenne
 
 All gram values are per single serving.
 Run from the bland2grand-backend directory:
@@ -331,7 +331,7 @@ def _spice_kwargs(spice_map: dict) -> dict:
         1: "s1_cumin",
         2: "s2_paprika",
         3: "s3_garlic_powder",
-        4: "s4_chili_powder",
+        4: "s4_salt",
         5: "s5_oregano",
         6: "s6_onion_powder",
         7: "s7_black_pepper",
@@ -354,7 +354,7 @@ def seed() -> int:
             cur.execute(
                 """INSERT OR IGNORE INTO recipes
                    (name, category, description,
-                    s1_cumin, s2_paprika, s3_garlic_powder, s4_chili_powder,
+                    s1_cumin, s2_paprika, s3_garlic_powder, s4_salt,
                     s5_oregano, s6_onion_powder, s7_black_pepper, s8_cayenne)
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (

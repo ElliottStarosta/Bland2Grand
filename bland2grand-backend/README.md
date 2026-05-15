@@ -181,7 +181,7 @@ python provision.py --port COM3 --ssid MyNetwork --password secret
 | 1 | Cumin |
 | 2 | Paprika |
 | 3 | Garlic Powder |
-| 4 | Chili Powder |
+| 4 | Salt |
 | 5 | Oregano |
 | 6 | Onion Powder |
 | 7 | Black Pepper |

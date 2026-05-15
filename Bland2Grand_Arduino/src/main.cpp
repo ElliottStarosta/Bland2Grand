@@ -1,187 +1,178 @@
 // ============================================================
-//  encoder_motor_test.cpp
-//  Bland2Grand — NEMA 23 + AS5600 Encoder Tracking Test
+//  slot_auger_test.cpp
+//  Bland2Grand — Manual Slot + Auger Engagement Test
 //
-//  Slowly rotates the carousel motor and prints encoder counts,
-//  degrees, and step tracking side-by-side so you can verify
-//  the AS5600 is reading movement as the shaft turns.
+//  On power-up assumes the carousel is already on slot 1.
+//  Type a slot number (1-8) in the serial monitor and press
+//  Enter. The carousel indexes to that slot using the shortest
+//  path, then the auger spins for one full revolution forward
+//  and reverses back (back-purge), then stops and waits for
+//  the next command.
 //
-//  To use:
-//    Edit platformio.ini:
-//      build_src_filter = +<tests/encoder_motor_test.cpp> -<main.cpp>
-//    Flash and open serial monitor at 115200 baud.
+//  No encoder, no scale, no WiFi required.
+//
+//  To flash:
+//    Make sure platformio.ini has:
+//      build_src_filter = +<main.cpp> -<tests/>
+//    Drop this file in as src/main.cpp
+//    pio run --target upload
+//    pio device monitor --baud 115200
 // ============================================================
 
 #include <Arduino.h>
-#include <Wire.h>
 #include <AccelStepper.h>
 #include "Constants.h"
 
-// ---- AS5600 direct register reads (no library needed) ----
-#define AS5600_ADDR   0x36
-#define REG_STATUS    0x0B
-#define REG_RAW_HI    0x0C
-#define REG_RAW_LO    0x0D
-#define REG_AGC       0x1A
+// -------------------------------------------------------
+// Motor instances
+// -------------------------------------------------------
+AccelStepper carousel(AccelStepper::DRIVER, PIN_CAROUSEL_STEP, PIN_CAROUSEL_DIR);
+AccelStepper auger(AccelStepper::DRIVER,    PIN_AUGER_STEP,    PIN_AUGER_DIR);
 
-// ---- Motor config ----
-// Slow speed: 200 microsteps/s (~11 rpm at 1/8 step) – easy to watch encoder
-static constexpr float TEST_SPEED        = 200.0f;  // microsteps / s
-static constexpr float TEST_ACCEL        = 400.0f;  // microsteps / s²
+// -------------------------------------------------------
+// State
+// -------------------------------------------------------
+uint8_t currentSlot = 1;   // assume slot 1 on power-up
 
-// How many steps per print interval
-static constexpr uint32_t PRINT_EVERY_MS = 200;     // print every 200 ms
-
-// How many full carousel slots to travel before reversing
-// (1 slot = STEPS_PER_SLOT steps = 400 microsteps by default)
-static constexpr uint8_t  SLOTS_TO_TRAVEL = 4;
-
-// ---- Globals ----
-AccelStepper motor(AccelStepper::DRIVER, PIN_CAROUSEL_STEP, PIN_CAROUSEL_DIR);
-
-long   targetSteps    = 0;
-bool   movingForward  = true;
-long   totalStepsMoved = 0;
-
-// ---- AS5600 helpers ----
-uint8_t readReg(uint8_t reg)
+// -------------------------------------------------------
+// Helper: move carousel to target slot (shortest path)
+// -------------------------------------------------------
+void goToSlot(uint8_t target)
 {
-    Wire.beginTransmission(AS5600_ADDR);
-    Wire.write(reg);
-    Wire.endTransmission(false);
-    Wire.requestFrom(AS5600_ADDR, (uint8_t)1);
-    uint32_t t = millis();
-    while (!Wire.available() && millis() - t < 10);
-    return Wire.available() ? Wire.read() : 0xFF;
+    if (target < 1 || target > CAROUSEL_SLOT_COUNT)
+    {
+        Serial.println(F("[ERROR] Invalid slot number."));
+        return;
+    }
+
+    if (target == currentSlot)
+    {
+        Serial.println(F("[INFO] Already at that slot - skipping carousel move."));
+        return;
+    }
+
+    // Shortest-path delta
+    int8_t fwd = (int8_t)target - (int8_t)currentSlot;
+    if (fwd < 0) fwd += (int8_t)CAROUSEL_SLOT_COUNT;
+    int8_t bwd = (int8_t)CAROUSEL_SLOT_COUNT - fwd;
+
+    long stepsToMove;
+    if (fwd <= bwd)
+        stepsToMove =  (long)fwd * (long)STEPS_PER_SLOT;
+    else
+        stepsToMove = -(long)bwd * (long)STEPS_PER_SLOT;
+
+    Serial.print(F("[CAROUSEL] Moving from slot "));
+    Serial.print(currentSlot);
+    Serial.print(F(" -> slot "));
+    Serial.print(target);
+    Serial.print(F("  ("));
+    Serial.print(stepsToMove > 0 ? F("forward") : F("backward"));
+    Serial.print(F(", "));
+    Serial.print(abs(stepsToMove));
+    Serial.println(F(" steps)"));
+
+    carousel.move(stepsToMove);
+    while (carousel.distanceToGo() != 0)
+        carousel.run();
+
+    currentSlot = target;
+    delay(INDEX_SETTLE_MS);
+
+    Serial.print(F("[CAROUSEL] Arrived at slot "));
+    Serial.println(currentSlot);
 }
 
-uint16_t readRawAngle()
+// -------------------------------------------------------
+// Helper: spin auger forward one revolution then reverse
+// -------------------------------------------------------
+void runAuger()
 {
-    uint16_t hi = readReg(REG_RAW_HI) & 0x0F;
-    uint8_t  lo = readReg(REG_RAW_LO);
-    return (hi << 8) | lo;
+    Serial.println(F("[AUGER] Spinning forward 1 revolution..."));
+
+    // Forward
+    auger.setMaxSpeed(AUGER_FULL_SPEED_STEPS_S);
+    auger.setAcceleration(AUGER_FULL_SPEED_STEPS_S * 2.0f);
+    auger.move((long)STEPS_PER_AUGER_CYCLE);
+
+    while (auger.distanceToGo() != 0)
+        auger.run();
+
+    delay(200);
+
+    // Back-purge: reverse the same number of steps
+    Serial.println(F("[AUGER] Back-purging (reverse 1 revolution)..."));
+    auger.setMaxSpeed(BACK_PURGE_SPEED_STEPS_S);
+    auger.setAcceleration(BACK_PURGE_SPEED_STEPS_S * 2.0f);
+    auger.move(-(long)STEPS_PER_AUGER_CYCLE);
+
+    while (auger.distanceToGo() != 0)
+        auger.run();
+
+    // Restore forward settings for next time
+    auger.setMaxSpeed(AUGER_FULL_SPEED_STEPS_S);
+    auger.setAcceleration(AUGER_FULL_SPEED_STEPS_S * 2.0f);
+
+    Serial.println(F("[AUGER] Done."));
 }
 
-// Returns human-readable magnet status string
-const char* magnetStatus(uint8_t status)
-{
-    if (!(status & 0x20)) return "NO MAGNET  <-- check gap/wiring";
-    if (status  & 0x08)   return "TOO STRONG <-- move magnet away";
-    if (status  & 0x10)   return "TOO WEAK   <-- move magnet closer";
-    return "OK";
-}
-
-// ---- Setup ----
+// -------------------------------------------------------
+// setup()
+// -------------------------------------------------------
 void setup()
 {
-    Serial.begin(115200);
+    Serial.begin(9600);
     while (!Serial && millis() < 3000) {}
 
     Serial.println(F("============================================"));
-    Serial.println(F("  Bland2Grand: Encoder + Motor Tracking Test"));
+    Serial.println(F("  Bland2Grand - Slot + Auger Engagement Test"));
     Serial.println(F("============================================"));
-    Serial.println(F("  Motor: NEMA 23 via TB6600 (M1/Carousel)"));
-    Serial.println(F("  Encoder: AS5600 on I2C (A4=SDA, A5=SCL)"));
+    Serial.println(F("  Assumed starting position: SLOT 1"));
+    Serial.print  (F("  Carousel slots : ")); Serial.println(CAROUSEL_SLOT_COUNT);
+    Serial.print  (F("  Steps/slot     : ")); Serial.println(STEPS_PER_SLOT);
+    Serial.print  (F("  Steps/auger rev: ")); Serial.println(STEPS_PER_AUGER_CYCLE);
     Serial.println();
 
-    // I2C
-    Wire.begin();
-    Wire.setClock(400000);
+    // Carousel motor
+    carousel.setMaxSpeed(INDEX_SPEED_STEPS_S);
+    carousel.setAcceleration(INDEX_ACCEL_STEPS_S2);
+    carousel.setCurrentPosition(0);
 
-    // Check AS5600 is on the bus
-    Wire.beginTransmission(AS5600_ADDR);
-    bool encoderFound = (Wire.endTransmission() == 0);
+    // Auger motor
+    auger.setMaxSpeed(AUGER_FULL_SPEED_STEPS_S);
+    auger.setAcceleration(AUGER_FULL_SPEED_STEPS_S * 2.0f);
+    auger.setCurrentPosition(0);
 
-    if (!encoderFound)
-    {
-        Serial.println(F("[ERROR] AS5600 not found at 0x36!"));
-        Serial.println(F("  Check: SDA->A4, SCL->A5, 3.3V, GND, magnet gap ~1-2mm"));
-        Serial.println(F("  Halting."));
-        while (true) { delay(1000); }
-    }
-    Serial.println(F("[OK]  AS5600 found at 0x36."));
-
-    // Wait for magnet detection
-    Serial.println(F("  Waiting for magnet..."));
-    uint32_t t = millis();
-    uint8_t status = 0;
-    while (!(status & 0x20))
-    {
-        status = readReg(REG_STATUS);
-        if (millis() - t > 5000)
-        {
-            Serial.println(F("[WARN] Magnet not detected after 5s — continuing anyway."));
-            break;
-        }
-        delay(200);
-    }
-    if (status & 0x20)
-        Serial.println(F("[OK]  Magnet detected."));
-
-    // Motor init
-    motor.setMaxSpeed(TEST_SPEED);
-    motor.setAcceleration(TEST_ACCEL);
-    motor.setCurrentPosition(0);
-
-    // Queue the first move: SLOTS_TO_TRAVEL slots forward
-    targetSteps = static_cast<long>(SLOTS_TO_TRAVEL) * STEPS_PER_SLOT;
-    motor.moveTo(targetSteps);
-    movingForward = true;
-
-    // Header row
-    Serial.println();
-    Serial.println(F("  Steps  | StepPos | RawAngle | Degrees  | AGC | Magnet"));
-    Serial.println(F("  -------|---------|----------|----------|-----|-------"));
+    Serial.println(F("Type a slot number (1-8) and press Enter:"));
 }
 
-// ---- Loop ----
+// -------------------------------------------------------
+// loop()
+// -------------------------------------------------------
 void loop()
 {
-    static uint32_t lastPrint = 0;
-
-    // Keep motor running (non-blocking)
-    motor.run();
-
-    // Reverse direction when target reached
-    if (motor.distanceToGo() == 0)
+    if (Serial.available() > 0)
     {
-        delay(300); // brief pause at end of travel
+        int input = Serial.parseInt();
 
-        movingForward = !movingForward;
-        if (movingForward)
-            targetSteps += static_cast<long>(SLOTS_TO_TRAVEL) * STEPS_PER_SLOT;
+        // Flush remainder of line
+        while (Serial.available())
+            Serial.read();
+
+        if (input < 1 || input > (int)CAROUSEL_SLOT_COUNT)
+        {
+            Serial.print(F("[ERROR] '"));
+            Serial.print(input);
+            Serial.print(F("' is not a valid slot. Enter 1-"));
+            Serial.println(CAROUSEL_SLOT_COUNT);
+        }
         else
-            targetSteps -= static_cast<long>(SLOTS_TO_TRAVEL) * STEPS_PER_SLOT;
-
-        motor.moveTo(targetSteps);
-
-        Serial.println();
-        Serial.print(F("  >>> Reversing direction: "));
-        Serial.println(movingForward ? F("FORWARD") : F("BACKWARD"));
-        Serial.println();
-    }
-
-    // Print encoder + step data at fixed interval
-    uint32_t now = millis();
-    if (now - lastPrint >= PRINT_EVERY_MS)
-    {
-        lastPrint = now;
-
-        uint8_t  status = readReg(REG_STATUS);
-        uint8_t  agc    = readReg(REG_AGC);
-        uint16_t raw    = readRawAngle();
-        float    deg    = raw * (360.0f / 4096.0f);
-        long     pos    = motor.currentPosition();
-
-        // Track total steps moved (absolute)
-        static long lastPos = 0;
-        totalStepsMoved += abs(pos - lastPos);
-        lastPos = pos;
-
-        char buf[80];
-        snprintf(buf, sizeof(buf),
-                 "  %6ld | %7ld | %8u | %7.2f  | %3u | %s",
-                 totalStepsMoved, pos, raw, deg, agc, magnetStatus(status));
-        Serial.println(buf);
+        {
+            Serial.println(F("--------------------------------------------"));
+            goToSlot((uint8_t)input);
+            runAuger();
+            Serial.println(F("--------------------------------------------"));
+            Serial.println(F("Type next slot number (1-8):"));
+        }
     }
 }

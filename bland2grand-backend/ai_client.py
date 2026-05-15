@@ -12,7 +12,7 @@ _SYSTEM = (
 
 _TEMPLATE = (
     'Give me a spice blend for "{dish}" using only these 8 slots: '
-    "1=Cumin, 2=Paprika, 3=GarlicPowder, 4=ChiliPowder, "
+    "1=Cumin, 2=Paprika, 3=GarlicPowder, 4=Salt, "
     "5=Oregano, 6=OnionPowder, 7=BlackPepper, 8=Cayenne. "
     'Return ONLY valid JSON in the form {{"1": g, "2": g, "3": g, "4": g, "5": g, "6": g, "7": g, "8": g}} '
     "where g is a float (0 if the spice is not used). "
