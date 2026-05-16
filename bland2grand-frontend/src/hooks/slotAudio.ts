@@ -1,5 +1,3 @@
-// Map each carousel slot number to its voice line MP3.
-// Files should live in: bland2grand-frontend/public/audio/
 const SLOT_AUDIO: Record<number, string> = {
   1: '/audio/slot1_cumin.mp3',
   2: '/audio/slot2_paprika.mp3',
@@ -11,24 +9,34 @@ const SLOT_AUDIO: Record<number, string> = {
   8: '/audio/slot8_cayenne.mp3',
 }
 
-let currentAudio: HTMLAudioElement | null = null
+const pool: Record<number, HTMLAudioElement> = {}
+let current: HTMLAudioElement | null = null
+
+// Call this inside the dispense button tap handler (synchronous gesture).
+// Just instantiates + loads — no play(), so no sound on tap.
+export function primeAudio(): void {
+  for (const [slotStr, src] of Object.entries(SLOT_AUDIO)) {
+    const slot = Number(slotStr)
+    if (pool[slot]) continue  // already primed
+    const audio = new Audio(src)
+    audio.preload = 'auto'
+    audio.load()
+    pool[slot] = audio
+  }
+}
 
 export function playSlotVoiceLine(slot: number): void {
-  const src = SLOT_AUDIO[slot]
-  if (!src) return
+  const audio = pool[slot]
+  if (!audio) return
 
-  // Stop any currently playing voice line
-  if (currentAudio) {
-    currentAudio.pause()
-    currentAudio.currentTime = 0
-    currentAudio = null
+  if (current && current !== audio) {
+    current.pause()
+    current.currentTime = 0
   }
 
-  const audio = new Audio(src)
-  currentAudio = audio
-
+  audio.currentTime = 0
   audio.play().catch((err) => {
-    // Browsers block autoplay before user gesture -- after the first tap this should always succeed. Log quietly if it doesn't.
-    console.warn('[SlotAudio] Could not play voice line for slot', slot, err)
+    console.warn('[SlotAudio] play failed for slot', slot, err)
   })
+  current = audio
 }

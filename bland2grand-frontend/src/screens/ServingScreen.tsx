@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faMinus, faPlay } from "@fortawesome/free-solid-svg-icons";
 import type { Recipe } from "../types";
 import { SPICE_COLORS } from "../types";
+import { primeAudio } from "../hooks/slotAudio";
 
 interface Props {
   recipe: Recipe;
@@ -62,6 +63,7 @@ export function ServingScreen({ recipe, onDispense, loading }: Props) {
 
   const handleDispense = () => {
     if (loading) return;
+    primeAudio()
     gsap.to(btnRef.current, {
       scale: 0.95,
       duration: 0.1,

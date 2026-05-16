@@ -130,6 +130,16 @@ void pushWeightUpdateNonBlocking(float current, float target)
     client.stop();
 }
 
+void pushNearlyThere()
+{
+    StaticJsonDocument<128> doc;
+    doc["slot"] = active.slot;
+    doc["spice_name"] = active.spiceName;
+    String b;
+    serializeJson(doc, b);
+    httpPost("/api/arduino/nearly-there", b);
+}
+
 // -------------------------------------------------------
 //  Push helpers  (blocking — only called when motors idle)
 // -------------------------------------------------------
@@ -191,6 +201,8 @@ void doCarouselMove(uint8_t target)
     if (target == currentSlot)
     {
         Serial.println(F("[CAROUSEL] Already at target slot."));
+        // Already here — fire nearly-there immediately then settle
+        pushNearlyThere();
         delay(INDEX_SETTLE_MS);
         return;
     }
@@ -203,17 +215,17 @@ void doCarouselMove(uint8_t target)
                      ? (long)fwd * (long)STEPS_PER_SLOT
                      : -(long)bwd * (long)STEPS_PER_SLOT;
 
-    Serial.print(F("[CAROUSEL] Moving to slot "));
-    Serial.print(target);
-    Serial.print(F(" ("));
-    Serial.print(steps);
-    Serial.println(F(" steps)"));
-
     carousel.move(steps);
     while (carousel.distanceToGo() != 0)
-        carousel.run();
+        carousel.run();  // pure stepper loop — no HTTP calls in here
+
     currentSlot = target;
+
+    // Motor has fully stopped — safe to do blocking HTTP now,
+    // before the settle delay so the sound plays during the settle pause
+    pushNearlyThere();
     delay(INDEX_SETTLE_MS);
+
     Serial.print(F("[CAROUSEL] Arrived at slot "));
     Serial.println(currentSlot);
 }
@@ -307,6 +319,9 @@ void tickDispense()
         {
             Serial.println(F("[CMD] All spices done."));
             pushSessionComplete();
+            // Home back to slot 1
+            Serial.println(F("[CAROUSEL] Returning to slot 1..."));
+            doCarouselMove(1);
         }
         dispenseState = DispenseState::IDLE;
         break;

@@ -48,6 +48,7 @@ export interface DispenseSession {
   errorMessage?: string;
   totalWeight: number;
   totalTarget: number;
+  lastCompletedSlot?: number;
 }
 
 // SSE events
@@ -67,6 +68,11 @@ export type SSEEvent =
       spice_name: string;
       slot_index: number;
       total_slots: number;
+    }
+  | {
+      type: "nearly_there";
+      slot: number;
+      spice_name: string;
     }
   | {
       type: "dispensing_start";
@@ -131,13 +137,13 @@ export const SPICE_LABELS: Record<number, string> = {
 };
 
 export const SPICE_DENSITY_G_PER_ML: Record<number, number> = {
-  1: 0.5,  // Cumin (ground)
+  1: 0.5, // Cumin (ground)
   2: 0.45, // Paprika
   3: 0.55, // Garlic Powder
-  4: 1.2,  // Salt (table salt)
-  5: 0.3,  // Oregano (dried, fluffy)
-  6: 0.5,  // Onion Powder
-  7: 0.6,  // Black Pepper (ground)
+  4: 1.2, // Salt (table salt)
+  5: 0.3, // Oregano (dried, fluffy)
+  6: 0.5, // Onion Powder
+  7: 0.6, // Black Pepper (ground)
   8: 0.45, // Cayenne
 };
 

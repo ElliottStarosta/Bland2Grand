@@ -28,6 +28,7 @@ from dispense import (
     handle_arduino_spice_complete,
     handle_arduino_session_complete,
     handle_arduino_fault,
+    handle_arduino_nearly_there,
 )
 from search import find_recipes
 
@@ -151,6 +152,12 @@ def create_recipe():
     recipe = get_recipe_by_id(recipe_id)
     return jsonify({"status": "created", "recipe": recipe}), 201
 
+# Arduino push endpoint for "nearly there" notification sfx
+@app.post("/api/arduino/nearly-there")
+def arduino_nearly_there():
+    data = request.get_json(silent=True) or {}
+    handle_arduino_nearly_there(data)
+    return jsonify({"ok": True})
 
 # Arduino push endpoints 
 @app.post("/api/arduino/indexing")

@@ -187,6 +187,12 @@ def _mock_dispense_spice(slot: int, target_grams: float) -> dict:
 
     return {"status": "done", "actual": round(current, 2)}
 
+def handle_arduino_nearly_there(data: dict) -> None:
+    _broadcast({
+        "type": "nearly_there",
+        "slot": data.get("slot"),
+        "spice_name": data.get("spice_name", ""),
+    })
 
 # Main dispense orchestration
 def start_dispense(recipe: dict, serving_count: int) -> tuple[bool, str]:
