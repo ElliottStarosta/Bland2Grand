@@ -1,178 +1,500 @@
 // ============================================================
-//  slot_auger_test.cpp
-//  Bland2Grand — Manual Slot + Auger Engagement Test
+//  main.cpp  —  Bland2Grand  (No-Scale / Dead-Reckoning Mode)
 //
-//  On power-up assumes the carousel is already on slot 1.
-//  Type a slot number (1-8) in the serial monitor and press
-//  Enter. The carousel indexes to that slot using the shortest
-//  path, then the auger spins for one full revolution forward
-//  and reverses back (back-purge), then stops and waits for
-//  the next command.
-//
-//  No encoder, no scale, no WiFi required.
-//
-//  To flash:
-//    Make sure platformio.ini has:
-//      build_src_filter = +<main.cpp> -<tests/>
-//    Drop this file in as src/main.cpp
-//    pio run --target upload
-//    pio device monitor --baud 115200
+//  Full app integration (WiFi, HTTP server, SSE push).
+//  Auger runs non-blocking so WiFi pushes don't stall motors.
+//  Weight updates are sent on a separate timer thread via the
+//  loop() so the stepper never misses a step.
 // ============================================================
 
 #include <Arduino.h>
 #include <AccelStepper.h>
+#include <WiFiS3.h>
+#include <ArduinoJson.h>
 #include "Constants.h"
 
 // -------------------------------------------------------
-// Motor instances
+//  WiFi credentials — edit these
+// -------------------------------------------------------
+const char *WIFI_SSID = "bland2grand";
+const char *WIFI_PASSWORD = "password";
+
+// -------------------------------------------------------
+//  Tuning
+// -------------------------------------------------------
+static constexpr float GRAMS_PER_CYCLE = 0.8f;
+static constexpr uint32_t SETTLE_MS = 400;
+
+// -------------------------------------------------------
+//  Motors
 // -------------------------------------------------------
 AccelStepper carousel(AccelStepper::DRIVER, PIN_CAROUSEL_STEP, PIN_CAROUSEL_DIR);
-AccelStepper auger(AccelStepper::DRIVER,    PIN_AUGER_STEP,    PIN_AUGER_DIR);
+AccelStepper auger(AccelStepper::DRIVER, PIN_AUGER_STEP, PIN_AUGER_DIR);
+
+uint8_t currentSlot = 1;
 
 // -------------------------------------------------------
-// State
+//  Dispense state machine
 // -------------------------------------------------------
-uint8_t currentSlot = 1;   // assume slot 1 on power-up
+enum class DispenseState
+{
+    IDLE,
+    INDEXING,      // carousel moving
+    DISPENSING,    // auger running forward
+    PURGING,       // auger running backward
+    PUSH_COMPLETE, // send spice-complete then check if session done
+    DONE
+};
+
+DispenseState dispenseState = DispenseState::IDLE;
+
+struct ActiveDispense
+{
+    uint8_t slot;
+    char spiceName[24];
+    char recipeName[48];
+    float targetGrams;
+    uint8_t slotIdx;
+    uint8_t total;
+    long totalSteps;
+    uint32_t lastPushMs;
+};
+
+ActiveDispense active;
 
 // -------------------------------------------------------
-// Helper: move carousel to target slot (shortest path)
+//  HTTP POST helper  (blocking, but only called when idle)
 // -------------------------------------------------------
-void goToSlot(uint8_t target)
+bool httpPost(const char *path, const String &body)
+{
+    WiFiClient client;
+    client.setTimeout(2000);
+    if (!client.connect(FLASK_SERVER_HOST, FLASK_SERVER_PORT))
+    {
+        Serial.print(F("[WiFi] POST failed: "));
+        Serial.println(path);
+        return false;
+    }
+    client.print(F("POST "));
+    client.print(path);
+    client.println(F(" HTTP/1.1"));
+    client.print(F("Host: "));
+    client.println(FLASK_SERVER_HOST);
+    client.println(F("Content-Type: application/json"));
+    client.print(F("Content-Length: "));
+    client.println(body.length());
+    client.println(F("Connection: close"));
+    client.println();
+    client.print(body);
+    uint32_t t = millis();
+    while (!client.available() && millis() - t < 2000)
+        delay(1);
+    bool ok = false;
+    if (client.available())
+    {
+        String status = client.readStringUntil('\n');
+        ok = status.indexOf("200") >= 0;
+    }
+    client.stop();
+    return ok;
+}
+
+// -------------------------------------------------------
+//  Non-blocking weight push — called from loop() while
+//  auger is running so it doesn't stall the stepper.
+//  Uses a short timeout so we don't block long.
+// -------------------------------------------------------
+void pushWeightUpdateNonBlocking(float current, float target)
+{
+    WiFiClient client;
+    client.setTimeout(80); // very short — best effort
+    if (!client.connect(FLASK_SERVER_HOST, FLASK_SERVER_PORT))
+        return;
+
+    StaticJsonDocument<96> doc;
+    doc["slot"] = active.slot;
+    doc["current_weight"] = serialized(String(current, 2));
+    doc["target_weight"] = serialized(String(target, 2));
+    String b;
+    serializeJson(doc, b);
+
+    client.print(F("POST /api/arduino/weight-push HTTP/1.1\r\n"));
+    client.print(F("Host: "));
+    client.println(FLASK_SERVER_HOST);
+    client.println(F("Content-Type: application/json"));
+    client.print(F("Content-Length: "));
+    client.println(b.length());
+    client.println(F("Connection: close\r\n"));
+    client.print(b);
+    // Don't wait for response — fire and forget
+    client.stop();
+}
+
+// -------------------------------------------------------
+//  Push helpers  (blocking — only called when motors idle)
+// -------------------------------------------------------
+void pushIndexing()
+{
+    StaticJsonDocument<128> doc;
+    doc["slot"] = active.slot;
+    doc["spice_name"] = active.spiceName;
+    doc["slot_index"] = active.slotIdx;
+    doc["total_slots"] = active.total;
+    String b;
+    serializeJson(doc, b);
+    httpPost("/api/arduino/indexing", b);
+}
+
+void pushDispenseStart()
+{
+    StaticJsonDocument<192> doc;
+    doc["slot"] = active.slot;
+    doc["spice_name"] = active.spiceName;
+    doc["target_weight"] = serialized(String(active.targetGrams, 2));
+    doc["slot_index"] = active.slotIdx;
+    doc["total_slots"] = active.total;
+    String b;
+    serializeJson(doc, b);
+    httpPost("/api/arduino/dispense-start", b);
+}
+
+void pushSpiceComplete()
+{
+    StaticJsonDocument<192> doc;
+    doc["slot"] = active.slot;
+    doc["spice_name"] = active.spiceName;
+    doc["actual"] = serialized(String(active.targetGrams, 2));
+    doc["target"] = serialized(String(active.targetGrams, 2));
+    doc["status"] = "done";
+    doc["slot_index"] = active.slotIdx;
+    String b;
+    serializeJson(doc, b);
+    httpPost("/api/arduino/spice-complete", b);
+}
+
+void pushSessionComplete()
+{
+    StaticJsonDocument<96> doc;
+    doc["recipe_name"] = active.recipeName;
+    String b;
+    serializeJson(doc, b);
+    httpPost("/api/arduino/session-complete", b);
+}
+
+// -------------------------------------------------------
+//  Carousel move  (blocking — called only from INDEXING)
+// -------------------------------------------------------
+void doCarouselMove(uint8_t target)
 {
     if (target < 1 || target > CAROUSEL_SLOT_COUNT)
-    {
-        Serial.println(F("[ERROR] Invalid slot number."));
         return;
-    }
-
     if (target == currentSlot)
     {
-        Serial.println(F("[INFO] Already at that slot - skipping carousel move."));
+        Serial.println(F("[CAROUSEL] Already at target slot."));
+        delay(INDEX_SETTLE_MS);
         return;
     }
 
-    // Shortest-path delta
     int8_t fwd = (int8_t)target - (int8_t)currentSlot;
-    if (fwd < 0) fwd += (int8_t)CAROUSEL_SLOT_COUNT;
+    if (fwd < 0)
+        fwd += (int8_t)CAROUSEL_SLOT_COUNT;
     int8_t bwd = (int8_t)CAROUSEL_SLOT_COUNT - fwd;
+    long steps = (fwd <= bwd)
+                     ? (long)fwd * (long)STEPS_PER_SLOT
+                     : -(long)bwd * (long)STEPS_PER_SLOT;
 
-    long stepsToMove;
-    if (fwd <= bwd)
-        stepsToMove =  (long)fwd * (long)STEPS_PER_SLOT;
-    else
-        stepsToMove = -(long)bwd * (long)STEPS_PER_SLOT;
-
-    Serial.print(F("[CAROUSEL] Moving from slot "));
-    Serial.print(currentSlot);
-    Serial.print(F(" -> slot "));
+    Serial.print(F("[CAROUSEL] Moving to slot "));
     Serial.print(target);
-    Serial.print(F("  ("));
-    Serial.print(stepsToMove > 0 ? F("forward") : F("backward"));
-    Serial.print(F(", "));
-    Serial.print(abs(stepsToMove));
+    Serial.print(F(" ("));
+    Serial.print(steps);
     Serial.println(F(" steps)"));
 
-    carousel.move(stepsToMove);
+    carousel.move(steps);
     while (carousel.distanceToGo() != 0)
         carousel.run();
-
     currentSlot = target;
     delay(INDEX_SETTLE_MS);
-
     Serial.print(F("[CAROUSEL] Arrived at slot "));
     Serial.println(currentSlot);
 }
 
 // -------------------------------------------------------
-// Helper: spin auger forward one revolution then reverse
+//  State machine tick — called every loop()
 // -------------------------------------------------------
-void runAuger()
+void tickDispense()
 {
-    Serial.println(F("[AUGER] Spinning forward 1 revolution..."));
+    switch (dispenseState)
+    {
 
-    // Forward
-    auger.setMaxSpeed(AUGER_FULL_SPEED_STEPS_S);
-    auger.setAcceleration(AUGER_FULL_SPEED_STEPS_S * 2.0f);
-    auger.move((long)STEPS_PER_AUGER_CYCLE);
+    case DispenseState::IDLE:
+        break;
 
-    while (auger.distanceToGo() != 0)
+    case DispenseState::INDEXING:
+        // Carousel move is blocking but short — do it once then transition
+        pushIndexing();
+        auger.enableOutputs();
+        doCarouselMove(active.slot);
+
+        // Set up auger forward move
+        active.totalSteps = max(1L, (long)roundf(active.targetGrams / GRAMS_PER_CYCLE)) * (long)STEPS_PER_AUGER_CYCLE;
+
+        pushDispenseStart();
+
+        auger.setMaxSpeed(AUGER_FULL_SPEED_STEPS_S);
+        auger.setAcceleration(AUGER_FULL_SPEED_STEPS_S * 2.0f);
+        auger.move(active.totalSteps);
+        active.lastPushMs = millis();
+
+        Serial.print(F("[AUGER] Dispensing "));
+        Serial.print(active.targetGrams);
+        Serial.print(F("g -> "));
+        Serial.print(active.totalSteps / STEPS_PER_AUGER_CYCLE);
+        Serial.println(F(" cycles"));
+
+        dispenseState = DispenseState::DISPENSING;
+        break;
+
+    case DispenseState::DISPENSING:
+        // Pure stepper — zero WiFi calls, maximum smoothness
         auger.run();
 
-    delay(200);
+        if (auger.distanceToGo() == 0)
+        {
+            Serial.println(F("[AUGER] Forward done. Sending progress burst..."));
 
-    // Back-purge: reverse the same number of steps
-    Serial.println(F("[AUGER] Back-purging (reverse 1 revolution)..."));
-    auger.setMaxSpeed(BACK_PURGE_SPEED_STEPS_S);
-    auger.setAcceleration(BACK_PURGE_SPEED_STEPS_S * 2.0f);
-    auger.move(-(long)STEPS_PER_AUGER_CYCLE);
+            // Send a burst of fake progress updates so the app
+            // animates smoothly — all sent after motors stop
+            for (int i = 1; i <= 8; i++)
+            {
+                float progress = active.targetGrams * (i / 8.0f);
+                StaticJsonDocument<96> doc;
+                doc["slot"] = active.slot;
+                doc["current_weight"] = serialized(String(progress, 2));
+                doc["target_weight"] = serialized(String(active.targetGrams, 2));
+                String b;
+                serializeJson(doc, b);
+                httpPost("/api/arduino/weight-push", b);
+                delay(40);
+            }
 
-    while (auger.distanceToGo() != 0)
+            delay(SETTLE_MS);
+            auger.setMaxSpeed(BACK_PURGE_SPEED_STEPS_S);
+            auger.setAcceleration(BACK_PURGE_SPEED_STEPS_S * 2.0f);
+            auger.move(-active.totalSteps);
+            Serial.println(F("[AUGER] Back-purging..."));
+            dispenseState = DispenseState::PURGING;
+        }
+        break;
+    case DispenseState::PURGING:
         auger.run();
 
-    // Restore forward settings for next time
-    auger.setMaxSpeed(AUGER_FULL_SPEED_STEPS_S);
-    auger.setAcceleration(AUGER_FULL_SPEED_STEPS_S * 2.0f);
+        if (auger.distanceToGo() == 0)
+        {
+            // Restore forward settings
+            auger.setMaxSpeed(AUGER_FULL_SPEED_STEPS_S);
+            auger.setAcceleration(AUGER_FULL_SPEED_STEPS_S * 2.0f);
+            delay(AUGER_COIL_DISABLE_DELAY_MS);
+            auger.disableOutputs();
 
-    Serial.println(F("[AUGER] Done."));
+            Serial.println(F("[AUGER] Done."));
+            dispenseState = DispenseState::PUSH_COMPLETE;
+        }
+        break;
+
+    case DispenseState::PUSH_COMPLETE:
+        pushSpiceComplete();
+        if (active.slotIdx + 1 >= active.total)
+        {
+            Serial.println(F("[CMD] All spices done."));
+            pushSessionComplete();
+        }
+        dispenseState = DispenseState::IDLE;
+        break;
+
+    case DispenseState::DONE:
+        dispenseState = DispenseState::IDLE;
+        break;
+    }
 }
 
 // -------------------------------------------------------
-// setup()
+//  HTTP server
+// -------------------------------------------------------
+WiFiServer server(HTTP_PORT);
+
+void handleIncomingRequest(WiFiClient &client)
+{
+    String req = "";
+    uint32_t t = millis();
+    while (client.connected() && millis() - t < 2000)
+    {
+        if (client.available())
+        {
+            char c = client.read();
+            req += c;
+            if (req.endsWith("\r\n\r\n"))
+                break;
+        }
+    }
+
+    // Health check
+    if (req.startsWith("GET /health"))
+    {
+        client.println(F("HTTP/1.1 200 OK"));
+        client.println(F("Content-Type: application/json"));
+        client.println(F("Connection: close\r\n"));
+        client.print(F("{\"status\":\"ok\",\"slot\":"));
+        client.print(currentSlot);
+        client.print(F(",\"busy\":"));
+        client.print(dispenseState != DispenseState::IDLE ? "true" : "false");
+        client.println(F(",\"homed\":true}"));
+        client.stop();
+        Serial.println(F("[HTTP] Health check OK"));
+        return;
+    }
+
+    if (!req.startsWith("POST /"))
+    {
+        client.println(F("HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n"));
+        client.stop();
+        return;
+    }
+
+    // Read body
+    String body = "";
+    uint32_t bt = millis();
+    while (client.connected() && millis() - bt < 500)
+    {
+        while (client.available())
+            body += (char)client.read();
+        if (body.length() > 0)
+            break;
+        delay(5);
+    }
+
+    Serial.print(F("[HTTP] Body: "));
+    Serial.println(body);
+
+    // Reject if busy
+    if (dispenseState != DispenseState::IDLE)
+    {
+        client.println(F("HTTP/1.1 409 Conflict\r\nConnection: close\r\n\r\n"));
+        client.stop();
+        return;
+    }
+
+    StaticJsonDocument<256> doc;
+    if (deserializeJson(doc, body) != DeserializationError::Ok || !doc.containsKey("carousel") || !doc.containsKey("grams"))
+    {
+        Serial.println(F("[HTTP] Bad request"));
+        client.println(F("HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n"));
+        client.stop();
+        return;
+    }
+
+    // ACK immediately
+    client.println(F("HTTP/1.1 200 OK"));
+    client.println(F("Content-Type: application/json"));
+    client.println(F("Connection: close\r\n"));
+    client.println(F("{\"status\":\"accepted\"}"));
+    client.stop();
+
+    // Load active dispense
+    active.slot = doc["carousel"].as<uint8_t>();
+    active.targetGrams = doc["grams"].as<float>();
+    active.slotIdx = doc["slot_index"] | 0;
+    active.total = doc["total_slots"] | 1;
+
+    const char *rn = doc["recipe_name"] | "";
+    const char *sn = doc["spice_name"] | "";
+    strncpy(active.recipeName, rn, sizeof(active.recipeName) - 1);
+    strncpy(active.spiceName, sn, sizeof(active.spiceName) - 1);
+
+    Serial.print(F("[CMD] slot="));
+    Serial.print(active.slot);
+    Serial.print(F(" grams="));
+    Serial.print(active.targetGrams);
+    Serial.print(F(" spice="));
+    Serial.print(active.spiceName);
+    Serial.print(F(" ("));
+    Serial.print(active.slotIdx + 1);
+    Serial.print(F("/"));
+    Serial.print(active.total);
+    Serial.println(F(")"));
+
+    dispenseState = DispenseState::INDEXING;
+}
+
+// -------------------------------------------------------
+//  setup()
 // -------------------------------------------------------
 void setup()
 {
     Serial.begin(9600);
-    while (!Serial && millis() < 3000) {}
+    while (!Serial && millis() < 3000)
+    {
+    }
 
     Serial.println(F("============================================"));
-    Serial.println(F("  Bland2Grand - Slot + Auger Engagement Test"));
+    Serial.println(F("  Bland2Grand  —  No-Scale Mode"));
     Serial.println(F("============================================"));
-    Serial.println(F("  Assumed starting position: SLOT 1"));
-    Serial.print  (F("  Carousel slots : ")); Serial.println(CAROUSEL_SLOT_COUNT);
-    Serial.print  (F("  Steps/slot     : ")); Serial.println(STEPS_PER_SLOT);
-    Serial.print  (F("  Steps/auger rev: ")); Serial.println(STEPS_PER_AUGER_CYCLE);
-    Serial.println();
 
-    // Carousel motor
+    // Motors
     carousel.setMaxSpeed(INDEX_SPEED_STEPS_S);
     carousel.setAcceleration(INDEX_ACCEL_STEPS_S2);
     carousel.setCurrentPosition(0);
 
-    // Auger motor
     auger.setMaxSpeed(AUGER_FULL_SPEED_STEPS_S);
     auger.setAcceleration(AUGER_FULL_SPEED_STEPS_S * 2.0f);
     auger.setCurrentPosition(0);
+    auger.disableOutputs();
 
-    Serial.println(F("Type a slot number (1-8) and press Enter:"));
+    // Static IP
+    IPAddress local_IP(192, 168, 137, 50);
+    IPAddress gateway(192, 168, 137, 1);
+    IPAddress subnet(255, 255, 255, 0);
+    WiFi.config(local_IP, gateway, subnet);
+
+    Serial.print(F("[WiFi] Connecting to "));
+    Serial.print(WIFI_SSID);
+    Serial.print(F("..."));
+
+    WiFi.disconnect();
+    delay(1000);
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+
+    while (WiFi.status() != WL_CONNECTED)
+    {
+        delay(500);
+        Serial.print('.');
+    }
+
+    Serial.println(F(" connected!"));
+    Serial.print(F("[WiFi] Arduino IP: "));
+    Serial.println(WiFi.localIP());
+
+    server.begin();
+    Serial.println(F("[HTTP] Server started on port 80. Ready."));
+    Serial.println(F("============================================"));
 }
 
 // -------------------------------------------------------
-// loop()
+//  loop()
 // -------------------------------------------------------
 void loop()
 {
-    if (Serial.available() > 0)
+    // Always tick the dispense state machine first
+    tickDispense();
+
+    // Only check for new HTTP requests when idle
+    // (don't interrupt an active dispense with a new command)
+    if (dispenseState == DispenseState::IDLE)
     {
-        int input = Serial.parseInt();
-
-        // Flush remainder of line
-        while (Serial.available())
-            Serial.read();
-
-        if (input < 1 || input > (int)CAROUSEL_SLOT_COUNT)
+        WiFiClient client = server.available();
+        if (client)
         {
-            Serial.print(F("[ERROR] '"));
-            Serial.print(input);
-            Serial.print(F("' is not a valid slot. Enter 1-"));
-            Serial.println(CAROUSEL_SLOT_COUNT);
-        }
-        else
-        {
-            Serial.println(F("--------------------------------------------"));
-            goToSlot((uint8_t)input);
-            runAuger();
-            Serial.println(F("--------------------------------------------"));
-            Serial.println(F("Type next slot number (1-8):"));
+            Serial.println(F("[HTTP] Incoming connection..."));
+            handleIncomingRequest(client);
         }
     }
 }

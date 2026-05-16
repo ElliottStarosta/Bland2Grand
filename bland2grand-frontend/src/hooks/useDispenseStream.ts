@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { DispenseSession, SlotProgress, SSEEvent } from '../types'
+import { playSlotVoiceLine } from './slotAudio'
 
 const IDLE: DispenseSession = {
   recipeName: '',
@@ -53,6 +54,7 @@ export function useDispenseStream() {
         }
 
         case 'indexing': {
+          playSlotVoiceLine(event.slot);
           const slots = prev.slots.map((s) =>
             s.slot === event.slot ? { ...s, status: 'indexing' as const } : s,
           )

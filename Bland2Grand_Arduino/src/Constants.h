@@ -56,9 +56,9 @@ static constexpr uint8_t ENCODER_TOLERANCE_COUNTS = static_cast<uint8_t>(
 static constexpr float HOMING_SPEED_STEPS_S = 500.0f;
 
 // Normal index speed (microsteps/s)
-static constexpr float INDEX_SPEED_STEPS_S = 1000.0f;
+static constexpr float INDEX_SPEED_STEPS_S = 2000.0f;
 
-static constexpr float INDEX_ACCEL_STEPS_S2 = 250.0f;
+static constexpr float INDEX_ACCEL_STEPS_S2 = 500.0f;
 
 
 // Settling delay after index before dispense begins (ms)
@@ -154,6 +154,6 @@ static constexpr float AUGER_PITCH_M = 0.010f;
 static constexpr float SPICE_DENSITY_MIN_G_ML = 0.19f; //oregano
 static constexpr float SPICE_DENSITY_MAX_G_ML = 0.55f; //paprika
 
-static constexpr const char* FLASK_SERVER_HOST = "192.168.2.71";
+static constexpr const char* FLASK_SERVER_HOST = "192.168.137.1";
 static constexpr uint16_t FLASK_SERVER_PORT = 5000;
 
