@@ -114,7 +114,7 @@ public:
                 {
                     _stopAndPurge(totalStepsDispensed);
                     delay(300);
-                    actual_g = _scale.read();
+                    actual_g = _scale.read(SCALE_AVG_SAMPLES_CAL);
                     float coast = actual_g - currentWeight;
                     if (coast > 0.0f)
                     {

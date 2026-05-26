@@ -18,65 +18,6 @@ let audioPlayAt: number | null = null;
 let audioPendingSlot: number | null = null;
 let pollInterval: ReturnType<typeof setInterval> | null = null;
 
-// Client-side weight animation — no motor interference
-let animationFrame: number | null = null
-let animStartTime: number | null = null
-let animStartWeight: number = 0
-let animTargetWeight: number = 0
-let animSlot: number = 0
-let animDurationMs: number = 0
-let animSetSession: ((fn: (prev: DispenseSession) => DispenseSession) => void) | null = null
-
-
-function startWeightAnimation(
-  slot: number,
-  fromWeight: number,
-  toWeight: number,
-  durationMs: number,
-  setter: (fn: (prev: DispenseSession) => DispenseSession) => void
-) {
-  stopWeightAnimation()
-  animSlot = slot
-  animStartWeight = fromWeight
-  animTargetWeight = toWeight
-  animDurationMs = durationMs
-  animSetSession = setter
-  animStartTime = null
-
-  const tick = (timestamp: number) => {
-    if (animStartTime === null) animStartTime = timestamp
-    const elapsed = timestamp - animStartTime
-    const progress = Math.min(elapsed / animDurationMs, 1)
-    // ease-out so it slows near the target (feels like filling up)
-    const eased = 1 - Math.pow(1 - progress, 2)
-    const current = animStartWeight + (animTargetWeight - animStartWeight) * eased
-
-    animSetSession!((prev) => {
-      const slots = prev.slots.map((s) =>
-        s.slot === animSlot ? { ...s, current } : s
-      )
-      const totalWeight = slots.reduce((sum, s) => sum + s.current, 0)
-      return { ...prev, slots, totalWeight }
-    })
-
-    if (progress < 1) {
-      animationFrame = requestAnimationFrame(tick)
-    } else {
-      animationFrame = null
-    }
-  }
-
-  animationFrame = requestAnimationFrame(tick)
-}
-
-function stopWeightAnimation() {
-  if (animationFrame !== null) {
-    cancelAnimationFrame(animationFrame)
-    animationFrame = null
-  }
-  animStartTime = null
-}
-
 function startAudioPoller() {
   if (pollInterval) return;
   pollInterval = setInterval(() => {
