@@ -259,23 +259,27 @@ private:
     // -------------------------------------------------------
     bool _tickDeadReckoning()
     {
-        _stepper.run();
+        _stepper.run(); // never block this
 
-        if (millis() - _lastPushMs >= WIFI_PUSH_INTERVAL_MS)
+        uint32_t now = millis();
+        if (now - _lastPushMs >= WIFI_PUSH_INTERVAL_MS)
         {
-            _lastPushMs = millis();
+            _lastPushMs = now;
             long remaining = _stepper.distanceToGo();
             float progress = (_totalSteps > 0)
                                  ? _targetGrams * (1.0f - static_cast<float>(remaining) / static_cast<float>(_totalSteps))
                                  : _targetGrams;
+            // Fire-and-forget: write to UDP buffer then immediately return
+            // Do NOT call any HTTP here — only UDP
             _wifi.pushWeightUDP(_slot, progress, _targetGrams);
         }
 
         if (_stepper.distanceToGo() == 0)
         {
+            // Motor done — NOW it's safe to do blocking calls
             _wifi.pushWeightUDP(_slot, _targetGrams, _targetGrams);
-            Serial.println(F("[Auger] Forward done. Sending progress burst..."));
-            _wifi.pushProgressBurst(_slot, _targetGrams);
+            // Remove pushProgressBurst entirely — it sends 8 blocking HTTP POSTs
+            // The real final weight came in via the UDP line above
             return true;
         }
         return false;

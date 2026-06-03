@@ -12,6 +12,7 @@ import { api } from "./screens/lib/api";
 import { useDispenseStream } from "./hooks/useDispenseStream";
 import type { Recipe, Screen } from "./types";
 
+
 export default function App() {
   const [isIdle, setIsIdle] = useState(true);
   const [screen, setScreen] = useState<Screen>("search");
@@ -20,18 +21,26 @@ export default function App() {
   const [selected, setSelected] = useState<Recipe | null>(null);
   const [dispLoading, setDispLoading] = useState(false);
 
-  const { session, connect, reset: resetSession, setSession } = useDispenseStream();
+  const {
+    session,
+    connect,
+    connectAndDispense,
+    reset: resetSession,
+    setSession,
+} = useDispenseStream();
+
   const contentRef = useRef<HTMLDivElement>(null);
   const fromFeatured = useRef(false);
-  const screenRef = useRef<Screen>(screen)
+  const screenRef = useRef<Screen>(screen);
 
-
-  useEffect(() => { screenRef.current = screen }, [screen]);
+  useEffect(() => {
+    screenRef.current = screen;
+  }, [screen]);
 
   // Idle timer -- inside the component
   const { wakeUp } = useIdleTimer(60_000, () => {
     // Don't go idle while dispensing
-      if (screenRef.current !== 'dispensing') setIsIdle(true)
+    if (screenRef.current !== "dispensing") setIsIdle(true);
   });
 
   const handleWake = useCallback(() => {
@@ -42,7 +51,10 @@ export default function App() {
   // Screen transition
   const navigateTo = useCallback((next: Screen) => {
     const el = contentRef.current;
-    if (!el) { setScreen(next); return; }
+    if (!el) {
+      setScreen(next);
+      return;
+    }
 
     gsap.to(el, {
       x: -16,
@@ -86,17 +98,19 @@ export default function App() {
       setSession((prev) => ({ ...prev, servingCount: servings }));
 
       try {
-        connect();
-        await api.dispense(selected.id, servings);
+        // Opens SSE AND waits for 'connected' ack before posting dispense
+        // This guarantees no events are missed
+        await connectAndDispense(selected.id, servings);
         navigateTo("dispensing");
       } catch (e: unknown) {
-        const msg = e instanceof Error ? e.message : "Failed to start dispense.";
+        const msg =
+          e instanceof Error ? e.message : "Failed to start dispense.";
         alert(msg);
       } finally {
         setDispLoading(false);
       }
     },
-    [selected, connect, navigateTo, setSession],
+    [selected, connectAndDispense, navigateTo, setSession],
   );
 
   const handleReset = useCallback(() => {
@@ -133,7 +147,11 @@ export default function App() {
 
   // Auto-navigate to complete
   const prevComplete = useRef(false);
-  if ((session.isComplete || session.isError) && !prevComplete.current && screen === "dispensing") {
+  if (
+    (session.isComplete || session.isError) &&
+    !prevComplete.current &&
+    screen === "dispensing"
+  ) {
     prevComplete.current = true;
     setTimeout(() => {
       navigateTo("complete");
@@ -144,7 +162,8 @@ export default function App() {
     prevComplete.current = false;
   }
 
-  const showBack = screen === "results" || screen === "serving" || screen === "custom";
+  const showBack =
+    screen === "results" || screen === "serving" || screen === "custom";
 
   return (
     <div
@@ -170,7 +189,8 @@ export default function App() {
         style={{
           width: 300,
           height: 120,
-          background: "radial-gradient(ellipse at 50% 0%, rgba(200,105,42,0.14) 0%, transparent 70%)",
+          background:
+            "radial-gradient(ellipse at 50% 0%, rgba(200,105,42,0.14) 0%, transparent 70%)",
         }}
       />
 
@@ -178,7 +198,10 @@ export default function App() {
       <Header screen={screen} onBack={showBack ? handleBack : undefined} />
 
       {/* Screen content */}
-      <div ref={contentRef} className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden">
+      <div
+        ref={contentRef}
+        className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden"
+      >
         {screen === "search" && (
           <SearchScreen
             onResults={handleResults}
@@ -187,13 +210,23 @@ export default function App() {
           />
         )}
         {screen === "results" && (
-          <ResultsScreen results={results} query={query} onSelect={handleSelect} />
+          <ResultsScreen
+            results={results}
+            query={query}
+            onSelect={handleSelect}
+          />
         )}
         {screen === "serving" && selected && (
-          <ServingScreen recipe={selected} onDispense={handleDispense} loading={dispLoading} />
+          <ServingScreen
+            recipe={selected}
+            onDispense={handleDispense}
+            loading={dispLoading}
+          />
         )}
         {screen === "dispensing" && <DispensingScreen session={session} />}
-        {screen === "complete" && <CompleteScreen session={session} onReset={handleReset} />}
+        {screen === "complete" && (
+          <CompleteScreen session={session} onReset={handleReset} />
+        )}
         {screen === "custom" && (
           <CustomRecipeScreen
             onSaved={handleCustomSaved}

@@ -20,18 +20,18 @@ _udp_thread: threading.Thread | None = None
 def _udp_listener() -> None:
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind(('0.0.0.0', 5001))
-    sock.settimeout(1.0)  # so it can check if we want to shut down
+    sock.settimeout(1.0)
     print("[UDP] Listening on port 5001")
     while True:
         try:
             data, addr = sock.recvfrom(256)
+            print(f"[UDP] GOT: {data.decode()}")  # ADD THIS LINE
             payload = json.loads(data.decode())
             handle_arduino_weight_push(payload)
         except socket.timeout:
             continue
         except Exception as e:
             print(f"[UDP] Error: {e}")
-
 def start_udp_listener() -> None:
     global _udp_thread
     if _udp_thread and _udp_thread.is_alive():
@@ -228,9 +228,6 @@ def start_dispense(recipe: dict, serving_count: int) -> tuple[bool, str]:
         return False, "A dispense is already in progress."
 
     spices = recipe.get("spices", [])
-    if not spices:
-        return False, "Recipe has no spices."
-
     targets: list[tuple[int, str, float]] = []
     for sp in sorted(spices, key=lambda s: s["slot"]):
         g = round(sp["grams_per_serving"] * serving_count, 1)
@@ -243,149 +240,48 @@ def start_dispense(recipe: dict, serving_count: int) -> tuple[bool, str]:
     def _run() -> None:
         _session.active = True
         time.sleep(0.3)
-
         try:
-            _broadcast(
-                {
-                    "type": "session_start",
-                    "recipe_name": recipe["name"],
-                    "total_slots": len(targets),
-                    "slots": [
-                        {"slot": s, "name": n, "target": g} for s, n, g in targets
-                    ],
-                }
-            )
+            # Fire session_start so frontend has slots populated
+            _broadcast({
+                "type": "session_start",
+                "recipe_name": recipe["name"],
+                "total_slots": len(targets),
+                "slots": [
+                    {"slot": s, "name": n, "target": g} for s, n, g in targets
+                ],
+            })
 
-            completed: list[dict] = []
+            # Fire indexing + dispense_start for slot 1
+            _broadcast({
+                "type": "indexing",
+                "slot": targets[0][0],
+                "spice_name": targets[0][1],
+                "slot_index": 0,
+                "total_slots": len(targets),
+            })
+            time.sleep(1.0)
+            _broadcast({
+                "type": "dispensing_start",
+                "slot": targets[0][0],
+                "spice_name": targets[0][1],
+                "target_weight": targets[0][2],
+                "slot_index": 0,
+                "total_slots": len(targets),
+            })
 
-            for idx, (slot, name, target_grams) in enumerate(targets):
-
-                if MOCK_ARDUINO:
-                    # Mock mode -- simulate the full dispense locally
-                    _broadcast(
-                        {
-                            "type": "indexing",
-                            "slot": slot,
-                            "spice_name": name,
-                            "slot_index": idx,
-                            "total_slots": len(targets),
-                        }
-                    )
-                    time.sleep(random.uniform(0.8, 1.2))
-
-                    _broadcast(
-                        {
-                            "type": "dispensing_start",
-                            "slot": slot,
-                            "spice_name": name,
-                            "target_weight": target_grams,
-                            "slot_index": idx,
-                            "total_slots": len(targets),
-                        }
-                    )
-
-                    result = _mock_dispense_spice(slot, target_grams)
-
-                    _broadcast(
-                        {
-                            "type": "spice_complete",
-                            "slot": slot,
-                            "spice_name": name,
-                            "actual": result["actual"],
-                            "target": target_grams,
-                            "status": result["status"],
-                            "slot_index": idx,
-                        }
-                    )
-
-                else:
-                    # Real Arduino mode
-                    _spice_signal.reset()
-
-                    try:
-                        resp = requests.post(
-                            f"{ARDUINO_URL}/",
-                            json={
-                                "carousel": slot,
-                                "grams": target_grams,
-                                "recipe_name": recipe["name"],
-                                "spice_name": name,
-                                "slot_index": idx,
-                                "total_slots": len(targets),
-                            },
-                            timeout=10,  # just waiting for "accepted" ACK
-                        )
-                        if resp.status_code != 200:
-                            raise Exception(f"Arduino rejected command: {resp.text}")
-
-                    except Exception as exc:
-                        print(f"[Dispense] Failed to send command to Arduino: {exc}")
-                        _broadcast(
-                            {
-                                "type": "session_error",
-                                "message": f"Could not reach Arduino: {exc}",
-                                "completed": completed,
-                            }
-                        )
-                        return
-
-                    SPICE_TIMEOUT_S = 120
-                    finished = _spice_signal.wait(timeout_s=SPICE_TIMEOUT_S)
-
-                    if not finished:
-                        print(
-                            f"[Dispense] Timeout waiting for spice {name} (slot {slot})"
-                        )
-                        _broadcast(
-                            {
-                                "type": "session_error",
-                                "message": f"Timeout waiting for {name}",
-                                "completed": completed,
-                            }
-                        )
-                        return
-
-                    result = _spice_signal.result
-
-                completed.append(
-                    {
-                        "slot": slot,
-                        "name": name,
-                        "target": target_grams,
-                        "actual": result.get("actual", 0.0),
-                        "status": result.get("status", "done"),
-                    }
-                )
-
-                if result.get("status") in ("timeout", "overload", "fault"):
-                    _broadcast(
-                        {
-                            "type": "session_error",
-                            "message": f"{name} failed: {result.get('status')}",
-                            "completed": completed,
-                        }
-                    )
-                    return
-
-            # All spices done
-            _broadcast(
-                {
-                    "type": "session_complete",
-                    "recipe_name": recipe["name"],
-                    "completed": completed,
-                }
-            )
+            # Now just wait — UDP packets from simulate.py will drive
+            # the weight_update broadcasts via handle_arduino_weight_push
+            print("[Dispense] UDP test mode — waiting for UDP weight updates...")
+            time.sleep(60)  # wait up to 60s for UDP packets
 
         except Exception as exc:
-            print(f"[Dispense] Unhandled error: {exc}")
-            _broadcast({"type": "session_error", "message": str(exc), "completed": []})
+            print(f"[Dispense] Error: {exc}")
         finally:
             _session.active = False
 
     _session.thread = threading.Thread(target=_run, daemon=True)
     _session.thread.start()
     return True, "Dispense started."
-
 
 def is_busy() -> bool:
     return _session.busy

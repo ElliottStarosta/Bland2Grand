@@ -40,8 +40,8 @@ static constexpr uint16_t STEPS_PER_SLOT = static_cast<uint16_t>(
 static constexpr float HOMING_SPEED_STEPS_S = 500.0f;
 
 // Normal index speed and acceleration
-static constexpr float INDEX_SPEED_STEPS_S = 3500.0f;
-static constexpr float INDEX_ACCEL_STEPS_S2 = 1500.0f;
+static constexpr float INDEX_SPEED_STEPS_S = 4000.0f;
+static constexpr float INDEX_ACCEL_STEPS_S2 = 1000.0f;
 
 static constexpr uint16_t STEPS_PER_SLOT_CORRECTION = 15;
 
@@ -57,7 +57,7 @@ static constexpr uint16_t STEPS_PER_AUGER_CYCLE = STEPS_PER_REV;
 static constexpr float BACK_PURGE_SPEED_STEPS_S = 800.0f;
 
 // Delay after back-purge before disabling coils (ms)
-static constexpr uint16_t AUGER_COIL_DISABLE_DELAY_MS = 500;
+static constexpr uint16_t AUGER_COIL_DISABLE_DELAY_MS = 200;
 
 //  Auger Speed Ramp
 

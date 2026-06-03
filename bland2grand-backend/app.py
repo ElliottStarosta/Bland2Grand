@@ -99,8 +99,9 @@ def status_stream():
             yield f"data: {json.dumps({'type': 'connected'})}\n\n"
             while True:
                 try:
-                    event = q.get(timeout=25)
-                    yield f"data: {json.dumps(event)}\n\n"
+                    event = q.get(timeout=5)  # shorter timeout = more frequent flushes
+                    payload = f"data: {json.dumps(event)}\n\n"
+                    yield payload
                     if event.get("type") in ("session_complete", "session_error"):
                         break
                 except Exception:
@@ -110,18 +111,15 @@ def status_stream():
         finally:
             unregister_sse_client(q)
 
-    return Response(
+    response = Response(
         stream_with_context(generate()),
         mimetype="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "X-Accel-Buffering": "no",
-            "Connection": "keep-alive",
-            "Content-Type": "text/event-stream",
-            "X-Content-Type-Options": "nosniff",
-        },
     )
-
+    response.headers["Cache-Control"] = "no-cache"
+    response.headers["X-Accel-Buffering"] = "no"
+    response.headers["Connection"] = "keep-alive"
+    response.headers["Transfer-Encoding"] = "chunked"  # forces Flask to flush each yield
+    return response
 
 # Calibration 
 @app.post("/api/calibrate")
