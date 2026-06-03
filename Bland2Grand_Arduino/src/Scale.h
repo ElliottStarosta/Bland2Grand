@@ -105,17 +105,21 @@ private:
 
     float _readMedian(uint8_t n)
     {
-        // clamp to odd number so there's a clean middle value
         if (n % 2 == 0)
             n++;
         if (n > 15)
-            n = 15; // cap to avoid stack overflow on Arduino
+            n = 15;
 
         float samples[15];
         for (uint8_t i = 0; i < n; i++)
         {
+            // Wait for a fresh conversion
             _waitReady();
-            samples[i] = _hx711.get_units(1); // 1 sample at a time
+            samples[i] = _hx711.get_units(1);
+
+            // Let DOUT go HIGH (busy) before polling again.
+            // Without this, is_ready() can fire on the same conversion twice.
+            delay(1);
         }
 
         // insertion sort

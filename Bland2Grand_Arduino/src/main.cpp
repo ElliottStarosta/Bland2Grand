@@ -13,6 +13,9 @@
 #include <ArduinoJson.h>
 #include "Constants.h"
 #include <Arduino_LED_Matrix.h>
+#include <WiFiUdp.h>
+
+
 
 
 // -------------------------------------------------------
@@ -22,6 +25,7 @@ const char *WIFI_SSID = "bland2grand";
 const char *WIFI_PASSWORD = "password";
 
 ArduinoLEDMatrix matrix;
+WiFiUDP udp;
 
 // 8x12 checkmark
 static uint8_t FRAME_CHECK[8][12] = {
@@ -81,7 +85,6 @@ enum class DispenseState
     IDLE,
     INDEXING,      // carousel moving
     DISPENSING,    // auger running forward
-    PURGING,       // auger running backward
     PUSH_COMPLETE, // send spice-complete then check if session done
     DONE
 };
@@ -144,30 +147,15 @@ bool httpPost(const char *path, const String &body)
 //  auger is running so it doesn't stall the stepper.
 //  Uses a short timeout so we don't block long.
 // -------------------------------------------------------
-void pushWeightUpdateNonBlocking(float current, float target)
-{
-    WiFiClient client;
-    client.setTimeout(80); // very short — best effort
-    if (!client.connect(FLASK_SERVER_HOST, FLASK_SERVER_PORT))
-        return;
+void pushWeightUDP(float current, float target) {
+    char buf[80];
+    int n = snprintf(buf, sizeof(buf),
+        "{\"slot\":%d,\"current_weight\":%.2f,\"target_weight\":%.2f}",
+        active.slot, current, target);
 
-    StaticJsonDocument<96> doc;
-    doc["slot"] = active.slot;
-    doc["current_weight"] = serialized(String(current, 2));
-    doc["target_weight"] = serialized(String(target, 2));
-    String b;
-    serializeJson(doc, b);
-
-    client.print(F("POST /api/arduino/weight-push HTTP/1.1\r\n"));
-    client.print(F("Host: "));
-    client.println(FLASK_SERVER_HOST);
-    client.println(F("Content-Type: application/json"));
-    client.print(F("Content-Length: "));
-    client.println(b.length());
-    client.println(F("Connection: close\r\n"));
-    client.print(b);
-    // Don't wait for response — fire and forget
-    client.stop();
+    udp.beginPacket(FLASK_SERVER_HOST, 5001);
+    udp.write((uint8_t*)buf, n);
+    udp.endPacket();  // ~0.5ms, no connection handshake
 }
 
 void pushNearlyThere()
@@ -252,8 +240,8 @@ void doCarouselMove(uint8_t target)
         fwd += (int8_t)CAROUSEL_SLOT_COUNT;
     int8_t bwd = (int8_t)CAROUSEL_SLOT_COUNT - fwd;
     long steps = (fwd <= bwd)
-                     ? (long)fwd * (long)STEPS_PER_SLOT
-                     : -(long)bwd * (long)STEPS_PER_SLOT;
+    ? (long)fwd * (long)STEPS_PER_SLOT + STEPS_PER_SLOT_CORRECTION
+    : -(long)bwd * (long)STEPS_PER_SLOT - STEPS_PER_SLOT_CORRECTION;
 
     carousel.move(steps);
     while (carousel.distanceToGo() != 0)
@@ -307,52 +295,38 @@ void tickDispense()
         break;
 
     case DispenseState::DISPENSING:
-        // Pure stepper — zero WiFi calls, maximum smoothness
         auger.run();
+
+        if (millis() - active.lastPushMs >= 200)
+        {
+            active.lastPushMs = millis();
+            float progress = active.targetGrams
+                * (1.0f - (float)auger.distanceToGo() / (float)active.totalSteps);
+            pushWeightUDP(progress, active.targetGrams);
+        }
 
         if (auger.distanceToGo() == 0)
         {
-            Serial.println(F("[AUGER] Forward done. Sending progress burst..."));
-
-            // Send a burst of fake progress updates so the app
-            // animates smoothly — all sent after motors stop
-            for (int i = 1; i <= 8; i++)
-            {
-                float progress = active.targetGrams * (i / 8.0f);
-                StaticJsonDocument<96> doc;
-                doc["slot"] = active.slot;
-                doc["current_weight"] = serialized(String(progress, 2));
-                doc["target_weight"] = serialized(String(active.targetGrams, 2));
-                String b;
-                serializeJson(doc, b);
-                httpPost("/api/arduino/weight-push", b);
-                delay(40);
-            }
+            pushWeightUDP(active.targetGrams, active.targetGrams);
+            Serial.println(F("[AUGER] Forward done. Parking..."));
 
             delay(SETTLE_MS);
+
+            // Park: half turn to disengage spur gear, then stop
             auger.setMaxSpeed(BACK_PURGE_SPEED_STEPS_S);
             auger.setAcceleration(BACK_PURGE_SPEED_STEPS_S * 2.0f);
-            auger.move(-active.totalSteps);
-            Serial.println(F("[AUGER] Back-purging..."));
-            dispenseState = DispenseState::PURGING;
-        }
-        break;
-    case DispenseState::PURGING:
-        auger.run();
+            auger.move((long)STEPS_PER_AUGER_CYCLE / 2);
+            while (auger.distanceToGo() != 0)
+                auger.run();
 
-        if (auger.distanceToGo() == 0)
-        {
-            // Restore forward settings
-            auger.setMaxSpeed(AUGER_FULL_SPEED_STEPS_S);
-            auger.setAcceleration(AUGER_FULL_SPEED_STEPS_S * 2.0f);
             delay(AUGER_COIL_DISABLE_DELAY_MS);
             auger.disableOutputs();
+            Serial.println(F("[AUGER] Parked."));
 
-            Serial.println(F("[AUGER] Done."));
             dispenseState = DispenseState::PUSH_COMPLETE;
         }
         break;
-
+    
     case DispenseState::PUSH_COMPLETE:
         pushSpiceComplete();
         if (active.slotIdx + 1 >= active.total)
@@ -463,7 +437,9 @@ void handleIncomingRequest(WiFiClient &client)
     const char *rn = doc["recipe_name"] | "";
     const char *sn = doc["spice_name"] | "";
     strncpy(active.recipeName, rn, sizeof(active.recipeName) - 1);
+    active.recipeName[sizeof(active.recipeName) - 1] = '\0';
     strncpy(active.spiceName, sn, sizeof(active.spiceName) - 1);
+    active.spiceName[sizeof(active.spiceName) - 1] = '\0';
 
     Serial.print(F("[CMD] slot="));
     Serial.print(active.slot);

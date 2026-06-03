@@ -29,6 +29,7 @@ from dispense import (
     handle_arduino_session_complete,
     handle_arduino_fault,
     handle_arduino_nearly_there,
+    start_udp_listener,
 )
 from search import find_recipes
 
@@ -202,8 +203,10 @@ def arduino_fault():
     return jsonify({"ok": True})
 
 
+
 # Entry point 
 if __name__ == "__main__":
     print(f"[Bland2Grand] Starting Flask on port {FLASK_PORT}")
     print(f"[Bland2Grand] Arduino mode: {'MOCK' if MOCK_ARDUINO else 'REAL'}")
+    
     app.run(host="0.0.0.0", port=FLASK_PORT, threaded=True, debug=False)

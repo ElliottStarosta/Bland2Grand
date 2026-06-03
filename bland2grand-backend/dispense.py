@@ -1,6 +1,8 @@
 import queue
 import random
 import threading
+import socket
+import json
 import time
 from typing import Optional
 
@@ -12,6 +14,32 @@ from config import ARDUINO_URL, MOCK_ARDUINO, SPICE_SLOTS
 _sse_clients: list[queue.Queue] = []
 _clients_lock = threading.Lock()
 
+# Session state
+_udp_thread: threading.Thread | None = None
+
+def _udp_listener() -> None:
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.bind(('0.0.0.0', 5001))
+    sock.settimeout(1.0)  # so it can check if we want to shut down
+    print("[UDP] Listening on port 5001")
+    while True:
+        try:
+            data, addr = sock.recvfrom(256)
+            payload = json.loads(data.decode())
+            handle_arduino_weight_push(payload)
+        except socket.timeout:
+            continue
+        except Exception as e:
+            print(f"[UDP] Error: {e}")
+
+def start_udp_listener() -> None:
+    global _udp_thread
+    if _udp_thread and _udp_thread.is_alive():
+        return
+    _udp_thread = threading.Thread(target=_udp_listener, daemon=True)
+    _udp_thread.start()
+
+start_udp_listener()
 
 def register_sse_client() -> queue.Queue:
     q: queue.Queue = queue.Queue(maxsize=50)

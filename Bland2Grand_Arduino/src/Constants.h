@@ -13,8 +13,8 @@ static constexpr uint8_t PIN_AUGER_STEP = 3;
 static constexpr uint8_t PIN_AUGER_DIR = 4;
 
 // HX711 load cell
-static constexpr uint8_t PIN_HX711_DOUT = 9;
-static constexpr uint8_t PIN_HX711_SCK = 10;
+static constexpr uint8_t PIN_HX711_DOUT = A1;
+static constexpr uint8_t PIN_HX711_SCK = A0;
 
 // Stepper Motor Geometry
 // Both motors: 1.8 deg step angle, 1/8 microstepping
@@ -41,7 +41,9 @@ static constexpr float HOMING_SPEED_STEPS_S = 500.0f;
 
 // Normal index speed and acceleration
 static constexpr float INDEX_SPEED_STEPS_S = 4000.0f;
-static constexpr float INDEX_ACCEL_STEPS_S2 = 1000.0f;
+static constexpr float INDEX_ACCEL_STEPS_S2 = 3000.0f;
+
+static constexpr uint16_t STEPS_PER_SLOT_CORRECTION = 15;
 
 // Settle delay after index before dispense begins (ms)
 static constexpr uint16_t INDEX_SETTLE_MS = 1000;
@@ -133,7 +135,7 @@ static constexpr uint16_t TARE_SETTLE_MS = 500;
 static constexpr float SCALE_CAPACITY_G = 1000.0f;
 static constexpr float SCALE_OVERLOAD_G = 1500.0f;
 static constexpr float SCALE_ACCURACY_G = 0.30f;
-static constexpr float SCALE_CAL_FACTOR = 677.96f;
+static constexpr float SCALE_CAL_FACTOR = 687.473f;
 
 //  Flow Model (EEPROM-backed regression)
 
