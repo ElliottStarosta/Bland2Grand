@@ -23,20 +23,14 @@
 #include <AccelStepper.h>
 #include "Constants.h"
 
-// -------------------------------------------------------
 // Motor instances
-// -------------------------------------------------------
 AccelStepper carousel(AccelStepper::DRIVER, PIN_CAROUSEL_STEP, PIN_CAROUSEL_DIR);
 AccelStepper auger(AccelStepper::DRIVER,    PIN_AUGER_STEP,    PIN_AUGER_DIR);
 
-// -------------------------------------------------------
 // State
-// -------------------------------------------------------
 uint8_t currentSlot = 1;   // assume slot 1 on power-up
 
-// -------------------------------------------------------
 // Helper: move carousel to target slot (shortest path)
-// -------------------------------------------------------
 void goToSlot(uint8_t target)
 {
     if (target < 1 || target > CAROUSEL_SLOT_COUNT)
@@ -83,9 +77,7 @@ void goToSlot(uint8_t target)
     Serial.println(currentSlot);
 }
 
-// -------------------------------------------------------
 // Helper: spin auger forward one revolution then reverse
-// -------------------------------------------------------
 void runAuger()
 {
     Serial.println(F("[AUGER] Spinning forward 1 revolution..."));
@@ -116,9 +108,7 @@ void runAuger()
     Serial.println(F("[AUGER] Done."));
 }
 
-// -------------------------------------------------------
 // setup()
-// -------------------------------------------------------
 void setup()
 {
     Serial.begin(9600);
@@ -146,9 +136,7 @@ void setup()
     Serial.println(F("Type a slot number (1-8) and press Enter:"));
 }
 
-// -------------------------------------------------------
 // loop()
-// -------------------------------------------------------
 void loop()
 {
     if (Serial.available() > 0)

@@ -15,9 +15,7 @@
 #include <Arduino_LED_Matrix.h>
 
 
-// -------------------------------------------------------
 //  WiFi credentials — edit these
-// -------------------------------------------------------
 const char *WIFI_SSID = "bland2grand";
 const char *WIFI_PASSWORD = "password";
 
@@ -59,23 +57,17 @@ static uint8_t FRAME_X[8][12] = {
 };
 
 
-// -------------------------------------------------------
 //  Tuning
-// -------------------------------------------------------
 static constexpr float GRAMS_PER_CYCLE = 0.8f;
 static constexpr uint32_t SETTLE_MS = 400;
 
-// -------------------------------------------------------
 //  Motors
-// -------------------------------------------------------
 AccelStepper carousel(AccelStepper::DRIVER, PIN_CAROUSEL_STEP, PIN_CAROUSEL_DIR);
 AccelStepper auger(AccelStepper::DRIVER, PIN_AUGER_STEP, PIN_AUGER_DIR);
 
 uint8_t currentSlot = 1;
 
-// -------------------------------------------------------
 //  Dispense state machine
-// -------------------------------------------------------
 enum class DispenseState
 {
     IDLE,
@@ -102,9 +94,7 @@ struct ActiveDispense
 
 ActiveDispense active;
 
-// -------------------------------------------------------
 //  HTTP POST helper  (blocking, but only called when idle)
-// -------------------------------------------------------
 bool httpPost(const char *path, const String &body)
 {
     WiFiClient client;
@@ -139,11 +129,9 @@ bool httpPost(const char *path, const String &body)
     return ok;
 }
 
-// -------------------------------------------------------
 //  Non-blocking weight push — called from loop() while
 //  auger is running so it doesn't stall the stepper.
 //  Uses a short timeout so we don't block long.
-// -------------------------------------------------------
 void pushWeightUpdateNonBlocking(float current, float target)
 {
     WiFiClient client;
@@ -180,9 +168,7 @@ void pushNearlyThere()
     httpPost("/api/arduino/nearly-there", b);
 }
 
-// -------------------------------------------------------
 //  Push helpers  (blocking — only called when motors idle)
-// -------------------------------------------------------
 void pushIndexing()
 {
     StaticJsonDocument<128> doc;
@@ -231,9 +217,7 @@ void pushSessionComplete()
     httpPost("/api/arduino/session-complete", b);
 }
 
-// -------------------------------------------------------
 //  Carousel move  (blocking — called only from INDEXING)
-// -------------------------------------------------------
 void doCarouselMove(uint8_t target)
 {
     if (target < 1 || target > CAROUSEL_SLOT_COUNT)
@@ -270,9 +254,7 @@ void doCarouselMove(uint8_t target)
     Serial.println(currentSlot);
 }
 
-// -------------------------------------------------------
 //  State machine tick — called every loop()
-// -------------------------------------------------------
 void tickDispense()
 {
     switch (dispenseState)
@@ -372,9 +354,7 @@ void tickDispense()
     }
 }
 
-// -------------------------------------------------------
 //  HTTP server
-// -------------------------------------------------------
 WiFiServer server(HTTP_PORT);
 
 void handleIncomingRequest(WiFiClient &client)
@@ -480,9 +460,7 @@ void handleIncomingRequest(WiFiClient &client)
     dispenseState = DispenseState::INDEXING;
 }
 
-// -------------------------------------------------------
 //  setup()
-// -------------------------------------------------------
 void setup()
 {
     Serial.begin(9600);
@@ -536,9 +514,7 @@ void setup()
     Serial.println(F("============================================"));
 }
 
-// -------------------------------------------------------
 //  loop()
-// -------------------------------------------------------
 void loop()
 {
     // Always tick the dispense state machine first

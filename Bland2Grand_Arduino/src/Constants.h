@@ -40,8 +40,8 @@ static constexpr uint16_t STEPS_PER_SLOT = static_cast<uint16_t>(
 static constexpr float HOMING_SPEED_STEPS_S = 500.0f;
 
 // Normal index speed and acceleration
-static constexpr float INDEX_SPEED_STEPS_S = 4000.0f;
-static constexpr float INDEX_ACCEL_STEPS_S2 = 3000.0f;
+static constexpr float INDEX_SPEED_STEPS_S = 3500.0f;
+static constexpr float INDEX_ACCEL_STEPS_S2 = 1500.0f;
 
 static constexpr uint16_t STEPS_PER_SLOT_CORRECTION = 15;
 

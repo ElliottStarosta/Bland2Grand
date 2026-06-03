@@ -22,15 +22,11 @@
 #include <ArduinoJson.h>
 #include "Constants.h"
 
-// -------------------------------------------------------
 //  WiFi credentials — edit these
-// -------------------------------------------------------
 const char* WIFI_SSID     = "bland2grand";
 const char* WIFI_PASSWORD = "password";  // change after resetting router
 
-// -------------------------------------------------------
 //  Tuning — adjust until dispensed amounts look right
-// -------------------------------------------------------
 
 // How many grams one full auger cycle (1 motor revolution)
 // delivers for a typical spice. Tune this by running 10 cycles
@@ -40,17 +36,13 @@ static constexpr float GRAMS_PER_CYCLE = 0.8f;
 // After dispensing, wait this long before reporting done (ms).
 static constexpr uint32_t SETTLE_MS = 400;
 
-// -------------------------------------------------------
 //  Motors
-// -------------------------------------------------------
 AccelStepper carousel(AccelStepper::DRIVER, PIN_CAROUSEL_STEP, PIN_CAROUSEL_DIR);
 AccelStepper auger   (AccelStepper::DRIVER, PIN_AUGER_STEP,    PIN_AUGER_DIR);
 
 uint8_t currentSlot = 1;
 
-// -------------------------------------------------------
 //  HTTP helpers
-// -------------------------------------------------------
 bool httpPost(const char* path, const String& body) {
     WiFiClient client;
     client.setTimeout(2000);
@@ -76,9 +68,7 @@ bool httpPost(const char* path, const String& body) {
     return ok;
 }
 
-// -------------------------------------------------------
 //  Push helpers  (mirrors WiFiComm.h)
-// -------------------------------------------------------
 void pushIndexing(uint8_t slot, const char* spiceName,
                   uint8_t slotIdx, uint8_t total) {
     StaticJsonDocument<128> doc;
@@ -132,9 +122,7 @@ void pushSessionComplete(const char* recipeName) {
     httpPost("/api/arduino/session-complete", b);
 }
 
-// -------------------------------------------------------
 //  Carousel  (open-loop, shortest path)
-// -------------------------------------------------------
 void goToSlot(uint8_t target) {
     if (target < 1 || target > CAROUSEL_SLOT_COUNT) return;
     if (target == currentSlot) {
@@ -161,9 +149,7 @@ void goToSlot(uint8_t target) {
     Serial.print(F("[CAROUSEL] Arrived at slot ")); Serial.println(currentSlot);
 }
 
-// -------------------------------------------------------
 //  Auger  (dead-reckoning: run N cycles for target grams)
-// -------------------------------------------------------
 void runAuger(uint8_t slot, const char* spiceName,
               float targetGrams, uint8_t slotIdx, uint8_t total) {
 
@@ -216,9 +202,7 @@ void runAuger(uint8_t slot, const char* spiceName,
     Serial.println(F("[AUGER] Done."));
 }
 
-// -------------------------------------------------------
 //  HTTP server  (listens for POST / from Flask)
-// -------------------------------------------------------
 WiFiServer server(HTTP_PORT);
 
 void handleDispenseRequest(WiFiClient& client) {
@@ -306,9 +290,7 @@ void handleDispenseRequest(WiFiClient& client) {
     }
 }
 
-// -------------------------------------------------------
 //  setup()
-// -------------------------------------------------------
 void setup() {
     Serial.begin(9600);
     while (!Serial && millis() < 3000) {}
@@ -374,9 +356,7 @@ void setup() {
     Serial.println(F("============================================"));
 }
 
-// -------------------------------------------------------
 //  loop()
-// -------------------------------------------------------
 void loop() {
     WiFiClient client = server.available();
     if (client) {
