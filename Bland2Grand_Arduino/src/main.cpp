@@ -1,45 +1,327 @@
+// ============================================================
+//  main.cpp  —  Bland2Grand
+//
+//  Entry point. Wires together WiFiComms, CarouselDriver,
+//  and AugerDriver into a simple non-blocking state machine.
+//
+//  ── Load-cell toggle ────────────────────────────────────
+//  Dead-reckoning (default — no HX711 required):
+//    #define USE_LOAD_CELL 0
+//
+//  Closed-loop (HX711 required, pins in Constants.h):
+//    #define USE_LOAD_CELL 1
+//  ────────────────────────────────────────────────────────
+// ============================================================
+
+// Set to 1 to enable closed-loop HX711 weight feedback.
+// Set to 0 for dead-reckoning (cycle-count only, no scale needed).
+#define USE_LOAD_CELL 0
+
 #include <Arduino.h>
-#include <AccelStepper.h>
+#include <WiFiS3.h>
+#include <ArduinoJson.h>
+#include <Arduino_LED_Matrix.h>
 #include "Constants.h"
+#include "WiFiComms.h"
+#include "CarouselDriver.h"
+#include "AugerDriver.h"
 
-AccelStepper stepper(AccelStepper::DRIVER, PIN_CAROUSEL_STEP, PIN_CAROUSEL_DIR);
+#if USE_LOAD_CELL
+#include "Scale.h"
+#endif
 
-void setup() {
-    Serial.begin(9600);
+// -------------------------------------------------------
+//  WiFi credentials
+// -------------------------------------------------------
+static const char *WIFI_SSID     = "bland2grand";
+static const char *WIFI_PASSWORD = "password";
 
-    stepper.setMaxSpeed(8500);
-    stepper.setAcceleration(2500);
-    stepper.setMinPulseWidth(20);
+// -------------------------------------------------------
+//  LED Matrix frames
+// -------------------------------------------------------
+ArduinoLEDMatrix matrix;
 
-    unsigned long t0;
+static uint8_t FRAME_CHECK[8][12] = {
+    {0,0,0,0,0,0,0,0,0,0,1,0},
+    {0,0,0,0,0,0,0,0,0,1,1,0},
+    {0,0,0,0,0,0,0,0,1,1,0,0},
+    {0,1,0,0,0,0,0,1,1,0,0,0},
+    {0,1,1,0,0,0,1,1,0,0,0,0},
+    {0,0,1,1,0,1,1,0,0,0,0,0},
+    {0,0,0,1,1,1,0,0,0,0,0,0},
+    {0,0,0,0,1,0,0,0,0,0,0,0},
+};
 
-    // --- Forward with acceleration ramp ---
-    stepper.move(99999999);   // give it a huge forward distance
-    t0 = millis();
-    while (millis() - t0 < 5000) {
-        stepper.run();
-    }
-    
-    // --- Stop fully ---
-    stepper.stop();
-    while (stepper.isRunning()) {
-        stepper.run();
-    }
+static uint8_t FRAME_X[8][12] = {
+    {1,1,1,0,0,0,0,0,0,1,1,1},
+    {0,1,1,1,0,0,0,0,1,1,1,0},
+    {0,0,1,1,1,0,0,1,1,1,0,0},
+    {0,0,0,1,1,1,1,1,1,0,0,0},
+    {0,0,0,1,1,1,1,1,1,0,0,0},
+    {0,0,1,1,1,0,0,1,1,1,0,0},
+    {0,1,1,1,0,0,0,0,1,1,1,0},
+    {1,1,1,0,0,0,0,0,0,1,1,1},
+};
 
-    delay(300);
+// -------------------------------------------------------
+//  Subsystem instances
+// -------------------------------------------------------
+WiFiComms wifi(WIFI_SSID, WIFI_PASSWORD);
+CarouselDriver carousel(wifi);
 
-    // --- Backward with acceleration ramp ---
-    stepper.move(-99999999);  // huge backward distance
-    t0 = millis();
-    while (millis() - t0 < 5000) {
-        stepper.run();
-    }
+#if USE_LOAD_CELL
+Scale scale;
+AugerDriver auger(wifi, scale);
+#else
+AugerDriver auger(wifi);
+#endif
 
-    // --- Final stop ---
-    stepper.stop();
-    while (stepper.isRunning()) {
-        stepper.run();
+// -------------------------------------------------------
+//  Dispense state machine
+// -------------------------------------------------------
+enum class DispenseState
+{
+    IDLE,
+    INDEXING,      // carousel moving + dispense setup
+    DISPENSING,    // auger running forward
+    PARKING,       // auger forward-park to disengage spur gear
+    PUSH_COMPLETE, // send spice-complete, check session done
+    DONE
+};
+
+DispenseState dispenseState = DispenseState::IDLE;
+
+struct ActiveDispense
+{
+    uint8_t  slot       = 0;
+    char     spiceName[24]  = {};
+    char     recipeName[48] = {};
+    float    targetGrams    = 0.0f;
+    uint8_t  slotIdx    = 0;
+    uint8_t  total      = 1;
+};
+
+ActiveDispense active;
+
+// -------------------------------------------------------
+//  State machine tick — called every loop()
+// -------------------------------------------------------
+void tickDispense()
+{
+    switch (dispenseState)
+    {
+    case DispenseState::IDLE:
+        break;
+
+    case DispenseState::INDEXING:
+        wifi.pushIndexing(active.slot, active.spiceName,
+                          active.slotIdx, active.total);
+        auger.enableCoils();
+        carousel.goToSlot(active.slot, active.spiceName);
+
+        auger.startDispense(active.slot, active.spiceName,
+                            active.targetGrams,
+                            active.slotIdx, active.total);
+        dispenseState = DispenseState::DISPENSING;
+        break;
+
+    case DispenseState::DISPENSING:
+        if (auger.tickDispense())
+        {
+            auger.startPark();
+            dispenseState = DispenseState::PARKING;
+        }
+        break;
+
+    case DispenseState::PARKING:
+        if (auger.tickPark())
+        {
+            auger.finishPark();
+            dispenseState = DispenseState::PUSH_COMPLETE;
+        }
+        break;
+
+    case DispenseState::PUSH_COMPLETE:
+        wifi.pushSpiceComplete(active.slot, active.spiceName,
+                               active.targetGrams, active.targetGrams,
+                               active.slotIdx);
+
+        if (active.slotIdx + 1 >= active.total)
+        {
+            Serial.println(F("[CMD] All spices done."));
+            wifi.pushSessionComplete(active.recipeName);
+            // Return carousel to slot 1
+            Serial.println(F("[Carousel] Returning to slot 1..."));
+            carousel.goToSlot(1);
+        }
+        dispenseState = DispenseState::IDLE;
+        break;
+
+    case DispenseState::DONE:
+        dispenseState = DispenseState::IDLE;
+        break;
     }
 }
 
-void loop() {}
+// -------------------------------------------------------
+//  HTTP request handler
+// -------------------------------------------------------
+void handleIncomingRequest(WiFiClient &client)
+{
+    // Read headers
+    String req;
+    uint32_t t = millis();
+    while (client.connected() && millis() - t < 2000)
+    {
+        if (client.available())
+        {
+            req += static_cast<char>(client.read());
+            if (req.endsWith("\r\n\r\n"))
+                break;
+        }
+    }
+
+    // Health check
+    if (req.startsWith("GET /health"))
+    {
+        client.println(F("HTTP/1.1 200 OK"));
+        client.println(F("Content-Type: application/json"));
+        client.println(F("Connection: close\r\n"));
+        client.print(F("{\"status\":\"ok\",\"slot\":"));
+        client.print(carousel.currentSlot());
+        client.print(F(",\"busy\":"));
+        client.print(dispenseState != DispenseState::IDLE ? "true" : "false");
+        client.print(F(",\"load_cell\":"));
+        client.print(USE_LOAD_CELL ? "true" : "false");
+        client.println(F(",\"homed\":true}"));
+        client.stop();
+        Serial.println(F("[HTTP] Health check OK"));
+        return;
+    }
+
+    if (!req.startsWith("POST /"))
+    {
+        client.println(F("HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n"));
+        client.stop();
+        return;
+    }
+
+    // Read body
+    String body;
+    uint32_t bt = millis();
+    while (client.connected() && millis() - bt < 500)
+    {
+        while (client.available())
+            body += static_cast<char>(client.read());
+        if (body.length() > 0)
+            break;
+        delay(5);
+    }
+
+    Serial.print(F("[HTTP] Body: "));
+    Serial.println(body);
+
+    // Reject if busy
+    if (dispenseState != DispenseState::IDLE)
+    {
+        client.println(F("HTTP/1.1 409 Conflict\r\nConnection: close\r\n\r\n"));
+        client.stop();
+        return;
+    }
+
+    StaticJsonDocument<256> doc;
+    if (deserializeJson(doc, body) != DeserializationError::Ok
+        || !doc.containsKey("carousel")
+        || !doc.containsKey("grams"))
+    {
+        Serial.println(F("[HTTP] Bad request — missing carousel or grams"));
+        client.println(F("HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n"));
+        client.stop();
+        return;
+    }
+
+    // ACK immediately so Flask doesn't time out
+    client.println(F("HTTP/1.1 200 OK"));
+    client.println(F("Content-Type: application/json"));
+    client.println(F("Connection: close\r\n"));
+    client.println(F("{\"status\":\"accepted\"}"));
+    client.stop();
+
+    // Populate active dispense
+    active.slot        = doc["carousel"].as<uint8_t>();
+    active.targetGrams = doc["grams"].as<float>();
+    active.slotIdx     = doc["slot_index"]  | 0;
+    active.total       = doc["total_slots"] | 1;
+
+    strncpy(active.recipeName, doc["recipe_name"] | "", sizeof(active.recipeName) - 1);
+    strncpy(active.spiceName,  doc["spice_name"]  | "", sizeof(active.spiceName)  - 1);
+    active.recipeName[sizeof(active.recipeName) - 1] = '\0';
+    active.spiceName [sizeof(active.spiceName)  - 1] = '\0';
+
+    Serial.print(F("[CMD] slot="));   Serial.print(active.slot);
+    Serial.print(F(" grams="));       Serial.print(active.targetGrams);
+    Serial.print(F(" spice="));       Serial.print(active.spiceName);
+    Serial.print(F(" ("));            Serial.print(active.slotIdx + 1);
+    Serial.print(F("/"));             Serial.print(active.total);
+    Serial.println(F(")"));
+
+    dispenseState = DispenseState::INDEXING;
+}
+
+// -------------------------------------------------------
+//  setup()
+// -------------------------------------------------------
+void setup()
+{
+    Serial.begin(9600);
+    while (!Serial && millis() < 3000) {}
+
+    matrix.begin();
+    matrix.renderBitmap(FRAME_X, 8, 12); // show X until WiFi connects
+
+    Serial.println(F("============================================"));
+#if USE_LOAD_CELL
+    Serial.println(F("  Bland2Grand  —  Closed-Loop (Load Cell)"));
+#else
+    Serial.println(F("  Bland2Grand  —  Dead-Reckoning Mode"));
+#endif
+    Serial.println(F("============================================"));
+
+    // Subsystems
+    carousel.begin();
+    auger.begin();
+
+#if USE_LOAD_CELL
+    if (!scale.begin())
+        Serial.println(F("[WARN] HX711 not responding — check wiring."));
+    else
+        Serial.println(F("[OK] HX711 scale ready."));
+#endif
+
+    // WiFi
+    wifi.connect();
+    matrix.renderBitmap(FRAME_CHECK, 8, 12); // show checkmark on connect
+    wifi.startServer();
+
+    Serial.println(F("============================================"));
+}
+
+// -------------------------------------------------------
+//  loop()
+// -------------------------------------------------------
+void loop()
+{
+    // Always tick the state machine first (keeps motors smooth)
+    tickDispense();
+
+    // Only accept new commands when idle
+    if (dispenseState == DispenseState::IDLE)
+    {
+        WiFiClient client = wifi.available();
+        if (client)
+        {
+            Serial.println(F("[HTTP] Incoming connection..."));
+            handleIncomingRequest(client);
+        }
+    }
+}
