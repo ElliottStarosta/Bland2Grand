@@ -2,7 +2,7 @@ import json
 import re
 import requests
 from config import OPENROUTER_API_KEY, AI_MODEL, API_URL
-
+from slot_config import SPICE_SLOTS
 
 _SYSTEM = (
     "You are a professional culinary spice expert. "
@@ -10,14 +10,16 @@ _SYSTEM = (
     "Values are grams of each spice per single serving."
 )
 
-_TEMPLATE = (
-    'Give me a spice blend for "{dish}" using only these 8 slots: '
-    "1=Cumin, 2=Paprika, 3=GarlicPowder, 4=Salt, "
-    "5=Oregano, 6=OnionPowder, 7=BlackPepper, 8=Cayenne. "
-    'Return ONLY valid JSON in the form {{"1": g, "2": g, "3": g, "4": g, "5": g, "6": g, "7": g, "8": g}} '
-    "where g is a float (0 if the spice is not used). "
-    "Use realistic and authentic amounts. Max 10g per slot per serving."
-)
+def _build_template() -> str:
+    slot_list = ", ".join(f"{k}={v.replace(' ', '')}" for k, v in SPICE_SLOTS.items())
+    keys = ", ".join(f'"{k}": g' for k in SPICE_SLOTS)
+    return (
+        'Give me a spice blend for "{dish}" using only these 8 slots: '
+        f"{slot_list}. "
+        f'Return ONLY valid JSON in the form {{{keys}}} '
+        "where g is a float (0 if the spice is not used). "
+        "Use realistic and authentic amounts. Max 10g per slot per serving."
+    )
 
 
 def _call_api(prompt: str) -> str:
@@ -64,7 +66,7 @@ def get_blend_for_dish(dish_name: str) -> dict:
     Returns a dict: {"1": grams, "2": grams, …} for slots 1-8.
     Raises on API or parse error.
     """
-    prompt = _TEMPLATE.format(dish=dish_name)
+    prompt = _build_template().format(dish=dish_name)
     raw = _call_api(prompt)
     blend = _parse_blend(raw)
     print(f"[AI] Blend for '{dish_name}': {blend}")

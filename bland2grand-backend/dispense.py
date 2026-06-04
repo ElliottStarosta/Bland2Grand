@@ -222,6 +222,16 @@ def handle_arduino_nearly_there(data: dict) -> None:
         "spice_name": data.get("spice_name", ""),
     })
 
+def _friendly_error(exc: Exception) -> str:
+    msg = str(exc)
+    if "ConnectTimeoutError" in msg or "connect timeout" in msg.lower():
+        return "Arduino unreachable -- check it is powered and on the network."
+    if "ConnectionRefusedError" in msg or "Connection refused" in msg:
+        return "Arduino refused connection -- check it is running."
+    if "Max retries exceeded" in msg:
+        return "Could not reach Arduino -- check WiFi and IP address."
+    return "Hardware error -- check Arduino connection."
+
 # Main dispense orchestration
 def start_dispense(recipe: dict, serving_count: int) -> tuple[bool, str]:
     if _session.busy:
@@ -275,7 +285,7 @@ def start_dispense(recipe: dict, serving_count: int) -> tuple[bool, str]:
                         raise RuntimeError(f"Arduino returned {resp.status_code}")
                 except Exception as exc:
                     print(f"[Dispense] Failed to reach Arduino: {exc}")
-                    _broadcast({"type": "session_error", "message": str(exc), "completed": []})
+                    _broadcast({"type": "session_error", "message": _friendly_error(exc), "completed": []})
                     return
 
                 completed = _spice_signal.wait(timeout_s=120)
@@ -296,7 +306,7 @@ def start_dispense(recipe: dict, serving_count: int) -> tuple[bool, str]:
 
         except Exception as exc:
             print(f"[Dispense] Error: {exc}")
-            _broadcast({"type": "session_error", "message": str(exc), "completed": []})
+            _broadcast({"type": "session_error", "message": _friendly_error(exc), "completed": []})
         finally:
             _session.active = False
 

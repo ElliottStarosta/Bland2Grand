@@ -1,19 +1,6 @@
-"""
-Standalone script to seed the Bland2Grand recipe database.
-
-Slot mapping:
-    1 = Cumin          5 = Oregano
-    2 = Paprika        6 = Onion Powder
-    3 = Garlic Powder  7 = Black Pepper
-    4 = Salt   8 = Cayenne
-
-All gram values are per single serving.
-Run from the bland2grand-backend directory:
-    python seed_recipes.py
-"""
-
 import sys
 import os
+from slot_config import SLOT_COLUMNS
 
 sys.path.insert(0, os.path.dirname(__file__))
 from database import init_db, save_recipe, get_connection
@@ -322,24 +309,6 @@ RECIPES = [
 ]
 
 
-# fmt: on
-
-
-def _spice_kwargs(spice_map: dict) -> dict:
-    """Map slot numbers to DB column keyword args."""
-    cols = {
-        1: "s1_cumin",
-        2: "s2_paprika",
-        3: "s3_garlic_powder",
-        4: "s4_salt",
-        5: "s5_oregano",
-        6: "s6_onion_powder",
-        7: "s7_black_pepper",
-        8: "s8_cayenne",
-    }
-    return {cols[slot]: grams for slot, grams in spice_map.items()}
-
-
 def seed() -> int:
     init_db()
     conn = get_connection()
@@ -348,29 +317,21 @@ def seed() -> int:
 
     print(f"Seeding {len(RECIPES)} recipes into the database…\n")
 
+    slot_cols = list(SLOT_COLUMNS.values())  # e.g. ['s1_salt', 's2_cumin', ...]
+    col_list = ", ".join(["name", "category", "description"] + slot_cols)
+    placeholders = ", ".join(["?"] * (3 + len(slot_cols)))
+    insert_sql = f"INSERT OR IGNORE INTO recipes ({col_list}) VALUES ({placeholders})"
+
     for i, recipe in enumerate(RECIPES, start=1):
         spice_map = recipe["s"]
         try:
-            cur.execute(
-                """INSERT OR IGNORE INTO recipes
-                   (name, category, description,
-                    s1_cumin, s2_paprika, s3_garlic_powder, s4_salt,
-                    s5_oregano, s6_onion_powder, s7_black_pepper, s8_cayenne)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (
-                    recipe["name"],
-                    recipe.get("category", "General"),
-                    recipe.get("description", ""),
-                    spice_map.get(1, 0),
-                    spice_map.get(2, 0),
-                    spice_map.get(3, 0),
-                    spice_map.get(4, 0),
-                    spice_map.get(5, 0),
-                    spice_map.get(6, 0),
-                    spice_map.get(7, 0),
-                    spice_map.get(8, 0),
-                ),
+            values = (
+                recipe["name"],
+                recipe.get("category", "General"),
+                recipe.get("description", ""),
+                *[spice_map.get(slot, 0) for slot in SLOT_COLUMNS.keys()],
             )
+            cur.execute(insert_sql, values)
             if cur.rowcount:
                 count += 1
                 print(f"  [{i:>3}/{len(RECIPES)}] {recipe['name']}")

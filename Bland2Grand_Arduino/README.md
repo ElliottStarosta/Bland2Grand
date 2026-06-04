@@ -38,24 +38,24 @@ The firmware manages all real-time hardware control: carousel positioning, auger
 
 ```
 Bland2Grand_Arduino/
-├── src/
-│   ├── main.cpp              # Entry point — setup() and loop()
-│   ├── Constants.h           # All pin, geometry, and tuning constants
-│   ├── StateMachine.h        # Top-level FSM (HOMING → IDLE → INDEXING → DISPENSING → DONE)
-│   ├── Carousel.h            # Carousel stepper control + closed-loop encoder correction
-│   ├── CarouselPosition.h    # EEPROM-backed position fusion (encoder + steps)
-│   ├── Auger.h               # Auger stepper, 3-stage speed ramp, back-purge
-│   ├── Scale.h               # HX711 wrapper — tare, averaged reads, overload detection
-│   ├── Encoder.h             # AS5600 wrapper — raw angle, signed error, wraparound math
-│   ├── FlowModel.h           # Online linear regression, coast estimation, EEPROM persistence
-│   ├── WiFiComm.h            # Outbound HTTP push to Flask (dispense events, weight updates)
-│   └── WiFiManager.h         # WiFi credential storage & serial provisioning
-├── src/tests/
-│   ├── auger.cpp             # Standalone auger forward/backward test
-│   ├── carousel.cpp          # Interactive carousel slot-seek test (Serial input)
-│   └── encoder_cal.cpp       # AS5600 calibration utility — prints raw angle + magnet status
-├── platformio.ini            # Build configuration
-└── include/                  # (reserved for shared headers)
+├ src/
+│   ├ main.cpp              # Entry point — setup() and loop()
+│   ├ Constants.h           # All pin, geometry, and tuning constants
+│   ├ StateMachine.h        # Top-level FSM (HOMING → IDLE → INDEXING → DISPENSING → DONE)
+│   ├ Carousel.h            # Carousel stepper control + closed-loop encoder correction
+│   ├ CarouselPosition.h    # EEPROM-backed position fusion (encoder + steps)
+│   ├ Auger.h               # Auger stepper, 3-stage speed ramp, back-purge
+│   ├ Scale.h               # HX711 wrapper — tare, averaged reads, overload detection
+│   ├ Encoder.h             # AS5600 wrapper — raw angle, signed error, wraparound math
+│   ├ FlowModel.h           # Online linear regression, coast estimation, EEPROM persistence
+│   ├ WiFiComm.h            # Outbound HTTP push to Flask (dispense events, weight updates)
+│   └ WiFiManager.h         # WiFi credential storage & serial provisioning
+├ src/tests/
+│   ├ auger.cpp             # Standalone auger forward/backward test
+│   ├ carousel.cpp          # Interactive carousel slot-seek test (Serial input)
+│   └ encoder_cal.cpp       # AS5600 calibration utility — prints raw angle + magnet status
+├ platformio.ini            # Build configuration
+└ include/                  # (reserved for shared headers)
 ```
 
 ---

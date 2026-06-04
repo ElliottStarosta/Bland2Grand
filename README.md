@@ -106,26 +106,26 @@ The app will show the Bland2Grand idle screen. Tap anywhere to wake it, search f
 
 ```
 Bland2Grand/
-├── Bland2Grand_Arduino/       # PlatformIO firmware (C++)
-│   └── src/
-│       ├── main.cpp           # Entry point — WiFi, HTTP server, dispense state machine
-│       ├── Constants.h        # All pin assignments, motor tuning, WiFi config
-│       └── ...                # Carousel, Auger, Scale, FlowModel modules
+├ Bland2Grand_Arduino/       # PlatformIO firmware (C++)
+│   └ src/
+│       ├ main.cpp           # Entry point — WiFi, HTTP server, dispense state machine
+│       ├ Constants.h        # All pin assignments, motor tuning, WiFi config
+│       └ ...                # Carousel, Auger, Scale, FlowModel modules
 │
-├── bland2grand-backend/       # Flask API server (Python)
-│   ├── app.py                 # All REST + SSE endpoints
-│   ├── dispense.py            # Dispense orchestration, mock mode
-│   ├── search.py              # Recipe search + AI fallback (OpenRouter)
-│   └── seed_recipes.py        # Seed ~100 curated recipes into SQLite
+├ bland2grand-backend/       # Flask API server (Python)
+│   ├ app.py                 # All REST + SSE endpoints
+│   ├ dispense.py            # Dispense orchestration, mock mode
+│   ├ search.py              # Recipe search + AI fallback (OpenRouter)
+│   └ seed_recipes.py        # Seed ~100 curated recipes into SQLite
 │
-├── bland2grand-frontend/      # React touch UI (TypeScript + Vite)
-│   └── src/
-│       ├── App.tsx            # Screen router, idle timer
-│       ├── screens/           # Search, Results, Serving, Dispensing, Complete
-│       └── hooks/             # SSE stream manager, debounce, audio
+├ bland2grand-frontend/      # React touch UI (TypeScript + Vite)
+│   └ src/
+│       ├ App.tsx            # Screen router, idle timer
+│       ├ screens/           # Search, Results, Serving, Dispensing, Complete
+│       └ hooks/             # SSE stream manager, debounce, audio
 │
-└── .vscode/
-    └── tasks.json             # VS Code task definitions
+└ .vscode/
+    └ tasks.json             # VS Code task definitions
 ```
 
 ---

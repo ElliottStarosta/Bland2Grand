@@ -36,6 +36,7 @@
 #include <AccelStepper.h>
 #include "Constants.h"
 #include "WiFiComms.h"
+#include "SlotConfig.h"
 
 // -------------------------------------------------------
 //  Toggle here — or #define before #include in main.cpp

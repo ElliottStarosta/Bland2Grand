@@ -101,7 +101,7 @@ export function SlotRow({ slot, isActive }: Props) {
       {/* Weight */}
       <div className="w-16 text-right flex-shrink-0">
         {slot.status === 'pending' ? (
-          <span className="font-body font-light" style={{ fontSize: 11, color: '#3A3530' }}>
+          <span className="font-body font-light" style={{ fontSize: 11, color: '#5f5a54' }}>
             {slot.target.toFixed(1)}g
           </span>
         ) : slot.status === 'done' || slot.status === 'error' ? (

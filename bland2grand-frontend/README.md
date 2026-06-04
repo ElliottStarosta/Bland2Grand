@@ -16,42 +16,42 @@ The frontend is a single-page application that proxies all API calls to the Flas
 
 ```
 bland2grand-frontend/
-├── src/
-│   ├── App.tsx                       # Root component — screen router, idle timer, dispense lifecycle
-│   ├── main.tsx                      # React entry point
-│   ├── index.css                     # Global styles, CSS variables, utility classes
+├ src/
+│   ├ App.tsx                       # Root component — screen router, idle timer, dispense lifecycle
+│   ├ main.tsx                      # React entry point
+│   ├ index.css                     # Global styles, CSS variables, utility classes
 │   │
-│   ├── types/
-│   │   └── index.ts                  # All shared types, SSE event union, spice constants
+│   ├ types/
+│   │   └ index.ts                  # All shared types, SSE event union, spice constants
 │   │
-│   ├── hooks/
-│   │   ├── useDebounce.ts            # Generic debounce hook
-│   │   └── useDispenseStream.ts      # SSE connection manager + session state reducer
+│   ├ hooks/
+│   │   ├ useDebounce.ts            # Generic debounce hook
+│   │   └ useDispenseStream.ts      # SSE connection manager + session state reducer
 │   │
-│   ├── components/
-│   │   ├── Header.tsx                # Animated header with back button + screen title
-│   │   ├── Bowl.tsx                  # SVG bowl with layered spice grain simulation
-│   │   ├── SlotRow.tsx               # Per-spice progress row with animated bar
-│   │   └── SpiceCard.tsx             # Recipe card with spice bar and category badge
+│   ├ components/
+│   │   ├ Header.tsx                # Animated header with back button + screen title
+│   │   ├ Bowl.tsx                  # SVG bowl with layered spice grain simulation
+│   │   ├ SlotRow.tsx               # Per-spice progress row with animated bar
+│   │   └ SpiceCard.tsx             # Recipe card with spice bar and category badge
 │   │
-│   └── screens/
-│       ├── IdleScreen.tsx            # Screensaver — ambient orbs, tap-to-wake, idle timer hook
-│       ├── SearchScreen.tsx          # Search bar, featured blends, cuisine grid, AI loading state
-│       ├── ResultsScreen.tsx         # Search results list
-│       ├── ServingScreen.tsx         # Serving-count picker + spice breakdown
-│       ├── DispensingScreen.tsx      # Live bowl fill + slot rows during active session
-│       ├── CompleteScreen.tsx        # Post-dispense summary with accuracy indicators
-│       ├── CustomRecipeScreen.tsx    # Per-slot amount builder with unit conversion
-│       └── lib/
-│           └── api.ts                # Typed fetch wrapper for all backend endpoints
+│   └ screens/
+│       ├ IdleScreen.tsx            # Screensaver — ambient orbs, tap-to-wake, idle timer hook
+│       ├ SearchScreen.tsx          # Search bar, featured blends, cuisine grid, AI loading state
+│       ├ ResultsScreen.tsx         # Search results list
+│       ├ ServingScreen.tsx         # Serving-count picker + spice breakdown
+│       ├ DispensingScreen.tsx      # Live bowl fill + slot rows during active session
+│       ├ CompleteScreen.tsx        # Post-dispense summary with accuracy indicators
+│       ├ CustomRecipeScreen.tsx    # Per-slot amount builder with unit conversion
+│       └ lib/
+│           └ api.ts                # Typed fetch wrapper for all backend endpoints
 │
-├── public/
-│   └── logo.png                      # App logo (used in header + idle screen)
-├── index.html
-├── tailwind.config.js
-├── vite.config.ts                    # Dev server with /api proxy → localhost:5000
-├── postcss.config.js
-└── tsconfig.app.json
+├ public/
+│   └ logo.png                      # App logo (used in header + idle screen)
+├ index.html
+├ tailwind.config.js
+├ vite.config.ts                    # Dev server with /api proxy → localhost:5000
+├ postcss.config.js
+└ tsconfig.app.json
 ```
 
 ---
@@ -62,13 +62,13 @@ bland2grand-frontend/
 IdleScreen (overlay, z-40)
       │ tap anywhere
       ▼
-SearchScreen ──────────────────────────────┐
+SearchScreen ┐
       │ search / featured / category        │
       ▼                                     │
 ResultsScreen                              │
       │ select recipe                       │
       ▼                                     │
-ServingScreen ◄──────────────────────────── ┘
+ServingScreen ◄ ┘
       │ dispense                            (custom recipe)
       ▼                          CustomRecipeScreen
 DispensingScreen

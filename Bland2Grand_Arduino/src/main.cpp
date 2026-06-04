@@ -4,13 +4,13 @@
 //  Entry point. Wires together WiFiComms, CarouselDriver,
 //  and AugerDriver into a simple non-blocking state machine.
 //
-//  ── Load-cell toggle ────────────────────────────────────
+//   Load-cell toggle 
 //  Dead-reckoning (default — no HX711 required):
 //    #define USE_LOAD_CELL 0
 //
 //  Closed-loop (HX711 required, pins in Constants.h):
 //    #define USE_LOAD_CELL 1
-//  ────────────────────────────────────────────────────────
+//  
 // ============================================================
 
 // Set to 1 to enable closed-loop HX711 weight feedback.

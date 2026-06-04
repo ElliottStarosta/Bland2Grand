@@ -7,7 +7,7 @@ Flask API server that sits between the React frontend and the Arduino hardware. 
 ## Overview
 
 ```
-Frontend  ←──SSE──→  Flask Backend  ←──HTTP──→  Arduino UNO R4 WiFi
+Frontend  ←SSE→  Flask Backend  ←HTTP→  Arduino UNO R4 WiFi
               REST                    push
                    ↕
               SQLite DB
@@ -26,15 +26,15 @@ The backend operates in two modes controlled by the `MOCK_ARDUINO` environment v
 
 ```
 bland2grand-backend/
-├── app.py              # Flask application — all route definitions
-├── config.py           # Environment variable loading (dotenv)
-├── database.py         # SQLite schema, CRUD helpers
-├── dispense.py         # Dispense orchestration, SSE broadcast, mock simulation
-├── search.py           # Recipe search — DB lookup → AI fallback
-├── ai_client.py        # OpenRouter API client (Claude / other LLMs)
-├── seed_recipes.py     # One-time DB seeding script (~100 curated recipes)
-├── provision.py        # Serial provisioning helper for Arduino WiFi credentials
-└── requirements.txt    # Python dependencies
+├ app.py              # Flask application — all route definitions
+├ config.py           # Environment variable loading (dotenv)
+├ database.py         # SQLite schema, CRUD helpers
+├ dispense.py         # Dispense orchestration, SSE broadcast, mock simulation
+├ search.py           # Recipe search — DB lookup → AI fallback
+├ ai_client.py        # OpenRouter API client (Claude / other LLMs)
+├ seed_recipes.py     # One-time DB seeding script (~100 curated recipes)
+├ provision.py        # Serial provisioning helper for Arduino WiFi credentials
+└ requirements.txt    # Python dependencies
 ```
 
 ---

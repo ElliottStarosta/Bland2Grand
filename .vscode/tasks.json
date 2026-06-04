@@ -5,45 +5,24 @@
       "label": "_KillSerial",
       "type": "shell",
       "command": "Get-Process | Where-Object { $_.CommandLine -like '*pio*monitor*' -or $_.CommandLine -like '*pio*device*' } | Stop-Process -Force -ErrorAction SilentlyContinue; Start-Sleep -Milliseconds 800",
-      "presentation": {
-        "reveal": "silent",
-        "panel": "shared",
-        "close": true
-      },
       "problemMatcher": []
     },
+
     {
-      "label": "Arduino: Flash",
+      "label": "Arduino: Flash + Serial",
       "type": "shell",
-      "command": "& \"$env:USERPROFILE\\.platformio\\penv\\Scripts\\pio.exe\" run --target upload",
-      "options": {
-        "cwd": "${workspaceFolder}/Bland2Grand_Arduino"
-      },
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      },
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated",
-        "clear": true
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "Arduino: Serial Monitor",
-      "type": "shell",
-      "command": "& \"$env:USERPROFILE\\.platformio\\penv\\Scripts\\pio.exe\" device monitor --baud 9600",
+      "command": "Get-Process | Where-Object { $_.CommandLine -like '*pio*monitor*' -or $_.CommandLine -like '*pio*device*' } | Stop-Process -Force -ErrorAction SilentlyContinue; Start-Sleep -Milliseconds 800; & \"$env:USERPROFILE\\.platformio\\penv\\Scripts\\pio.exe\" run --target upload; & \"$env:USERPROFILE\\.platformio\\penv\\Scripts\\pio.exe\" device monitor --baud 9600",
       "options": {
         "cwd": "${workspaceFolder}/Bland2Grand_Arduino"
       },
       "presentation": {
         "reveal": "always",
-        "panel": "dedicated",
+        "panel": "new",
         "clear": true
       },
       "problemMatcher": []
     },
+
     {
       "label": "Backend: Flask",
       "type": "shell",
@@ -53,11 +32,12 @@
       },
       "presentation": {
         "reveal": "always",
-        "panel": "dedicated",
+        "panel": "new",
         "clear": true
       },
       "problemMatcher": []
     },
+
     {
       "label": "Frontend: Vite",
       "type": "shell",
@@ -65,21 +45,14 @@
       "options": {
         "cwd": "${workspaceFolder}/bland2grand-frontend"
       },
-      "isBackground": true,
-      "presentation": {
-        "panel": "new"
-      }
-    },
-    {
-      "label": "Arduino: Flash + Serial",
-      "dependsOrder": "sequence",
-      "dependsOn": ["_KillSerial", "Arduino: Flash", "Arduino: Serial Monitor"],
       "presentation": {
         "reveal": "always",
-        "panel": "shared"
+        "panel": "new",
+        "clear": true
       },
       "problemMatcher": []
     },
+
     {
       "label": "Bland2Grand: Full Stack",
       "dependsOrder": "parallel",
@@ -88,20 +61,16 @@
         "Backend: Flask",
         "Frontend: Vite"
       ],
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared"
-      },
       "problemMatcher": []
     },
+
     {
       "label": "Bland2Grand: Backend + Frontend",
       "dependsOrder": "parallel",
-      "dependsOn": ["Backend: Flask", "Frontend: Vite"],
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared"
-      },
+      "dependsOn": [
+        "Backend: Flask",
+        "Frontend: Vite"
+      ],
       "problemMatcher": []
     }
   ]

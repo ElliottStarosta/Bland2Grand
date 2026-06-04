@@ -119,4 +119,4 @@ static constexpr float CONTAINER_LOADED_MASS_KG = 0.125f;
 static constexpr float AUGER_TUBE_RADIUS_M = 0.010f;
 static constexpr float AUGER_PITCH_M = 0.010f;
 static constexpr float SPICE_DENSITY_MIN_G_ML = 0.19f; // oregano
-static constexpr float SPICE_DENSITY_MAX_G_ML = 1.20f; // salt
+static constexpr float SPICE_DENSITY_MAX_G_ML = 1.20f; // 

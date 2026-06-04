@@ -1,9 +1,6 @@
 import sqlite3
 from config import DATABASE_PATH, SPICE_SLOTS
-
 from slot_config import SLOT_COLUMNS
-_SLOT_TO_COL = SLOT_COLUMNS
-
 
 
 def get_connection() -> sqlite3.Connection:
@@ -16,35 +13,27 @@ def init_db() -> None:
     conn = get_connection()
     cur = conn.cursor()
 
-    cur.execute(
-        """
+    slot_col_defs = ",\n            ".join(
+        f"{col} REAL DEFAULT 0" for col in SLOT_COLUMNS.values()
+    )
+
+    cur.execute(f"""
         CREATE TABLE IF NOT EXISTS recipes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL UNIQUE,
             category TEXT DEFAULT 'General',
             description TEXT DEFAULT '',
-
-            s1_cumin REAL DEFAULT 0,
-            s2_paprika REAL DEFAULT 0,
-            s3_garlic_powder REAL DEFAULT 0,
-            s4_salt REAL DEFAULT 0,
-            s5_oregano REAL DEFAULT 0,
-            s6_onion_powder REAL DEFAULT 0,
-            s7_black_pepper REAL DEFAULT 0,
-            s8_cayenne REAL DEFAULT 0
+            {slot_col_defs}
         )
-    """
-    )
+    """)
 
-    cur.execute(
-        """
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS calibration (
             slot INTEGER PRIMARY KEY,
             spice_name TEXT,
             cal_factor REAL DEFAULT 1000.0
         )
-    """
-    )
+    """)
 
     for slot, name in SPICE_SLOTS.items():
         cur.execute(
@@ -60,40 +49,29 @@ def init_db() -> None:
 
 def _ensure_recipe_columns(cur: sqlite3.Cursor) -> None:
     """Add any missing spice columns to the recipes table for older databases."""
-    existing_cols = {row[1] for row in cur.execute("PRAGMA table_info(recipes)").fetchall()}
-
-    if "s4_salt" not in existing_cols and "s4_chili_powder" in existing_cols:
-        cur.execute("ALTER TABLE recipes ADD COLUMN s4_salt REAL DEFAULT 0")
-        cur.execute("UPDATE recipes SET s4_salt = s4_chili_powder WHERE s4_chili_powder IS NOT NULL")
-        existing_cols.add("s4_salt")
-
-    for col in _SLOT_TO_COL.values():
+    existing_cols = {
+        row[1] for row in cur.execute("PRAGMA table_info(recipes)").fetchall()
+    }
+    for col in SLOT_COLUMNS.values():
         if col not in existing_cols:
+            print(f"[DB] Adding missing column: {col}")
             cur.execute(f"ALTER TABLE recipes ADD COLUMN {col} REAL DEFAULT 0")
-
-
-
 
 
 def _recipe_to_dict(row: sqlite3.Row) -> dict:
     """Convert a DB row into the JSON-serialisable recipe format."""
     spices = []
-    for slot, col in _SLOT_TO_COL.items():
+    for slot, col in SLOT_COLUMNS.items():
         try:
             g = row[col]
-        except IndexError:
-            if col == "s4_salt" and "s4_chili_powder" in row.keys():
-                g = row["s4_chili_powder"]
-            else:
-                g = 0
+        except (IndexError, KeyError):
+            g = 0
         if g and g > 0:
-            spices.append(
-                {
-                    "slot": slot,
-                    "name": SPICE_SLOTS[slot],
-                    "grams_per_serving": round(g, 2),
-                }
-            )
+            spices.append({
+                "slot": slot,
+                "name": SPICE_SLOTS[slot],
+                "grams_per_serving": round(g, 2),
+            })
     return {
         "id": row["id"],
         "name": row["name"],
@@ -103,7 +81,6 @@ def _recipe_to_dict(row: sqlite3.Row) -> dict:
     }
 
 
-# Public API
 def search_recipes(query: str, limit: int = 6) -> list[dict]:
     conn = get_connection()
     rows = conn.execute(
@@ -115,7 +92,6 @@ def search_recipes(query: str, limit: int = 6) -> list[dict]:
 
 
 def search_recipes_by_category(category: str, limit: int = 10) -> list[dict]:
-    """Return all recipes matching a category, ordered by name."""
     conn = get_connection()
     rows = conn.execute(
         "SELECT * FROM recipes WHERE category LIKE ? COLLATE NOCASE ORDER BY name LIMIT ?",
@@ -144,28 +120,23 @@ def get_recipe_by_name(name: str) -> dict | None:
 def save_recipe(
     name: str, spices: dict, category: str = "AI Generated", description: str = ""
 ) -> int:
-    """spices: {slot_str: grams, …}  e.g. {"1": 2.0, "2": 1.5, …}"""
     conn = get_connection()
     cur = conn.cursor()
+
+    cols = list(SLOT_COLUMNS.values())
+    col_list = ", ".join(["name", "category", "description"] + cols)
+    placeholders = ", ".join(["?"] * (3 + len(cols)))
+
+    values = (
+        name,
+        category,
+        description,
+        *[float(spices.get(str(slot), 0)) for slot in SLOT_COLUMNS.keys()],
+    )
+
     cur.execute(
-        """INSERT OR REPLACE INTO recipes
-           (name, category, description,
-            s1_cumin, s2_paprika, s3_garlic_powder, s4_salt,
-            s5_oregano, s6_onion_powder, s7_black_pepper, s8_cayenne)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-        (
-            name,
-            category,
-            description,
-            float(spices.get("1", 0)),
-            float(spices.get("2", 0)),
-            float(spices.get("3", 0)),
-            float(spices.get("4", 0)),
-            float(spices.get("5", 0)),
-            float(spices.get("6", 0)),
-            float(spices.get("7", 0)),
-            float(spices.get("8", 0)),
-        ),
+        f"INSERT OR REPLACE INTO recipes ({col_list}) VALUES ({placeholders})",
+        values,
     )
     conn.commit()
     new_id = cur.lastrowid
