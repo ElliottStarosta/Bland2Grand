@@ -147,7 +147,7 @@ public:
 
         _stepper.setMaxSpeed(AUGER_FULL_SPEED_STEPS_S);
         _stepper.setAcceleration(AUGER_FULL_SPEED_STEPS_S * 2.0f);
-        _stepper.move(_totalSteps);
+        _stepper.move(-_totalSteps);
 
         Serial.print(F("[Auger] Bulk phase: "));
         Serial.print(bulkCycles);
@@ -162,7 +162,7 @@ public:
 
         _stepper.setMaxSpeed(AUGER_FULL_SPEED_STEPS_S);
         _stepper.setAcceleration(AUGER_FULL_SPEED_STEPS_S * 2.0f);
-        _stepper.move(_totalSteps);
+        _stepper.move(-_totalSteps);
 
         Serial.print(F("[Auger] Dead-reckoning: "));
         Serial.print(cycles);
@@ -203,7 +203,7 @@ public:
         _stepper.setAcceleration(BACK_PURGE_SPEED_STEPS_S * 2.0f);
         _stepper.moveTo(_parkTarget);
 
-        Serial.print(F("[Auger] Parking: current="));
+        Serial.print(F("[Auger] Parking: current="));   
         Serial.print(current);
         Serial.print(F(" -> target="));
         Serial.print(_parkTarget);
@@ -421,7 +421,7 @@ private:
         float tapSpeed = AUGER_FULL_SPEED_STEPS_S * RAMP_SPEED_STAGE3;
         _stepper.setMaxSpeed(tapSpeed);
         _stepper.setAcceleration(tapSpeed * 2.0f);
-        _stepper.move(tapSteps);
+        _stepper.move(-tapSteps);
     }
 
     // Block until scale gives SETTLE_READS consecutive readings

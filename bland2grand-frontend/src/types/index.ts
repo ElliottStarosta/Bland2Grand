@@ -1,3 +1,5 @@
+export { SPICE_SLOTS, SPICE_COLORS, SPICE_DENSITY_G_PER_ML, SPICE_LABELS } from '../slotConfig'
+
 export type Screen =
   | "search"
   | "results"
@@ -112,40 +114,6 @@ export interface CompletedSpice {
   status: "done" | "timeout";
 }
 
-// Spice colours
-
-export const SPICE_COLORS: Record<number, string> = {
-  1: "#8B6914", // Cumin       -- warm brown
-  2: "#C94020", // Paprika     -- deep red
-  3: "#D4C57A", // Garlic      -- pale gold
-  4: "#E8EEF2", // Salt       -- dark red
-  5: "#4E7C55", // Oregano     -- forest green
-  6: "#D4A870", // Onion       -- sandy tan
-  7: "#6f009a", // Pepper      -- near black
-  8: "#C63B0A", // Cayenne     -- vivid orange-red
-};
-
-export const SPICE_LABELS: Record<number, string> = {
-  1: "Cumin",
-  2: "Paprika",
-  3: "Garlic Powder",
-  4: "Salt",
-  5: "Oregano",
-  6: "Onion Powder",
-  7: "Black Pepper",
-  8: "Cayenne",
-};
-
-export const SPICE_DENSITY_G_PER_ML: Record<number, number> = {
-  1: 0.5, // Cumin (ground)
-  2: 0.45, // Paprika
-  3: 0.55, // Garlic Powder
-  4: 1.2, // Salt (table salt)
-  5: 0.3, // Oregano (dried, fluffy)
-  6: 0.5, // Onion Powder
-  7: 0.6, // Black Pepper (ground)
-  8: 0.45, // Cayenne
-};
 
 export const TSP_ML = 4.92;
 export const TBSP_ML = 14.79;

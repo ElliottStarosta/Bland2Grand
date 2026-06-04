@@ -40,10 +40,10 @@ static constexpr uint16_t STEPS_PER_SLOT = static_cast<uint16_t>(
 static constexpr float HOMING_SPEED_STEPS_S = 500.0f;
 
 // Normal index speed and acceleration
-static constexpr float INDEX_SPEED_STEPS_S = 4000.0f;
-static constexpr float INDEX_ACCEL_STEPS_S2 = 1000.0f;
+static constexpr float INDEX_SPEED_STEPS_S = 3000.0f;
+static constexpr float INDEX_ACCEL_STEPS_S2 = 500.0f;
 
-static constexpr uint16_t STEPS_PER_SLOT_CORRECTION = 15;
+static constexpr uint16_t STEPS_PER_SLOT_CORRECTION = 500;
 
 // Settle delay after index before dispense begins (ms)
 static constexpr uint16_t INDEX_SETTLE_MS = 1000;
@@ -71,39 +71,6 @@ static constexpr float RAMP_SPEED_STAGE1 = 1.00f;
 static constexpr float RAMP_SPEED_STAGE2 = 0.50f;
 static constexpr float RAMP_SPEED_STAGE3 = 0.15f;
 
-// ============================================================
-//  Per-Slot Grams Per Auger Revolution
-//
-//  Each slot holds a different spice with a different bulk
-//  density and auger fill factor. Calibrate each slot by
-//  running 10 auger cycles and weighing the result, then
-//  dividing by 10. Update the values below.
-//
-//  Slot mapping (matches Flask SPICE_SLOTS in config.py):
-//    1 = Cumin           (ground, medium density)
-//    2 = Paprika         (ground, light-medium)
-//    3 = Garlic Powder   (fine powder, packs easily)
-//    4 = Salt            (table salt, very dense)
-//    5 = Oregano         (dried leaf, very light / fluffy)
-//    6 = Onion Powder    (fine powder, medium density)
-//    7 = Black Pepper    (ground, medium density)
-//    8 = Cayenne         (fine powder, light)
-//
-//  Default estimates are based on typical bulk densities and a
-//  10 mm diameter auger tube — replace with measured values.
-// ============================================================
-
-static constexpr float GRAMS_PER_REV[CAROUSEL_SLOT_COUNT + 1] = {
-    0.0f,  // index 0 — unused (slots are 1-based)
-    0.75f, // slot 1 — Cumin           ~0.50 g/mL bulk density
-    0.65f, // slot 2 — Paprika         ~0.45 g/mL
-    0.80f, // slot 3 — Garlic Powder   ~0.55 g/mL (packs more)
-    1.50f, // slot 4 — Salt            ~1.20 g/mL (very dense)
-    0.35f, // slot 5 — Oregano         ~0.30 g/mL (fluffy, low fill)
-    0.75f, // slot 6 — Onion Powder    ~0.50 g/mL
-    0.80f, // slot 7 — Black Pepper    ~0.60 g/mL
-    0.65f, // slot 8 — Cayenne         ~0.45 g/mL
-};
 
 //  WiFi Push Timing
 

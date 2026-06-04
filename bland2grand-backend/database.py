@@ -1,6 +1,10 @@
 import sqlite3
 from config import DATABASE_PATH, SPICE_SLOTS
 
+from slot_config import SLOT_COLUMNS
+_SLOT_TO_COL = SLOT_COLUMNS
+
+
 
 def get_connection() -> sqlite3.Connection:
     conn = sqlite3.connect(DATABASE_PATH)
@@ -68,17 +72,7 @@ def _ensure_recipe_columns(cur: sqlite3.Cursor) -> None:
             cur.execute(f"ALTER TABLE recipes ADD COLUMN {col} REAL DEFAULT 0")
 
 
-# Column name helpers
-_SLOT_TO_COL = {
-    1: "s1_cumin",
-    2: "s2_paprika",
-    3: "s3_garlic_powder",
-    4: "s4_salt",
-    5: "s5_oregano",
-    6: "s6_onion_powder",
-    7: "s7_black_pepper",
-    8: "s8_cayenne",
-}
+
 
 
 def _recipe_to_dict(row: sqlite3.Row) -> dict:

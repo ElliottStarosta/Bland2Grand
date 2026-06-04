@@ -1,0 +1,52 @@
+{
+  "slots": {
+    "1": {
+      "name": "Salt",
+      "density_g_ml": 1.2,
+      "grams_per_rev": 1.5,
+      "color": "#E8EEF2"
+    },
+    "2": {
+      "name": "Cumin",
+      "density_g_ml": 0.5,
+      "grams_per_rev": 0.75,
+      "color": "#8B6914"
+    },
+    "3": {
+      "name": "Paprika",
+      "density_g_ml": 0.45,
+      "grams_per_rev": 0.65,
+      "color": "#C94020"
+    },
+    "4": {
+      "name": "Onion Powder",
+      "density_g_ml": 0.5,
+      "grams_per_rev": 0.75,
+      "color": "#D4A870"
+    },
+    "5": {
+      "name": "Garlic Powder",
+      "density_g_ml": 0.55,
+      "grams_per_rev": 0.8,
+      "color": "#D4C57A"
+    },
+    "6": {
+      "name": "Black Pepper",
+      "density_g_ml": 0.6,
+      "grams_per_rev": 0.8,
+      "color": "#6f009a"
+    },
+    "7": {
+      "name": "Oregano",
+      "density_g_ml": 0.3,
+      "grams_per_rev": 0.35,
+      "color": "#4E7C55"
+    },
+    "8": {
+      "name": "Cayenne",
+      "density_g_ml": 0.45,
+      "grams_per_rev": 0.65,
+      "color": "#C63B0A"
+    }
+  }
+}

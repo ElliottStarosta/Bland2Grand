@@ -241,7 +241,6 @@ def start_dispense(recipe: dict, serving_count: int) -> tuple[bool, str]:
         _session.active = True
         time.sleep(0.3)
         try:
-            # Fire session_start so frontend has slots populated
             _broadcast({
                 "type": "session_start",
                 "recipe_name": recipe["name"],
@@ -251,31 +250,53 @@ def start_dispense(recipe: dict, serving_count: int) -> tuple[bool, str]:
                 ],
             })
 
-            # Fire indexing + dispense_start for slot 1
-            _broadcast({
-                "type": "indexing",
-                "slot": targets[0][0],
-                "spice_name": targets[0][1],
-                "slot_index": 0,
-                "total_slots": len(targets),
-            })
-            time.sleep(1.0)
-            _broadcast({
-                "type": "dispensing_start",
-                "slot": targets[0][0],
-                "spice_name": targets[0][1],
-                "target_weight": targets[0][2],
-                "slot_index": 0,
-                "total_slots": len(targets),
-            })
+            for idx, (slot, name, grams) in enumerate(targets):
+                if not _session.active:
+                    break
 
-            # Now just wait — UDP packets from simulate.py will drive
-            # the weight_update broadcasts via handle_arduino_weight_push
-            print("[Dispense] UDP test mode — waiting for UDP weight updates...")
-            time.sleep(60)  # wait up to 60s for UDP packets
+                _spice_signal.reset()
+
+                payload = {
+                    "carousel":    slot,
+                    "grams":       grams,
+                    "spice_name":  name,
+                    "recipe_name": recipe["name"],
+                    "slot_index":  idx,
+                    "total_slots": len(targets),
+                }
+
+                try:
+                    resp = requests.post(
+                        f"{ARDUINO_URL}/",
+                        json=payload,
+                        timeout=5,
+                    )
+                    if resp.status_code != 200:
+                        raise RuntimeError(f"Arduino returned {resp.status_code}")
+                except Exception as exc:
+                    print(f"[Dispense] Failed to reach Arduino: {exc}")
+                    _broadcast({"type": "session_error", "message": str(exc), "completed": []})
+                    return
+
+                completed = _spice_signal.wait(timeout_s=120)
+                if not completed or _spice_signal.result.get("status") == "fault":
+                    _broadcast({
+                        "type": "session_error",
+                        "message": f"Timeout or fault on slot {slot}",
+                        "completed": [],
+                    })
+                    return
+
+            if _session.active:
+                _broadcast({
+                    "type": "session_complete",
+                    "recipe_name": recipe["name"],
+                    "completed": [n for _, n, _ in targets],
+                })
 
         except Exception as exc:
             print(f"[Dispense] Error: {exc}")
+            _broadcast({"type": "session_error", "message": str(exc), "completed": []})
         finally:
             _session.active = False
 

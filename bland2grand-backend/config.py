@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+from slot_config import SPICE_SLOTS, SPICE_DENSITY_G_PER_ML, SPICE_COLORS
 
 load_dotenv()
 
@@ -11,14 +12,3 @@ FLASK_PORT = int(os.getenv("FLASK_PORT", 5000))
 MOCK_ARDUINO = os.getenv("MOCK_ARDUINO", "true").lower() == "true"
 
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
-
-SPICE_SLOTS = {
-    1: "Cumin",
-    2: "Paprika",
-    3: "Garlic Powder",
-    4: "Salt",
-    5: "Oregano",
-    6: "Onion Powder",
-    7: "Black Pepper",
-    8: "Cayenne",
-}
