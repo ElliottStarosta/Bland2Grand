@@ -21,7 +21,6 @@ public:
         Serial.println(F("[Carousel] Initialised. Assumed slot 1."));
     }
 
-  
     bool goToSlot(uint8_t target)
     {
         if (target < 1 || target > CAROUSEL_SLOT_COUNT)
@@ -39,30 +38,27 @@ public:
             return true;
         }
 
-        int8_t fwd = static_cast<int8_t>(target) - static_cast<int8_t>(_currentSlot);
+        // CCW ONLY (increasing slot numbers)
+        int8_t fwd = target - _currentSlot;
         if (fwd < 0)
-            fwd += static_cast<int8_t>(CAROUSEL_SLOT_COUNT);
-        int8_t bwd = static_cast<int8_t>(CAROUSEL_SLOT_COUNT) - fwd;
+            fwd += CAROUSEL_SLOT_COUNT; // wrap around
 
-        long steps = (fwd <= bwd)
-                         ? static_cast<long>(fwd) * static_cast<long>(STEPS_PER_SLOT) + STEPS_PER_SLOT_CORRECTION
-                         : -(static_cast<long>(bwd) * static_cast<long>(STEPS_PER_SLOT)) - STEPS_PER_SLOT_CORRECTION;
+        long steps = (long)fwd * (long)STEPS_PER_SLOT + STEPS_PER_SLOT_CORRECTION;
 
-        Serial.print(F("[Carousel] Moving to slot "));
+        Serial.print(F("[Carousel] Moving CCW to slot "));
         Serial.print(target);
-        Serial.print(F("  ("));
-        Serial.print(steps > 0 ? F("fwd") : F("bwd"));
-        Serial.print(F(", "));
-        Serial.print(abs(steps));
+        Serial.print(F(" ("));
+        Serial.print(fwd);
+        Serial.print(F(" slots, "));
+        Serial.print(steps);
         Serial.println(F(" steps)"));
 
         _stepper.move(steps);
         while (_stepper.distanceToGo() != 0)
             _stepper.run();
+
         _currentSlot = target;
 
-        // Motor stopped — safe to do blocking HTTP now.
-        // Fire before settle delay so app sound plays during the pause.
         _wifi.pushNearlyThere(_currentSlot, "");
         delay(INDEX_SETTLE_MS);
 
@@ -71,7 +67,6 @@ public:
         return true;
     }
 
-    //  goToSlot() overload that also passes spiceName for the nearly-there push.
     bool goToSlot(uint8_t target, const char *spiceName)
     {
         if (target < 1 || target > CAROUSEL_SLOT_COUNT)
@@ -89,21 +84,19 @@ public:
             return true;
         }
 
-        int8_t fwd = static_cast<int8_t>(target) - static_cast<int8_t>(_currentSlot);
+        // CCW ONLY
+        int8_t fwd = target - _currentSlot;
         if (fwd < 0)
-            fwd += static_cast<int8_t>(CAROUSEL_SLOT_COUNT);
-        int8_t bwd = static_cast<int8_t>(CAROUSEL_SLOT_COUNT) - fwd;
+            fwd += CAROUSEL_SLOT_COUNT;
 
-        long steps = (fwd <= bwd)
-                         ? static_cast<long>(fwd) * static_cast<long>(STEPS_PER_SLOT) + STEPS_PER_SLOT_CORRECTION
-                         : -(static_cast<long>(bwd) * static_cast<long>(STEPS_PER_SLOT)) - STEPS_PER_SLOT_CORRECTION;
+        long steps = (long)fwd * (long)STEPS_PER_SLOT + STEPS_PER_SLOT_CORRECTION;
 
-        Serial.print(F("[Carousel] Moving to slot "));
+        Serial.print(F("[Carousel] Moving CCW to slot "));
         Serial.print(target);
-        Serial.print(F("  ("));
-        Serial.print(steps > 0 ? F("fwd") : F("bwd"));
-        Serial.print(F(", "));
-        Serial.print(abs(steps));
+        Serial.print(F(" ("));
+        Serial.print(fwd);
+        Serial.print(F(" slots, "));
+        Serial.print(steps);
         Serial.println(F(" steps)"));
 
         _stepper.move(steps);
@@ -111,6 +104,7 @@ public:
             _stepper.run();
 
         _currentSlot = target;
+
         _wifi.pushNearlyThere(_currentSlot, spiceName);
         delay(INDEX_SETTLE_MS);
 

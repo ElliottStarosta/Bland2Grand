@@ -5,9 +5,9 @@ SPICE_SLOTS: dict[int, str] = {
     1: "Salt",
     2: "Cumin",
     3: "Paprika",
-    4: "Onion Powder",
-    5: "Garlic Powder",
-    6: "Black Pepper",
+    4: "Garlic Powder",
+    5: "Black Pepper",
+    6: "Onion Powder",
     7: "Oregano",
     8: "Cayenne",
 }
@@ -16,9 +16,9 @@ SPICE_DENSITY_G_PER_ML: dict[int, float] = {
     1: 1.2,  # Salt
     2: 0.5,  # Cumin
     3: 0.45,  # Paprika
-    4: 0.5,  # Onion Powder
-    5: 0.55,  # Garlic Powder
-    6: 0.6,  # Black Pepper
+    4: 0.55,  # Garlic Powder
+    5: 0.6,  # Black Pepper
+    6: 0.5,  # Onion Powder
     7: 0.3,  # Oregano
     8: 0.45,  # Cayenne
 }
@@ -27,9 +27,9 @@ SPICE_COLORS: dict[int, str] = {
     1: "#E8EEF2",  # Salt
     2: "#8B6914",  # Cumin
     3: "#C94020",  # Paprika
-    4: "#D4A870",  # Onion Powder
-    5: "#D4C57A",  # Garlic Powder
-    6: "#6f009a",  # Black Pepper
+    4: "#D4C57A",  # Garlic Powder
+    5: "#6f009a",  # Black Pepper
+    6: "#D4A870",  # Onion Powder
     7: "#4E7C55",  # Oregano
     8: "#C63B0A",  # Cayenne
 }
@@ -39,9 +39,9 @@ SLOT_COLUMNS: dict[int, str] = {
     1: "s1_salt",
     2: "s2_cumin",
     3: "s3_paprika",
-    4: "s4_onion_powder",
-    5: "s5_garlic_powder",
-    6: "s6_black_pepper",
+    4: "s4_garlic_powder",
+    5: "s5_black_pepper",
+    6: "s6_onion_powder",
     7: "s7_oregano",
     8: "s8_cayenne",
 }

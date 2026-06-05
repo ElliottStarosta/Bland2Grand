@@ -19,22 +19,22 @@
       "color": "#C94020"
     },
     "4": {
+        "name": "Garlic Powder",
+        "density_g_ml": 0.55,
+        "grams_per_rev": 0.8,
+        "color": "#D4C57A"
+    },
+    "5": {
+        "name": "Black Pepper",
+        "density_g_ml": 0.6,
+        "grams_per_rev": 0.8,
+        "color": "#6f009a"
+    },
+    "6": {
       "name": "Onion Powder",
       "density_g_ml": 0.5,
       "grams_per_rev": 0.75,
       "color": "#D4A870"
-    },
-    "5": {
-      "name": "Garlic Powder",
-      "density_g_ml": 0.55,
-      "grams_per_rev": 0.8,
-      "color": "#D4C57A"
-    },
-    "6": {
-      "name": "Black Pepper",
-      "density_g_ml": 0.6,
-      "grams_per_rev": 0.8,
-      "color": "#6f009a"
     },
     "7": {
       "name": "Oregano",
