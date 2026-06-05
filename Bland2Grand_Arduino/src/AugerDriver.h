@@ -133,6 +133,7 @@ public:
         _lastPushMs = millis();
 
         _wifi.pushDispenseStart(slot, spiceName, targetGrams, slotIdx, total);
+         _stepper.enableOutputs();
 
 #if USE_LOAD_CELL
         _scale.tare();
@@ -191,26 +192,31 @@ public:
     void startPark()
     {
         long current = _stepper.currentPosition();
-        long stepsPerRev = static_cast<long>(STEPS_PER_REV);
+        long remainder = current % STEPS_PER_REV;
 
-        // Round up to the next full revolution boundary.
-        // If already at 0 (freshly reset), nextFullRev == 0 and moveTo(0)
-        // is a no-op — correct, already parked.
-        long nextFullRev = ((current + stepsPerRev - 1) / stepsPerRev) * stepsPerRev;
+        // Make modulo positive
+        if (remainder < 0)
+            remainder += STEPS_PER_REV;
 
-        _parkTarget = nextFullRev;
+        if (remainder == 0)
+        {
+            _parkTarget = current; // already parked
+        }
+        else
+        {
+            _parkTarget = current + (STEPS_PER_REV - remainder);
+        }
 
         _stepper.setMaxSpeed(BACK_PURGE_SPEED_STEPS_S);
         _stepper.setAcceleration(BACK_PURGE_SPEED_STEPS_S * 2.0f);
         _stepper.moveTo(_parkTarget);
 
-        Serial.print(F("[Auger] Parking: current="));   
+        Serial.print(F("[Auger] Parking: current="));
         Serial.print(current);
-        Serial.print(F(" -> target="));
-        Serial.print(_parkTarget);
-        Serial.print(F(" ("));
-        Serial.print(_parkTarget - current);
-        Serial.println(F(" steps fwd)"));
+        Serial.print(F(" remainder="));
+        Serial.print(remainder);
+        Serial.print(F(" target="));
+        Serial.println(_parkTarget);
     }
 
     bool tickPark()

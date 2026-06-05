@@ -43,7 +43,7 @@ static constexpr float HOMING_SPEED_STEPS_S = 500.0f;
 static constexpr float INDEX_SPEED_STEPS_S = 3000.0f;
 static constexpr float INDEX_ACCEL_STEPS_S2 = 500.0f;
 
-static constexpr uint16_t STEPS_PER_SLOT_CORRECTION = 500;
+static constexpr uint16_t STEPS_PER_SLOT_CORRECTION = 100;
 
 // Settle delay after index before dispense begins (ms)
 static constexpr uint16_t INDEX_SETTLE_MS = 1000;
@@ -68,8 +68,8 @@ static constexpr float RAMP_STAGE2_THRESHOLD = 0.80f;
 static constexpr float RAMP_STAGE3_THRESHOLD = 0.95f;
 
 static constexpr float RAMP_SPEED_STAGE1 = 1.00f;
-static constexpr float RAMP_SPEED_STAGE2 = 0.50f;
-static constexpr float RAMP_SPEED_STAGE3 = 0.15f;
+static constexpr float RAMP_SPEED_STAGE2 = 0.75f;
+static constexpr float RAMP_SPEED_STAGE3 = 0.50f;
 
 
 //  WiFi Push Timing

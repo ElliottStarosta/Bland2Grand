@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include <Arduino.h>
 #include <WiFiS3.h>
 #include <WiFiUdp.h>
@@ -37,6 +36,16 @@ public:
         Serial.println(F(" connected!"));
         Serial.print(F("[WiFi] Arduino IP: "));
         Serial.println(WiFi.localIP());
+
+        if (_udp.begin(8888))
+        {
+            Serial.println(F("[UDP] socket ready"));
+        }
+        else
+        {
+            Serial.println(F("[UDP] socket FAILED"));
+        }
+
         return true;
     }
 
@@ -147,14 +156,28 @@ public:
     void pushWeightUDP(uint8_t slot, float current, float target)
     {
         char buf[80];
+
         int n = snprintf(buf, sizeof(buf),
                          "{\"slot\":%d,\"current_weight\":%.2f,\"target_weight\":%.2f}",
                          slot, current, target);
-        _udp.beginPacket(FLASK_SERVER_HOST, 5001);
-        _udp.write(reinterpret_cast<uint8_t *>(buf), n);
-        _udp.endPacket();
-    }
 
+        Serial.print(F("[UDP] "));
+        Serial.println(buf);
+
+        if (_udp.beginPacket(FLASK_SERVER_HOST, 5001))
+        {
+            _udp.write((uint8_t *)buf, n);
+
+            int ok = _udp.endPacket();
+
+            Serial.print(F("[UDP] sent="));
+            Serial.println(ok);
+        }
+        else
+        {
+            Serial.println(F("[UDP] beginPacket failed"));
+        }
+    }
     //  Burst of fake progress updates — blocking, called after motors stop to animate the app progress bar smoothly.
     void pushProgressBurst(uint8_t slot, float targetGrams, uint8_t steps = 8)
     {

@@ -38,26 +38,25 @@ public:
             return true;
         }
 
-        // CCW ONLY (increasing slot numbers)
         int8_t fwd = target - _currentSlot;
         if (fwd < 0)
-            fwd += CAROUSEL_SLOT_COUNT; // wrap around
-
-        long steps = (long)fwd * (long)STEPS_PER_SLOT + STEPS_PER_SLOT_CORRECTION;
+            fwd += CAROUSEL_SLOT_COUNT;
 
         Serial.print(F("[Carousel] Moving CCW to slot "));
         Serial.print(target);
         Serial.print(F(" ("));
         Serial.print(fwd);
-        Serial.print(F(" slots, "));
-        Serial.print(steps);
-        Serial.println(F(" steps)"));
+        Serial.println(F(" slots)"));
 
-        _stepper.move(steps);
-        while (_stepper.distanceToGo() != 0)
-            _stepper.run();
-
-        _currentSlot = target;
+        for (int8_t i = 0; i < fwd; i++)
+        {
+            _moveOneSlot(nullptr, false);
+            _currentSlot = (_currentSlot % CAROUSEL_SLOT_COUNT) + 1;
+            Serial.print(F("[Carousel] Stepped to slot "));
+            Serial.println(_currentSlot);
+            if (i < fwd - 1)
+                delay(100); // brief pause between slots
+        }
 
         _wifi.pushNearlyThere(_currentSlot, "");
         delay(INDEX_SETTLE_MS);
@@ -84,26 +83,25 @@ public:
             return true;
         }
 
-        // CCW ONLY
         int8_t fwd = target - _currentSlot;
         if (fwd < 0)
             fwd += CAROUSEL_SLOT_COUNT;
-
-        long steps = (long)fwd * (long)STEPS_PER_SLOT + STEPS_PER_SLOT_CORRECTION;
 
         Serial.print(F("[Carousel] Moving CCW to slot "));
         Serial.print(target);
         Serial.print(F(" ("));
         Serial.print(fwd);
-        Serial.print(F(" slots, "));
-        Serial.print(steps);
-        Serial.println(F(" steps)"));
+        Serial.println(F(" slots)"));
 
-        _stepper.move(steps);
-        while (_stepper.distanceToGo() != 0)
-            _stepper.run();
-
-        _currentSlot = target;
+        for (int8_t i = 0; i < fwd; i++)
+        {
+            _moveOneSlot(nullptr, false);
+            _currentSlot = (_currentSlot % CAROUSEL_SLOT_COUNT) + 1;
+            Serial.print(F("[Carousel] Stepped to slot "));
+            Serial.println(_currentSlot);
+            if (i < fwd - 1)
+                delay(100); // brief pause between slots
+        }
 
         _wifi.pushNearlyThere(_currentSlot, spiceName);
         delay(INDEX_SETTLE_MS);
@@ -112,11 +110,27 @@ public:
         Serial.println(_currentSlot);
         return true;
     }
-
     uint8_t currentSlot() const { return _currentSlot; }
 
 private:
     AccelStepper _stepper;
     WiFiComms &_wifi;
     uint8_t _currentSlot;
+
+    bool _moveOneSlot(const char *spiceName, bool pushOnArrive)
+    {
+        long steps = (long)STEPS_PER_SLOT + STEPS_PER_SLOT_CORRECTION;
+
+        _stepper.setMaxSpeed(INDEX_SPEED_STEPS_S);
+        _stepper.setAcceleration(INDEX_ACCEL_STEPS_S2);
+        _stepper.move(steps);
+
+        while (_stepper.distanceToGo() != 0)
+            _stepper.run();
+
+        // Reset position counter each slot so error never accumulates
+        _stepper.setCurrentPosition(0);
+
+        return true;
+    }
 };

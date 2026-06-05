@@ -3,33 +3,33 @@
 
 SPICE_SLOTS: dict[int, str] = {
     1: "Salt",
-    2: "Cumin",
-    3: "Paprika",
+    2: "Black Pepper",
+    3: "Onion Powder",
     4: "Garlic Powder",
-    5: "Black Pepper",
-    6: "Onion Powder",
+    5: "Cumin",
+    6: "Paprika",
     7: "Oregano",
     8: "Cayenne",
 }
 
 SPICE_DENSITY_G_PER_ML: dict[int, float] = {
     1: 1.2,  # Salt
-    2: 0.5,  # Cumin
-    3: 0.45,  # Paprika
+    2: 0.6,  # Black Pepper
+    3: 0.5,  # Onion Powder
     4: 0.55,  # Garlic Powder
-    5: 0.6,  # Black Pepper
-    6: 0.5,  # Onion Powder
+    5: 0.5,  # Cumin
+    6: 0.45,  # Paprika
     7: 0.3,  # Oregano
     8: 0.45,  # Cayenne
 }
 
 SPICE_COLORS: dict[int, str] = {
     1: "#E8EEF2",  # Salt
-    2: "#8B6914",  # Cumin
-    3: "#C94020",  # Paprika
+    2: "#6f009a",  # Black Pepper
+    3: "#D4A870",  # Onion Powder
     4: "#D4C57A",  # Garlic Powder
-    5: "#6f009a",  # Black Pepper
-    6: "#D4A870",  # Onion Powder
+    5: "#8B6914",  # Cumin
+    6: "#C94020",  # Paprika
     7: "#4E7C55",  # Oregano
     8: "#C63B0A",  # Cayenne
 }
@@ -37,11 +37,11 @@ SPICE_COLORS: dict[int, str] = {
 # SQL column name for each slot (used by database.py)
 SLOT_COLUMNS: dict[int, str] = {
     1: "s1_salt",
-    2: "s2_cumin",
-    3: "s3_paprika",
+    2: "s2_black_pepper",
+    3: "s3_onion_powder",
     4: "s4_garlic_powder",
-    5: "s5_black_pepper",
-    6: "s6_onion_powder",
+    5: "s5_cumin",
+    6: "s6_paprika",
     7: "s7_oregano",
     8: "s8_cayenne",
 }

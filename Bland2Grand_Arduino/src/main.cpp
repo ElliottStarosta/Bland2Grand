@@ -15,7 +15,7 @@
 
 // Set to 1 to enable closed-loop HX711 weight feedback.
 // Set to 0 for dead-reckoning (cycle-count only, no scale needed).
-#define USE_LOAD_CELL 0
+#define USE_LOAD_CELL 1
 
 #include <Arduino.h>
 #include <WiFiS3.h>

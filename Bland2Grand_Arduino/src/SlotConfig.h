@@ -8,11 +8,11 @@
 static const char* const SPICE_NAMES[CAROUSEL_SLOT_COUNT + 1] = {
     "",  // index 0 unused
     "Salt",  // slot 1
-    "Cumin",  // slot 2
-    "Paprika",  // slot 3
+    "Black Pepper",  // slot 2
+    "Onion Powder",  // slot 3
     "Garlic Powder",  // slot 4
-    "Black Pepper",  // slot 5
-    "Onion Powder",  // slot 6
+    "Cumin",  // slot 5
+    "Paprika",  // slot 6
     "Oregano",  // slot 7
     "Cayenne",  // slot 8
 };
@@ -22,11 +22,11 @@ static const char* const SPICE_NAMES[CAROUSEL_SLOT_COUNT + 1] = {
 static constexpr float GRAMS_PER_REV[CAROUSEL_SLOT_COUNT + 1] = {
     0.0f,  // index 0 -- unused
     1.5f,  // slot 1 -- Salt
-    0.75f,  // slot 2 -- Cumin
-    0.65f,  // slot 3 -- Paprika
+    0.8f,  // slot 2 -- Black Pepper
+    0.75f,  // slot 3 -- Onion Powder
     0.8f,  // slot 4 -- Garlic Powder
-    0.8f,  // slot 5 -- Black Pepper
-    0.75f,  // slot 6 -- Onion Powder
+    0.75f,  // slot 5 -- Cumin
+    0.65f,  // slot 6 -- Paprika
     0.35f,  // slot 7 -- Oregano
     0.65f,  // slot 8 -- Cayenne
 };
