@@ -4,13 +4,13 @@
 //  Entry point. Wires together WiFiComms, CarouselDriver,
 //  and AugerDriver into a simple non-blocking state machine.
 //
-//   Load-cell toggle 
+//   Load-cell toggle
 //  Dead-reckoning (default — no HX711 required):
 //    #define USE_LOAD_CELL 0
 //
 //  Closed-loop (HX711 required, pins in Constants.h):
 //    #define USE_LOAD_CELL 1
-//  
+//
 // ============================================================
 
 // Set to 1 to enable closed-loop HX711 weight feedback.
@@ -33,7 +33,7 @@
 // -------------------------------------------------------
 //  WiFi credentials
 // -------------------------------------------------------
-static const char *WIFI_SSID     = "bland2grand";
+static const char *WIFI_SSID = "bland2grand";
 static const char *WIFI_PASSWORD = "password";
 
 // -------------------------------------------------------
@@ -42,25 +42,25 @@ static const char *WIFI_PASSWORD = "password";
 ArduinoLEDMatrix matrix;
 
 static uint8_t FRAME_CHECK[8][12] = {
-    {0,0,0,0,0,0,0,0,0,0,1,0},
-    {0,0,0,0,0,0,0,0,0,1,1,0},
-    {0,0,0,0,0,0,0,0,1,1,0,0},
-    {0,1,0,0,0,0,0,1,1,0,0,0},
-    {0,1,1,0,0,0,1,1,0,0,0,0},
-    {0,0,1,1,0,1,1,0,0,0,0,0},
-    {0,0,0,1,1,1,0,0,0,0,0,0},
-    {0,0,0,0,1,0,0,0,0,0,0,0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0},
+    {0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0},
+    {0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0},
+    {0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0},
+    {0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0},
 };
 
 static uint8_t FRAME_X[8][12] = {
-    {1,1,1,0,0,0,0,0,0,1,1,1},
-    {0,1,1,1,0,0,0,0,1,1,1,0},
-    {0,0,1,1,1,0,0,1,1,1,0,0},
-    {0,0,0,1,1,1,1,1,1,0,0,0},
-    {0,0,0,1,1,1,1,1,1,0,0,0},
-    {0,0,1,1,1,0,0,1,1,1,0,0},
-    {0,1,1,1,0,0,0,0,1,1,1,0},
-    {1,1,1,0,0,0,0,0,0,1,1,1},
+    {1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1},
+    {0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0},
+    {0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0},
+    {0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0},
+    {0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0},
+    {0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0},
+    {0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0},
+    {1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1},
 };
 
 // -------------------------------------------------------
@@ -93,12 +93,12 @@ DispenseState dispenseState = DispenseState::IDLE;
 
 struct ActiveDispense
 {
-    uint8_t  slot       = 0;
-    char     spiceName[24]  = {};
-    char     recipeName[48] = {};
-    float    targetGrams    = 0.0f;
-    uint8_t  slotIdx    = 0;
-    uint8_t  total      = 1;
+    uint8_t slot = 0;
+    char spiceName[24] = {};
+    char recipeName[48] = {};
+    float targetGrams = 0.0f;
+    uint8_t slotIdx = 0;
+    uint8_t total = 1;
 };
 
 ActiveDispense active;
@@ -117,22 +117,39 @@ void tickDispense()
         wifi.pushIndexing(active.slot, active.spiceName,
                           active.slotIdx, active.total);
         auger.enableCoils();
-        carousel.goToSlot(active.slot, active.spiceName);
+        carousel.goToSlot(active.slot, active.spiceName); // blocking — carousel settling
 
-        auger.startDispense(active.slot, active.spiceName,
-                            active.targetGrams,
-                            active.slotIdx, active.total);
-        dispenseState = DispenseState::DISPENSING;
-        break;
+        #if USE_LOAD_CELL
+                scale.tare(); // tare HERE while everything is still — free time
+        #endif
 
+            auger.startDispense(active.slot, active.spiceName,
+                                active.targetGrams,
+                                active.slotIdx, active.total);
+            dispenseState = DispenseState::DISPENSING;
+            break;
     case DispenseState::DISPENSING:
+    {
+        static uint32_t lastStopCheck = 0;
+        uint32_t now = millis();
+        if (now - lastStopCheck >= 200) // check stop every 200ms, not every loop
+        {
+            lastStopCheck = now;
+            if (wifi.checkStopUDP())
+            {
+                Serial.println(F("[CMD] STOP via UDP"));
+                active.slotIdx = active.total - 1;
+                dispenseState = DispenseState::PUSH_COMPLETE;
+                break;
+            }
+        }
         if (auger.tickDispense())
         {
             auger.startPark();
             dispenseState = DispenseState::PARKING;
         }
         break;
-
+    }
     case DispenseState::PARKING:
         if (auger.tickPark())
         {
@@ -199,6 +216,18 @@ void handleIncomingRequest(WiFiClient &client)
         return;
     }
 
+    if (req.startsWith("POST /stop"))
+    {
+        client.println(F("HTTP/1.1 200 OK"));
+        client.println(F("Content-Type: application/json"));
+        client.println(F("Connection: close\r\n"));
+        client.println(F("{\"status\":\"stopped\"}"));
+        client.stop();
+        Serial.println(F("[CMD] STOP received — aborting dispense."));
+        dispenseState = DispenseState::PUSH_COMPLETE;
+        return;
+    }
+
     if (!req.startsWith("POST /"))
     {
         client.println(F("HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n"));
@@ -230,9 +259,7 @@ void handleIncomingRequest(WiFiClient &client)
     }
 
     StaticJsonDocument<256> doc;
-    if (deserializeJson(doc, body) != DeserializationError::Ok
-        || !doc.containsKey("carousel")
-        || !doc.containsKey("grams"))
+    if (deserializeJson(doc, body) != DeserializationError::Ok || !doc.containsKey("carousel") || !doc.containsKey("grams"))
     {
         Serial.println(F("[HTTP] Bad request — missing carousel or grams"));
         client.println(F("HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n"));
@@ -248,21 +275,26 @@ void handleIncomingRequest(WiFiClient &client)
     client.stop();
 
     // Populate active dispense
-    active.slot        = doc["carousel"].as<uint8_t>();
+    active.slot = doc["carousel"].as<uint8_t>();
     active.targetGrams = doc["grams"].as<float>();
-    active.slotIdx     = doc["slot_index"]  | 0;
-    active.total       = doc["total_slots"] | 1;
+    active.slotIdx = doc["slot_index"] | 0;
+    active.total = doc["total_slots"] | 1;
 
     strncpy(active.recipeName, doc["recipe_name"] | "", sizeof(active.recipeName) - 1);
-    strncpy(active.spiceName,  doc["spice_name"]  | "", sizeof(active.spiceName)  - 1);
+    strncpy(active.spiceName, doc["spice_name"] | "", sizeof(active.spiceName) - 1);
     active.recipeName[sizeof(active.recipeName) - 1] = '\0';
-    active.spiceName [sizeof(active.spiceName)  - 1] = '\0';
+    active.spiceName[sizeof(active.spiceName) - 1] = '\0';
 
-    Serial.print(F("[CMD] slot="));   Serial.print(active.slot);
-    Serial.print(F(" grams="));       Serial.print(active.targetGrams);
-    Serial.print(F(" spice="));       Serial.print(active.spiceName);
-    Serial.print(F(" ("));            Serial.print(active.slotIdx + 1);
-    Serial.print(F("/"));             Serial.print(active.total);
+    Serial.print(F("[CMD] slot="));
+    Serial.print(active.slot);
+    Serial.print(F(" grams="));
+    Serial.print(active.targetGrams);
+    Serial.print(F(" spice="));
+    Serial.print(active.spiceName);
+    Serial.print(F(" ("));
+    Serial.print(active.slotIdx + 1);
+    Serial.print(F("/"));
+    Serial.print(active.total);
     Serial.println(F(")"));
 
     dispenseState = DispenseState::INDEXING;
@@ -274,7 +306,9 @@ void handleIncomingRequest(WiFiClient &client)
 void setup()
 {
     Serial.begin(9600);
-    while (!Serial && millis() < 3000) {}
+    while (!Serial && millis() < 3000)
+    {
+    }
 
     matrix.begin();
     matrix.renderBitmap(FRAME_X, 8, 12); // show X until WiFi connects

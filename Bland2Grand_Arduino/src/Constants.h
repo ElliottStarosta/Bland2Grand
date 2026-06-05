@@ -54,14 +54,14 @@ static constexpr uint16_t STEPS_PER_AUGER_CYCLE = STEPS_PER_REV;
 
 // Back-purge: reverse all dispensed steps after each dispense.
 // This sweeps spice back up the helix and re-parks the toothless arc.
-static constexpr float BACK_PURGE_SPEED_STEPS_S = 800.0f;
+static constexpr float BACK_PURGE_SPEED_STEPS_S = 1600.0f;
 
 // Delay after back-purge before disabling coils (ms)
 static constexpr uint16_t AUGER_COIL_DISABLE_DELAY_MS = 200;
 
 //  Auger Speed Ramp
 
-static constexpr float AUGER_FULL_SPEED_STEPS_S = 1200.0f;
+static constexpr float AUGER_FULL_SPEED_STEPS_S = 3200.0f;
 
 // Three-stage closed-loop ramp keyed to (steps_done / total_steps)
 static constexpr float RAMP_STAGE2_THRESHOLD = 0.80f;

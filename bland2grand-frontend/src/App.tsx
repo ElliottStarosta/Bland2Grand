@@ -12,7 +12,6 @@ import { api } from "./screens/lib/api";
 import { useDispenseStream } from "./hooks/useDispenseStream";
 import type { Recipe, Screen } from "./types";
 
-
 export default function App() {
   const [isIdle, setIsIdle] = useState(true);
   const [screen, setScreen] = useState<Screen>("search");
@@ -27,7 +26,7 @@ export default function App() {
     connectAndDispense,
     reset: resetSession,
     setSession,
-} = useDispenseStream();
+  } = useDispenseStream();
 
   const contentRef = useRef<HTMLDivElement>(null);
   const fromFeatured = useRef(false);
@@ -42,6 +41,14 @@ export default function App() {
     // Don't go idle while dispensing
     if (screenRef.current !== "dispensing") setIsIdle(true);
   });
+
+  const handleStop = useCallback(async () => {
+    try {p
+      await fetch("/api/stop", { method: "POST" });
+    } catch {
+      /* SSE session_error handles the rest */
+    }
+  }, []);
 
   const handleWake = useCallback(() => {
     setIsIdle(false);
@@ -223,7 +230,10 @@ export default function App() {
             loading={dispLoading}
           />
         )}
-        {screen === "dispensing" && <DispensingScreen session={session} />}
+        {screen === "dispensing" && (
+          <DispensingScreen session={session} onStop={handleStop} />
+        )}
+
         {screen === "complete" && (
           <CompleteScreen session={session} onReset={handleReset} />
         )}

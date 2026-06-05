@@ -65,6 +65,9 @@ def _broadcast(event: dict) -> None:
             except queue.Full:
                 pass
 
+def broadcast(event: dict) -> None:
+    """Public wrapper to broadcast an event to all SSE clients."""
+    _broadcast(event)
 
 # Spice-complete signal
 class _SpiceCompleteSignal:

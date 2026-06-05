@@ -1,70 +1,83 @@
-import { useEffect, useRef } from 'react'
-import { gsap } from 'gsap'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faRotate, faDroplet } from '@fortawesome/free-solid-svg-icons'
-import type { DispenseSession } from '../types'
-import { Bowl } from '../components/Bowl'
-import { SlotRow } from '../components/SlotRow'
+import { useEffect, useRef, useState } from "react";
+import { gsap } from "gsap";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faRotate, faDroplet, faTimes, faSpinner } from "@fortawesome/free-solid-svg-icons";
+import type { DispenseSession } from "../types";
+import { Bowl } from "../components/Bowl";
+import { SlotRow } from "../components/SlotRow";
 
 interface Props {
-  session: DispenseSession
+  session: DispenseSession;
+  onStop?: () => void;
 }
 
-export function DispensingScreen({ session }: Props) {
-  const containerRef = useRef<HTMLDivElement>(null)
+export function DispensingScreen({ session, onStop }: Props) {
+  const [stopping, setStopping] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleStop = async () => {
+    if (stopping) return;
+    setStopping(true);
+    try {
+      await fetch("/api/stop", { method: "POST" });
+    } catch {
+      // session_error SSE will handle navigation regardless
+    }
+  };
 
   useEffect(() => {
-    const el = containerRef.current
-    if (!el) return
-    const sections = el.querySelectorAll('[data-s]')
+    const el = containerRef.current;
+    if (!el) return;
+    const sections = el.querySelectorAll("[data-s]");
     gsap.fromTo(
       sections,
       { y: 16, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.4, stagger: 0.08, ease: 'power3.out' },
-    )
-  }, [])
+      { y: 0, opacity: 1, duration: 0.4, stagger: 0.08, ease: "power3.out" },
+    );
+  }, []);
 
   const activeSlot = session.slots.find(
-    (s) => s.status === 'dispensing' || s.status === 'indexing',
-  )
+    (s) => s.status === "dispensing" || s.status === "indexing",
+  );
 
   const completedCount = session.slots.filter(
-    (s) => s.status === 'done' || s.status === 'error',
-  ).length
-  const totalCount = session.slots.length
-  const overallPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
+    (s) => s.status === "done" || s.status === "error",
+  ).length;
+  const totalCount = session.slots.length;
+  const overallPct =
+    totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   const phase =
-    activeSlot?.status === 'indexing'
-      ? 'Rotating…'
-      : activeSlot?.status === 'dispensing'
-      ? activeSlot.name
-      : session.slots.every((s) => s.status === 'pending')
-      ? 'Starting…'
-      : 'Finishing…'
+    activeSlot?.status === "indexing"
+      ? "Rotating…"
+      : activeSlot?.status === "dispensing"
+        ? activeSlot.name
+        : session.slots.every((s) => s.status === "pending")
+          ? "Starting…"
+          : "Finishing…";
 
-  const R = 13
-  const CIRC = 2 * Math.PI * R
-  const dash = (overallPct / 100) * CIRC
+  const R = 13;
+  const CIRC = 2 * Math.PI * R;
+  const dash = (overallPct / 100) * CIRC;
 
   return (
     <div
       ref={containerRef}
       className="flex-1 overflow-y-auto"
-      style={{ WebkitOverflowScrolling: 'touch' }}
+      style={{ WebkitOverflowScrolling: "touch" }}
     >
       <div className="flex flex-col px-4 pb-safe gap-3">
 
-        {/*  Status bar  */}
+        {/* Status bar */}
         <div data-s className="flex items-center justify-between">
           <div className="flex items-center gap-2 min-w-0">
-            {activeSlot?.status === 'indexing' && (
+            {activeSlot?.status === "indexing" && (
               <FontAwesomeIcon
                 icon={faRotate}
                 className="text-accent text-xs flex-shrink-0 animate-spin"
               />
             )}
-            {activeSlot?.status === 'dispensing' && (
+            {activeSlot?.status === "dispensing" && (
               <FontAwesomeIcon
                 icon={faDroplet}
                 className="text-accent text-xs flex-shrink-0"
@@ -89,13 +102,34 @@ export function DispensingScreen({ session }: Props) {
                 strokeWidth="2.5"
                 strokeLinecap="round"
                 strokeDasharray={`${dash} ${CIRC - dash}`}
-                style={{ transition: 'stroke-dasharray 0.5s ease' }}
+                style={{ transition: "stroke-dasharray 0.5s ease" }}
               />
             </svg>
+
+            {/* Stop button */}
+            {onStop && (
+              <button
+                onClick={handleStop}
+                disabled={stopping}
+                className="w-9 h-9 rounded-xl flex items-center justify-center
+                           transition-all duration-150 active:scale-90 disabled:opacity-40 focus:outline-none"
+                style={{
+                  background: "rgba(184,56,56,0.12)",
+                  border: "1px solid rgba(184,56,56,0.3)",
+                }}
+                aria-label="Stop dispensing"
+              >
+                <FontAwesomeIcon
+                  icon={stopping ? faSpinner : faTimes}
+                  className={stopping ? "animate-spin" : ""}
+                  style={{ fontSize: 13, color: "#E07070" }}
+                />
+              </button>
+            )}
           </div>
         </div>
 
-        {/*  Bowl  */}
+        {/* Bowl */}
         <div data-s className="glass-card px-3 pt-2 pb-2">
           <Bowl
             slots={session.slots}
@@ -123,7 +157,7 @@ export function DispensingScreen({ session }: Props) {
           </div>
         </div>
 
-        {/*  Slot rows  */}
+        {/* Slot rows */}
         <div data-s className="glass-card px-3 py-1">
           <div className="divide-y divide-border">
             {session.slots.map((s) => (
@@ -138,5 +172,5 @@ export function DispensingScreen({ session }: Props) {
 
       </div>
     </div>
-  )
+  );
 }

@@ -80,6 +80,7 @@ export function useDispenseStream() {
             activeSlotIndex: -1,
             lastCompletedSlot: 1,
             totalTarget: slots.reduce((sum, s) => sum + s.target, 0),
+            totalWeight: 0,
           };
         }
 
@@ -105,6 +106,7 @@ export function useDispenseStream() {
                   ...s,
                   status: "dispensing" as const,
                   target: event.target_weight,
+                  current: 0,
                 }
               : s,
           );
@@ -112,9 +114,16 @@ export function useDispenseStream() {
         }
 
         case "weight_update": {
-          const slots = prev.slots.map((s) =>
-            s.slot === event.slot ? { ...s, current: event.current_weight } : s,
-          );
+          const slots = prev.slots.map((s) => {
+            if (s.slot !== event.slot) return s;
+            // Only clamp upward during active dispensing
+            // During settle/nudge the scale can legitimately read lower briefly
+            const newWeight =
+              s.status === "dispensing"
+                ? Math.max(s.current, event.current_weight)
+                : event.current_weight; // trust the scale when motor is stopped
+            return { ...s, current: newWeight };
+          });
           const totalWeight = slots.reduce((sum, s) => sum + s.current, 0);
           return { ...prev, slots, totalWeight };
         }

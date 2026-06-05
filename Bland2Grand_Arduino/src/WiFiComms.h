@@ -37,6 +37,9 @@ public:
         Serial.print(F("[WiFi] Arduino IP: "));
         Serial.println(WiFi.localIP());
 
+        if (_stopUdp.begin(8889))
+            Serial.println(F("[UDP] stop socket ready on 8889"));
+
         if (_udp.begin(8888))
         {
             Serial.println(F("[UDP] socket ready"));
@@ -134,6 +137,22 @@ public:
         return _post("/api/arduino/spice-complete", b);
     }
 
+    bool checkStopUDP()
+    {
+        int size = _stopUdp.parsePacket();
+        if (size > 0)
+        {
+            char buf[32];
+            int n = _stopUdp.read(buf, sizeof(buf) - 1);
+            buf[n] = '\0';
+            Serial.print(F("[UDP] stop socket got: "));
+            Serial.println(buf);
+            if (strstr(buf, "STOP"))
+                return true;
+        }
+        return false;
+    }
+
     bool pushSessionComplete(const char *recipeName)
     {
         StaticJsonDocument<96> doc;
@@ -161,8 +180,8 @@ public:
                          "{\"slot\":%d,\"current_weight\":%.2f,\"target_weight\":%.2f}",
                          slot, current, target);
 
-        Serial.print(F("[UDP] "));
-        Serial.println(buf);
+        // Serial.print(F("[UDP] "));
+        // Serial.println(buf);
 
         if (_udp.beginPacket(FLASK_SERVER_HOST, 5001))
         {
@@ -170,8 +189,8 @@ public:
 
             int ok = _udp.endPacket();
 
-            Serial.print(F("[UDP] sent="));
-            Serial.println(ok);
+            // Serial.print(F("[UDP] sent="));
+            // Serial.println(ok);
         }
         else
         {
@@ -194,6 +213,7 @@ private:
     const char *_password;
     WiFiServer _server;
     WiFiUDP _udp;
+    WiFiUDP _stopUdp;
     bool _serverStarted;
 
     bool _post(const char *path, const String &body)

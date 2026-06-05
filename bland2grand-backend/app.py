@@ -14,14 +14,16 @@ Endpoints:
 import json
 from flask import Flask, Response, jsonify, request, stream_with_context
 from flask_cors import CORS
+import requests
 
-from config import FLASK_PORT, MOCK_ARDUINO
+from config import ARDUINO_URL, FLASK_PORT, MOCK_ARDUINO
 from database import init_db, get_recipe_by_id, save_recipe, update_calibration
 from dispense import (
     register_sse_client,
     unregister_sse_client,
     start_dispense,
     is_busy,
+    broadcast,
     handle_arduino_indexing,
     handle_arduino_dispense_start,
     handle_arduino_weight_push,
@@ -39,13 +41,39 @@ CORS(app, resources={r"/api/*": {"origins": "*"}})
 init_db()
 
 
-# Health 
+# Health
 @app.get("/api/health")
 def health():
     return jsonify({"status": "ok", "mock_arduino": MOCK_ARDUINO})
 
 
-# Search 
+# Stop
+import socket
+
+
+@app.route("/api/stop", methods=["POST"])
+def stop_dispense():
+    from dispense import _spice_signal, _session
+
+    # Send UDP stop -- works even while Arduino is mid-dispense
+    try:
+        arduino_host = ARDUINO_URL.replace("http://", "").replace("https://", "")
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.sendto(b'STOP', (arduino_host, 8889))
+        sock.close()
+        print("[Stop] UDP STOP sent")
+    except Exception as e:
+        print(f"[Stop] UDP failed: {e}")
+
+    _session.active = False
+    _spice_signal.signal({"status": "fault"})
+    broadcast(
+        {"type": "session_error", "message": "Cancelled by user", "completed": []}
+    )
+    return jsonify({"status": "stopped"})
+
+
+# Search
 @app.get("/api/search")
 def search():
     query = request.args.get("q", "").strip()
@@ -55,7 +83,7 @@ def search():
     return jsonify({"results": results, "count": len(results)})
 
 
-# Recipe fetch 
+# Recipe fetch
 @app.get("/api/recipes/<int:recipe_id>")
 def get_recipe(recipe_id: int):
     recipe = get_recipe_by_id(recipe_id)
@@ -64,7 +92,7 @@ def get_recipe(recipe_id: int):
     return jsonify(recipe)
 
 
-# Dispense 
+# Dispense
 @app.post("/api/dispense")
 def dispense():
     if is_busy():
@@ -87,10 +115,12 @@ def dispense():
     if not success:
         return jsonify({"error": message}), 400
 
-    return jsonify({"status": "started", "recipe": recipe["name"], "servings": serving_count})
+    return jsonify(
+        {"status": "started", "recipe": recipe["name"], "servings": serving_count}
+    )
 
 
-# SSE status stream 
+# SSE status stream
 @app.get("/api/status/stream")
 def status_stream():
     def generate():
@@ -118,10 +148,13 @@ def status_stream():
     response.headers["Cache-Control"] = "no-cache"
     response.headers["X-Accel-Buffering"] = "no"
     response.headers["Connection"] = "keep-alive"
-    response.headers["Transfer-Encoding"] = "chunked"  # forces Flask to flush each yield
+    response.headers["Transfer-Encoding"] = (
+        "chunked"  # forces Flask to flush each yield
+    )
     return response
 
-# Calibration 
+
+# Calibration
 @app.post("/api/calibrate")
 def calibrate():
     body = request.get_json(silent=True) or {}
@@ -135,7 +168,7 @@ def calibrate():
     return jsonify({"status": "ok", "slot": slot, "cal_factor": cal_factor})
 
 
-# Custom recipe 
+# Custom recipe
 @app.post("/api/recipe")
 def create_recipe():
     body = request.get_json(silent=True) or {}
@@ -147,9 +180,12 @@ def create_recipe():
         return jsonify({"error": "name is required."}), 400
 
     normalized = {str(i): float(spices.get(str(i), 0)) for i in range(1, 9)}
-    recipe_id = save_recipe(name, normalized, category="Custom", description=description)
+    recipe_id = save_recipe(
+        name, normalized, category="Custom", description=description
+    )
     recipe = get_recipe_by_id(recipe_id)
     return jsonify({"status": "created", "recipe": recipe}), 201
+
 
 # Arduino push endpoint for "nearly there" notification sfx
 @app.post("/api/arduino/nearly-there")
@@ -158,7 +194,8 @@ def arduino_nearly_there():
     handle_arduino_nearly_there(data)
     return jsonify({"ok": True})
 
-# Arduino push endpoints 
+
+# Arduino push endpoints
 @app.post("/api/arduino/indexing")
 def arduino_indexing():
     data = request.get_json(silent=True) or {}
@@ -201,10 +238,9 @@ def arduino_fault():
     return jsonify({"ok": True})
 
 
-
-# Entry point 
+# Entry point
 if __name__ == "__main__":
     print(f"[Bland2Grand] Starting Flask on port {FLASK_PORT}")
     print(f"[Bland2Grand] Arduino mode: {'MOCK' if MOCK_ARDUINO else 'REAL'}")
-    
+
     app.run(host="0.0.0.0", port=FLASK_PORT, threaded=True, debug=False)

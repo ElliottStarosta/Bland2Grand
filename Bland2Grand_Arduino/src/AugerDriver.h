@@ -65,8 +65,8 @@ static constexpr uint8_t TAP_CYCLES = 1;
 
 // Phase 2/3: how many consecutive stable scale reads before we trust the weight.
 // Stability = successive readings within STABLE_BAND_G of each other.
-static constexpr uint8_t SETTLE_READS = 4;
-static constexpr float STABLE_BAND_G = 0.15f;
+static constexpr uint8_t SETTLE_READS = 3;
+static constexpr float STABLE_BAND_G = 0.25f;
 
 // Maximum nudge taps before giving up (prevents infinite loop on stuck auger).
 static constexpr uint8_t MAX_TAPS = 30;
@@ -102,7 +102,7 @@ public:
     void begin()
     {
         _stepper.setMaxSpeed(AUGER_FULL_SPEED_STEPS_S);
-        _stepper.setAcceleration(AUGER_FULL_SPEED_STEPS_S * 2.0f);
+        _stepper.setAcceleration(AUGER_FULL_SPEED_STEPS_S * 4.0f);
         _stepper.setCurrentPosition(0);
         _stepper.disableOutputs();
         Serial.println(F("[Auger] Initialised."));
@@ -133,10 +133,10 @@ public:
         _lastPushMs = millis();
 
         _wifi.pushDispenseStart(slot, spiceName, targetGrams, slotIdx, total);
-         _stepper.enableOutputs();
+        _stepper.enableOutputs();
 
 #if USE_LOAD_CELL
-        _scale.tare();
+        // _scale.tare();
         _dispensePhase = Phase::BULK;
         _tapCount = 0;
 
@@ -146,9 +146,10 @@ public:
         float bulkGrams = targetGrams * COAST_UNDERSHOOT_RATIO;
         long bulkCycles = max(1L, static_cast<long>(roundf(bulkGrams / gramsPerCycle)));
         _totalSteps = bulkCycles * static_cast<long>(STEPS_PER_AUGER_CYCLE);
+        _lastRevPushed = 0;
 
         _stepper.setMaxSpeed(AUGER_FULL_SPEED_STEPS_S);
-        _stepper.setAcceleration(AUGER_FULL_SPEED_STEPS_S * 2.0f);
+        _stepper.setAcceleration(AUGER_FULL_SPEED_STEPS_S * 4.0f);
         _stepper.move(-_totalSteps);
 
         Serial.print(F("[Auger] Bulk phase: "));
@@ -163,7 +164,7 @@ public:
         _totalSteps = cycles * static_cast<long>(STEPS_PER_AUGER_CYCLE);
 
         _stepper.setMaxSpeed(AUGER_FULL_SPEED_STEPS_S);
-        _stepper.setAcceleration(AUGER_FULL_SPEED_STEPS_S * 2.0f);
+        _stepper.setAcceleration(AUGER_FULL_SPEED_STEPS_S * 4.0f);
         _stepper.move(-_totalSteps);
 
         Serial.print(F("[Auger] Dead-reckoning: "));
@@ -228,7 +229,7 @@ public:
     void finishPark()
     {
         _stepper.setMaxSpeed(AUGER_FULL_SPEED_STEPS_S);
-        _stepper.setAcceleration(AUGER_FULL_SPEED_STEPS_S * 2.0f);
+        _stepper.setAcceleration(AUGER_FULL_SPEED_STEPS_S * 4.0f);
         delay(AUGER_COIL_DISABLE_DELAY_MS);
         disableCoils();
         _stepper.setCurrentPosition(0);
@@ -240,6 +241,7 @@ private:
     WiFiComms &_wifi;
     long _totalSteps = 0;
     long _parkTarget = 0;
+    long _lastRevPushed = 0;
 
 #if USE_LOAD_CELL
     Scale &_scale;
@@ -317,14 +319,15 @@ private:
     {
         _stepper.run();
 
-        if (millis() - _lastPushMs >= WIFI_PUSH_INTERVAL_MS)
+        // Push once per completed revolution instead of on a timer
+        long stepsCompleted = _totalSteps - abs(_stepper.distanceToGo());
+        long revsCompleted = stepsCompleted / STEPS_PER_AUGER_CYCLE;
+
+        if (revsCompleted > _lastRevPushed)
         {
-            _lastPushMs = millis();
-            if (_scale.isReady())
-            {
-                float liveWeight = _scale.read();
-                _wifi.pushWeightUDP(_slot, liveWeight, _targetGrams);
-            }
+            _lastRevPushed = revsCompleted;
+            float estimated = _targetGrams * COAST_UNDERSHOOT_RATIO * (static_cast<float>(stepsCompleted) / static_cast<float>(_totalSteps));
+            _wifi.pushWeightUDP(_slot, estimated, _targetGrams);
         }
 
         if (_stepper.distanceToGo() == 0)
@@ -339,7 +342,7 @@ private:
     bool _tickSettle()
     {
         float settled = _readStableWeight();
-        _wifi.pushWeightUDP(_slot, settled, _targetGrams);
+        // _wifi.pushWeightUDP(_slot, settled, _targetGrams);
 
         Serial.print(F("[Auger] Settled weight: "));
         Serial.print(settled, 2);
@@ -372,7 +375,7 @@ private:
 
         // Tap finished — settle and read
         float settled = _readStableWeight();
-        _wifi.pushWeightUDP(_slot, settled, _targetGrams);
+        // _wifi.pushWeightUDP(_slot, settled, _targetGrams);
 
         float tapDelivered = settled - _weightBeforeTap;
         _tapCount++;
@@ -422,12 +425,11 @@ private:
     void _queueTap()
     {
         long tapSteps = static_cast<long>(TAP_CYCLES) * static_cast<long>(STEPS_PER_AUGER_CYCLE);
-        _totalSteps += tapSteps; // accumulate total dispensed steps
+        _totalSteps += tapSteps;
 
-        // Slow speed for nudge taps — less momentum means less coast
-        float tapSpeed = AUGER_FULL_SPEED_STEPS_S * RAMP_SPEED_STAGE3;
+        float tapSpeed = AUGER_FULL_SPEED_STEPS_S * 0.75f;
         _stepper.setMaxSpeed(tapSpeed);
-        _stepper.setAcceleration(tapSpeed * 2.0f);
+        _stepper.setAcceleration(tapSpeed * 4.0f);
         _stepper.move(-tapSteps);
     }
 
@@ -437,22 +439,23 @@ private:
     float _readStableWeight()
     {
         float prev = _scale.read();
-        _wifi.pushWeightUDP(_slot, prev, _targetGrams);
         uint8_t count = 1;
+        uint32_t deadline = millis() + 1000; // never block more than 1s
 
-        while (count < SETTLE_READS)
+        while (count < SETTLE_READS && millis() < deadline)
         {
             delay(SCALE_POLL_MS);
             float cur = _scale.read();
-            _wifi.pushWeightUDP(_slot, cur, _targetGrams); // real reading every poll
 
             if (fabsf(cur - prev) <= STABLE_BAND_G)
                 count++;
             else
-                count = 1; // reset — still moving
+                count = 1;
 
             prev = cur;
         }
+
+        _wifi.pushWeightUDP(_slot, prev, _targetGrams);
         return prev;
     }
 #endif // USE_LOAD_CELL
