@@ -200,20 +200,5 @@ Flash with the **Arduino: Flash** task or `pio run --target upload`.
 | Carousel DIR | D7 |
 | Auger STEP | D3 |
 | Auger DIR | D4 |
-| HX711 DOUT | D9 |
-| HX711 SCK | D10 |
-
----
-
-## Slot Mapping
-
-| Slot | Spice |
-|------|-------|
-| 1 | Cumin |
-| 2 | Paprika |
-| 3 | Garlic Powder |
-| 4 | Salt |
-| 5 | Oregano |
-| 6 | Onion Powder |
-| 7 | Black Pepper |
-| 8 | Cayenne |
+| HX711 SCK | A0 |
+| HX711 DOUT | A1 |
