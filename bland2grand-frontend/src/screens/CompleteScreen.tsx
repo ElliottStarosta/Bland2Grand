@@ -1,3 +1,5 @@
+// Post-dispense summary — accuracy per slot, error state, restart CTA.
+
 import { useEffect, useRef } from 'react'
 import { gsap } from 'gsap'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'

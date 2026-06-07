@@ -1,3 +1,5 @@
+// SVG bowl visualization — stacked spice layers with procedural grain texture.
+
 import { useEffect, useRef } from 'react'
 import { gsap } from 'gsap'
 import type { SlotProgress } from '../types'
@@ -10,6 +12,7 @@ interface Props {
   activeSlot?: number
 }
 
+// Deterministic PRNG so grain pattern is stable across re-renders for a given slot.
 function seededRand(seed: number) {
   let s = seed
   return () => {
@@ -43,6 +46,7 @@ interface GrainProps {
   isTop: boolean
 }
 
+// One horizontal band of spice inside the bowl clip region.
 function GrainLayer({ color, yTop, yBot, W, slot, isTop }: GrainProps) {
   const bandH = yBot - yTop
   if (bandH < 0.5) return null
@@ -121,7 +125,7 @@ export function Bowl({ slots, totalTarget, totalWeight, activeSlot }: Props) {
   // f=0 -> baseY (floor), f=1 -> mouthY (full to brim)
   const fracToY = (f: number) => baseY - f * depth
 
-  // Clip path 
+  // Bowl silhouette in user space; layers are drawn bottom-up inside this clip.
   const clip = [
     `M ${cx - mouthHW} ${mouthY}`,
     `C ${cx - mouthHW + 10} ${mouthY + 50}  ${cx - baseHW - 8} ${baseY - 20}  ${cx - baseHW} ${baseY}`,

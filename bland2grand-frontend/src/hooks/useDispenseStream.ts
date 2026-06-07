@@ -1,7 +1,11 @@
+// SSE hook: opens /api/status/stream and folds events into dispense session state.
+// connectAndDispense waits for the 'connected' ack before POSTing so we don't miss events.
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { DispenseSession, SlotProgress, SSEEvent } from "../types";
 import { playSlotVoiceLine } from "./slotAudio";
 
+// Default session shape before Flask sends session_start.
 const IDLE: DispenseSession = {
   recipeName: "",
   servingCount: 1,
@@ -12,8 +16,10 @@ const IDLE: DispenseSession = {
   totalWeight: 0,
   totalTarget: 0,
   lastCompletedSlot: 1,
+  awaitingBowl: true,
 };
 
+// Module-level audio scheduler — defers slot voice lines so they don't overlap indexing SFX.
 let audioPlayAt: number | null = null;
 let audioPendingSlot: number | null = null;
 let pollInterval: ReturnType<typeof setInterval> | null = null;
@@ -49,6 +55,7 @@ export function useDispenseStream() {
   const esRef = useRef<EventSource | null>(null);
   const activeRef = useRef(false);
 
+  // Pure reducer: map each SSE payload to the next DispenseSession snapshot.
   const handleMessage = useCallback((e: MessageEvent) => {
     if (!activeRef.current) return;
     let event: SSEEvent;
@@ -63,6 +70,11 @@ export function useDispenseStream() {
         case "connected":
         case "heartbeat":
           return prev;
+        case "no_bowl":
+            return { ...prev, awaitingBowl: true };
+
+        case "bowl_detected":
+            return { ...prev, awaitingBowl: false };
 
         case "session_start": {
           const slots: SlotProgress[] = event.slots.map((s) => ({
@@ -158,6 +170,7 @@ export function useDispenseStream() {
     });
   }, []);
 
+  // Open SSE only (caller POSTs dispense separately).
   const connect = useCallback(() => {
     if (esRef.current) esRef.current.close();
 
@@ -178,6 +191,7 @@ export function useDispenseStream() {
     return es;
   }, [handleMessage]);
 
+  // Open SSE first, wait for connected, then POST /api/dispense so no events are dropped.
   const connectAndDispense = useCallback(
     (recipeId: number, servingCount: number): Promise<void> => {
       return new Promise((resolve, reject) => {

@@ -1,3 +1,4 @@
+// encoder_cal.cpp - read AS5600 raw angle and magnet status over I2C.
 
 #include <Arduino.h>
 #include <Wire.h>

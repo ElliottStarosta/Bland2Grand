@@ -1,167 +1,123 @@
-# Bland2Grand — Arduino Firmware
+# Bland2Grand Arduino firmware
 
-Firmware for the **Arduino UNO R4 WiFi** that drives the Bland2Grand automatic spice dispenser. Built with PlatformIO and the Arduino framework.
+PlatformIO project for the **Arduino UNO R4 WiFi**. Drives carousel indexing, auger dispensing, load-cell feedback, and talks to Flask over WiFi.
 
----
+## What runs where
 
-## Overview
+`main.cpp` is the production sketch. It spins a small state machine:
 
-The firmware manages all real-time hardware control: carousel positioning, auger dispensing, load-cell weighing, and WiFi communication back to the Flask backend. A finite state machine (`StateMachine`) coordinates every phase of a dispense session.
+```
+IDLE → INDEXING → DISPENSING → PARKING → (next spice or done)
+```
 
----
+- **INDEXING** — carousel steps to the target slot (shortest CCW path).
+- **DISPENSING** — auger runs; weight pushed over UDP so HTTP doesn't stall steps.
+- **PARKING** — half-rev forward to disengage the spur gear and avoid drips.
+
+`USE_LOAD_CELL` in `main.cpp` picks closed-loop (HX711) vs dead-reckoning (cycle counts only).
 
 ## Hardware
 
-| Component | Role |
-|-----------|------|
-| Arduino UNO R4 WiFi | Main controller |
-| NEMA 23 + TB6600 (M1) | Carousel rotation |
-| NEMA 17 + TB6600 (M2) | Auger / half-spur gear |
-| HX711 + load cell | Closed-loop weight feedback |
-| AS5600 (I²C) | Magnetic encoder for carousel position |
+| Part | Job |
+|------|-----|
+| UNO R4 WiFi | Controller + LED matrix status |
+| NEMA 23 + TB6600 | 8-slot carousel |
+| NEMA 17 + TB6600 | Auger / half-spur gear |
+| HX711 + load cell | Gram feedback (optional) |
+| AS5600 | Carousel angle (test/cal sketches) |
 
-### Pin Assignments
+### Pins (see `Constants.h`)
 
 | Signal | Pin |
 |--------|-----|
-| Carousel STEP | D3 |
-| Carousel DIR | D4 |
-| Auger STEP | D5 |
-| Auger DIR | D7 |
-| HX711 DOUT | D9 |
-| HX711 SCK | D10 |
-| AS5600 SDA/SCL | A4 / A5 (hardware I²C) |
+| Carousel STEP / DIR | D5 / D7 |
+| Auger STEP / DIR | D3 / D4 |
+| HX711 DOUT / SCK | A1 / A0 |
+| AS5600 I²C | A4 / A5 |
 
----
+## Source files
 
-## Project Structure
+| File | Role |
+|------|------|
+| `main.cpp` | WiFi, HTTP :80, dispense FSM |
+| `Constants.h` | Pins, speeds, gram/rev estimates |
+| `CarouselDriver.h` | Slot indexing |
+| `AugerDriver.h` | Bulk → settle → nudge dispense |
+| `Scale.h` | HX711 wrapper |
+| `WiFiComms.h` | WiFi, HTTP server, Flask pushes, UDP weight |
+| `SlotConfig.h` | Generated spice names |
 
-```
-Bland2Grand_Arduino/
-├ src/
-│   ├ main.cpp              # Entry point — setup() and loop()
-│   ├ Constants.h           # All pin, geometry, and tuning constants
-│   ├ StateMachine.h        # Top-level FSM (HOMING → IDLE → INDEXING → DISPENSING → DONE)
-│   ├ Carousel.h            # Carousel stepper control + closed-loop encoder correction
-│   ├ CarouselPosition.h    # EEPROM-backed position fusion (encoder + steps)
-│   ├ Auger.h               # Auger stepper, 3-stage speed ramp, back-purge
-│   ├ Scale.h               # HX711 wrapper — tare, averaged reads, overload detection
-│   ├ Encoder.h             # AS5600 wrapper — raw angle, signed error, wraparound math
-│   ├ FlowModel.h           # Online linear regression, coast estimation, EEPROM persistence
-│   ├ WiFiComm.h            # Outbound HTTP push to Flask (dispense events, weight updates)
-│   └ WiFiManager.h         # WiFi credential storage & serial provisioning
-├ src/tests/
-│   ├ auger.cpp             # Standalone auger forward/backward test
-│   ├ carousel.cpp          # Interactive carousel slot-seek test (Serial input)
-│   └ encoder_cal.cpp       # AS5600 calibration utility — prints raw angle + magnet status
-├ platformio.ini            # Build configuration
-└ include/                  # (reserved for shared headers)
-```
+### Test sketches (`src/tests/`)
 
----
+Swap in via `platformio.ini` `build_src_filter`:
 
-## State Machine
+| Sketch | Purpose |
+|--------|---------|
+| `carousel.cpp` | Interactive slot moves over serial |
+| `calibration.cpp` | Find HX711 cal factor |
+| `encoder_spin.cpp` | AS5600 vs step count |
+| `c_spin.cpp` | Pick slot 1–8, spin auger once |
+| `ipTest.cpp` | Full WiFi stack, no scale |
 
-```
-HOMING → IDLE → INDEXING → DISPENSING → DONE → IDLE
-                                              ↘ FAULT
-```
+## Closed-loop dispense (load cell)
 
-- **HOMING** — Scans carousel until AS5600 reads `MODULE_1_SHAFT_COUNTS`, zeroes the stepper.
-- **IDLE** — Runs a minimal HTTP server on port 80 waiting for a `POST /` dispense command from Flask.
-- **INDEXING** — Moves carousel to the target slot; closed-loop encoder correction.
-- **DISPENSING** — Runs auger with 3-stage speed ramp; polls scale every `SCALE_POLL_MS`; pushes live weight to Flask every `WIFI_PUSH_INTERVAL_MS`.
-- **DONE** — Records coast overshoot, saves FlowModel to EEPROM, pushes result to Flask.
-- **FAULT** — Broadcasts fault message; requires power cycle.
+AugerDriver runs three phases when `USE_LOAD_CELL=1`:
 
----
+1. **Bulk** — fast run to ~85% of target by cycle count (scale is noisy while spinning).
+2. **Settle** — stop, wait for stable reads.
+3. **Nudge** — one auger cycle at a time until target or max taps.
 
-## Key Algorithms
+Per-slot coast EMA learns how much spice keeps falling after the motor stops.
 
-### 3-Stage Speed Ramp (Auger)
+After each spice the auger reverses (back-purge) to re-seat the half-spur gear.
 
-| Phase | Weight ratio | Speed |
-|-------|-------------|-------|
-| Stage 1 | < 80 % of target | 100 % |
-| Stage 2 | 80–95 % | 50 % |
-| Stage 3 | > 95 % | 15 % |
+## WiFi
 
-### FlowModel (Online Regression)
+Static IP default: `192.168.137.50` on the `bland2grand` hotspot (gateway `192.168.137.1`).
 
-Accumulates `(auger_cycles, weight)` observations per slot using online least-squares. After each dispense, the measured coast (in-flight grams after motor stop) is folded into an exponential moving average (`α = 0.3`). `predictStopWeight()` subtracts the estimated coast from the target so the final reading lands on target.
+Credentials at top of `main.cpp`. First boot with empty EEPROM can accept serial provisioning — see backend `provision.py`.
 
-### Back-Purge
+Flask push target is `FLASK_SERVER_HOST` in `Constants.h`.
 
-After every dispense the auger reverses by exactly the number of steps taken. This sweeps powder back up the helix and re-parks the toothless arc of the half-spur gear, preventing drips between dispenses.
+UDP: weight → port 5001 on the PC, STOP command listened on 8889.
 
----
-
-## WiFi Provisioning
-
-On first boot (no credentials in EEPROM) the firmware waits 30 seconds for a JSON payload over Serial:
-
-```json
-{"cmd": "provision", "ssid": "YourNetwork", "password": "yourpassword"}
-```
-
-Use the helper script in the backend folder:
+## Build & flash
 
 ```bash
-python bland2grand-backend/provision.py
-```
-
----
-
-## Dependencies (PlatformIO)
-
-```ini
-lib_deps =
-    waspinator/AccelStepper@^1.64
-    bogde/HX711@^0.7.5
-    robtillaart/AS5600@^0.6.7
-    bblanchon/ArduinoJson@^7.2.2
-    jandrassy/ArduinoOTA@^1.1.1
-```
-
----
-
-## Build & Flash
-
-```bash
-# Build
 pio run
-
-# Flash
 pio run --target upload
-
-# Serial monitor
-pio device monitor --baud 115200
+pio device monitor --baud 9600
 ```
 
-### Running a Test Sketch
+VS Code task **Arduino: Flash** works too.
 
-Edit `platformio.ini` to point `build_src_filter` at the desired test file, e.g.:
+### Run a test sketch
 
 ```ini
 build_src_filter = +<tests/carousel.cpp> -<main.cpp>
 ```
 
----
+## PlatformIO libs
+
+```
+AccelStepper, HX711, AS5600, ArduinoJson, ArduinoOTA
+```
+
+(listed in `platformio.ini`)
 
 ## Calibration
 
-1. Flash `encoder_cal.cpp` and open the serial monitor.
-2. Manually rotate the carousel until slot 1 is aligned under the auger tube.
-3. Read the `Raw` value printed to Serial.
-4. Update `MODULE_1_SHAFT_COUNTS` in `Constants.h` and reflash `main.cpp`.
+1. Flash `encoder_cal.cpp` or `encoder_spin.cpp`, note raw AS5600 at slot 1.
+2. Update `MODULE_1_SHAFT_COUNTS` in `Constants.h` if using encoder homing.
+3. Flash `calibration.cpp` phase 1 with a known weight to find `SCALE_CAL_FACTOR`.
+4. Reflash `main.cpp` with `USE_LOAD_CELL 1`.
 
----
-
-## EEPROM Layout
+## EEPROM map (approximate)
 
 | Address | Content |
 |---------|---------|
-| 0–63 | FlowModel — 8 slots × 16 bytes (slope, intercept, coast, n_samples) |
-| 64–127 | *(reserved)* |
-| 128–143 | CarouselPosition — slot, encoder counts, step position, magic byte |
-| 200–297 | WiFi credentials — SSID (33 B), password (65 B), magic byte |
+| 0–63 | FlowModel per slot (legacy) |
+| 128–143 | Carousel position backup |
+| 200–297 | WiFi SSID/password |
+
+Exact layout may vary — check `FlowModel.h` / `WiFiComms.h` if you're poking EEPROM directly.

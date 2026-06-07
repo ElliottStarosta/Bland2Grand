@@ -1,3 +1,9 @@
+"""
+Generate shared slot config for backend, frontend, and Arduino from spice_slots.json.
+
+Run from repo root: python generate_slots.py
+"""
+
 import json
 import sys
 import os

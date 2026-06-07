@@ -1,4 +1,5 @@
 #pragma once
+
 #include <Arduino.h>
 #include <HX711.h>
 #include "Constants.h"
@@ -6,13 +7,12 @@
 class Scale
 {
 public:
-    Scale() : _lastWeight(0.0f), _ready(false) {}
+    Scale() : _lastWeight(0.0f), _filteredWeight(0.0f), _ready(false) {}
 
-    // Call once in setup(). Blocks until HX711 is responding,
     bool begin(uint32_t timeoutMs = 5000)
     {
         _hx711.begin(PIN_HX711_DOUT, PIN_HX711_SCK);
-        _hx711.set_gain(128); // channel A, gain 128
+        _hx711.set_gain(128);
 
         uint32_t t = millis();
         while (!_hx711.is_ready())
@@ -28,113 +28,118 @@ public:
         _hx711.set_scale(SCALE_CAL_FACTOR);
         _ready = true;
 
-        tare();
+        // Always tare on boot — the scale must be empty at startup.
+        // If a bowl is already on it, readings will be wrong until the
+        // INDEXING tare runs. That's acceptable — bowl detection uses
+        // MIN_BOWL_WEIGHT_G which is 20g, well above noise.
+        _hx711.tare(SCALE_AVG_SAMPLES);
+        _lastWeight = 0.0f;
+        _filteredWeight = 0.0f;
+
         return true;
     }
 
-    // Zero the scale. Waits for settle then takes SCALE_AVG_SAMPLES readings.
+    // Tare with settle wait + EMA flush.
+    // Call this AFTER bowl is confirmed on scale.
     void tare()
     {
-        delay(TARE_SETTLE_MS);
+        // Wait for physical oscillation to die down
+        delay(2000);
+
+        // Take the zero reference
         _waitReady();
         _hx711.tare(SCALE_AVG_SAMPLES);
+
+        // Hard-reset EMA so old weight doesn't bleed through
         _lastWeight = 0.0f;
+        _filteredWeight = 0.0f;
+
+        // Flush: read 5 real samples to confirm near-zero
+        // (don't update EMA — just discard to let HX711 settle)
+        for (uint8_t i = 0; i < 5; i++)
+        {
+            _waitReady();
+            _hx711.get_units(1);
+            delay(50);
+        }
+
+        // Final hard reset
+        _lastWeight = 0.0f;
+        _filteredWeight = 0.0f;
+
+        Serial.print(F("[Scale] Post-tare check: "));
+        Serial.print(_hx711.get_units(3), 3);
+        Serial.println(F("g (raw, should be ~0)"));
     }
 
-    // Calibrated gram reading, averaged over SCALE_AVG_SAMPLES.
-    // Returns the last known value if HX711 is mid-conversion (non-blocking).
+    // Non-blocking read with EMA filtering.
+    // Returns last known value if HX711 not ready yet.
     float read()
     {
         if (!_hx711.is_ready())
             return _lastWeight;
 
-        float w = _readMedian(SCALE_AVG_SAMPLES);
-        if (w < 0.0f)
-            w = 0.0f;
+        float raw = _hx711.get_units(1); // single fast read
+
+        // EMA filter
+        _filteredWeight += ALPHA * (raw - _filteredWeight);
+
+        // Clamp negatives to 0
+        float w = max(0.0f, _filteredWeight);
+
         _lastWeight = w;
         return w;
     }
-    // Single raw ADC sample (no calibration, no averaging).
-    // Used by the calibration sketch to find calFactor.
+
+    // Blocking stable read — waits for SETTLE_READS consecutive
+    // readings within STABLE_BAND_G. Max wait 2s.
+    float readStable()
+    {
+        float prev = read();
+        uint8_t count = 1;
+        uint32_t deadline = millis() + 2000;
+
+        while (count < SETTLE_READS && millis() < deadline)
+        {
+            delay(SCALE_POLL_MS);
+            float cur = read();
+            if (fabsf(cur - prev) <= STABLE_BAND_G)
+                count++;
+            else
+                count = 1;
+            prev = cur;
+        }
+        return prev;
+    }
+
     long rawRead()
     {
         _waitReady();
         return _hx711.read_average(SCALE_AVG_SAMPLES);
     }
 
-    // Override the calibration factor at runtime.
-    // Normally not needed — SCALE_CAL_FACTOR in Constants.h is used.
     void setCalFactor(float factor)
     {
         if (factor != 0.0f)
             _hx711.set_scale(factor);
     }
 
-    // True if HX711 is ready for a new conversion right now.
-    bool isReady()
-    {
-        return _hx711.is_ready();
-    }
-
-    // True if begin() completed successfully.
-    bool isConnected() const
-    {
-        return _ready;
-    }
-
-    // True if the last reading exceeded the safe overload threshold.
-    bool isOverloaded()
-    {
-        return read() > SCALE_OVERLOAD_G;
-    }
-
-    // Last gram reading without triggering a new conversion.
-    float lastWeight() const { return _lastWeight; }
+    bool isReady()      { return _hx711.is_ready(); }
+    bool isConnected()  const { return _ready; }
+    bool isOverloaded() { return read() > SCALE_OVERLOAD_G; }
+    float lastWeight()  const { return _lastWeight; }
 
 private:
     HX711 _hx711;
     float _lastWeight;
-    bool _ready;
+    float _filteredWeight;
+    bool  _ready;
 
-    // Block until HX711 signals a conversion is ready.
+    static constexpr float ALPHA = 0.6f; // balanced: fast response, not too noisy
+
     void _waitReady()
     {
         while (!_hx711.is_ready())
             delay(5);
-    }
-
-    float _readMedian(uint8_t n)
-    {
-        if (n % 2 == 0)
-            n++;
-        if (n > 15)
-            n = 15;
-
-        float samples[15];
-        for (uint8_t i = 0; i < n; i++)
-        {
-            // Wait for a fresh conversion
-            _waitReady();
-            samples[i] = _hx711.get_units(1);
-
-            // Let DOUT go HIGH (busy) before polling again.
-            // Without this, is_ready() can fire on the same conversion twice.
-            delay(1);
-        }
-
-        // insertion sort
-        for (uint8_t i = 1; i < n; i++)
-        {
-            float key = samples[i];
-            int8_t j = i - 1;
-            while (j >= 0 && samples[j] > key)
-            {
-                samples[j + 1] = samples[j];
-                j--;
-            }
-            samples[j + 1] = key;
-        }
-
-        return samples[n / 2];
     }
 };

@@ -1,3 +1,12 @@
+"""
+Simulate a full dispense session without hardware.
+
+Requires Flask running on localhost:5000. Replays Arduino push + UDP weight
+events for the Tacos al Pastor recipe so you can test the SSE UI path.
+
+Run: python simulate.py
+"""
+
 import socket, json, time, requests
 
 BASE = 'http://localhost:5000'

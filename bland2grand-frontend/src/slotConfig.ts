@@ -24,8 +24,8 @@ export const SPICE_COLORS: Record<number, string> = {
 };
 
 export const SPICE_DENSITY_G_PER_ML: Record<number, number> = {
-  1: 1.2,  // Salt
-  2: 0.6,  // Black Pepper
+  1: 1.12,  // Salt
+  2: 0.5,  // Black Pepper
   3: 0.5,  // Onion Powder
   4: 0.55,  // Garlic Powder
   5: 0.5,  // Cumin

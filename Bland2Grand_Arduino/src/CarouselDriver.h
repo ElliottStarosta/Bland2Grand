@@ -1,4 +1,6 @@
 #pragma once
+// CarouselDriver - 8-slot spice carousel (NEMA 23 + TB6600).
+// Steps CCW one slot at a time; assumes we start homed on slot 1.
 
 #include <Arduino.h>
 #include <AccelStepper.h>
@@ -21,6 +23,7 @@ public:
         Serial.println(F("[Carousel] Initialised. Assumed slot 1."));
     }
 
+    // Rotate to target slot. Blocking call — only invoke from INDEXING state.
     bool goToSlot(uint8_t target)
     {
         if (target < 1 || target > CAROUSEL_SLOT_COUNT)
@@ -38,6 +41,7 @@ public:
             return true;
         }
 
+        // Always travel CCW; wrap so we never go more than half a revolution the long way.
         int8_t fwd = target - _currentSlot;
         if (fwd < 0)
             fwd += CAROUSEL_SLOT_COUNT;
@@ -66,6 +70,7 @@ public:
         return true;
     }
 
+    // Same as goToSlot(uint8_t) but includes spice name for UI nearly-there events.
     bool goToSlot(uint8_t target, const char *spiceName)
     {
         if (target < 1 || target > CAROUSEL_SLOT_COUNT)
@@ -83,6 +88,7 @@ public:
             return true;
         }
 
+        // Always travel CCW; wrap so we never go more than half a revolution the long way.
         int8_t fwd = target - _currentSlot;
         if (fwd < 0)
             fwd += CAROUSEL_SLOT_COUNT;
@@ -117,6 +123,7 @@ private:
     WiFiComms &_wifi;
     uint8_t _currentSlot;
 
+    // One index step: STEPS_PER_SLOT plus a small correction factor from tuning.
     bool _moveOneSlot(const char *spiceName, bool pushOnArrive)
     {
         long steps = (long)STEPS_PER_SLOT + STEPS_PER_SLOT_CORRECTION;

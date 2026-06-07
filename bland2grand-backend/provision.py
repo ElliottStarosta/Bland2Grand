@@ -1,3 +1,5 @@
+"""Push WiFi credentials to the Arduino over USB serial (provisioning mode)."""
+
 import argparse
 import json
 import sys
@@ -12,7 +14,7 @@ except ImportError:
     sys.exit("pyserial not found. Run: pip install pyserial")
 
 
-# SERIAL PORT DETECTION
+# Pick the likely Arduino COM port on this machine.
 def find_arduino_port() -> str:
     candidates = list(serial.tools.list_ports.comports())
     print(f"[debug] All detected serial ports:")
@@ -27,7 +29,7 @@ def find_arduino_port() -> str:
     sys.exit("[error] No serial ports found.")
 
 
-# PROVISION FUNCTION
+# Send the provision JSON and wait for PROV:OK from firmware.
 def provision(port: str, ssid: str, password: str) -> None:
     print(f"\nPort:     {port}")
     print(f"SSID:     {ssid}")

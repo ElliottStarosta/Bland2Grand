@@ -1,3 +1,5 @@
+// Top app bar — screen title, subtitle, optional back button; animates on screen change.
+
 import { useRef, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronLeft } from "@fortawesome/free-solid-svg-icons";
@@ -44,6 +46,7 @@ export function Header({ screen, onBack }: Props) {
   const prevScreen   = useRef(screen);
   const isSearch     = screen === "search";
 
+  // Cross-fade title/subtitle when navigating between screens.
   useEffect(() => {
     if (prevScreen.current === screen) return;
     prevScreen.current = screen;

@@ -1,3 +1,5 @@
+// Root app shell: screen routing, idle screensaver, dispense SSE hookup.
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { Header } from "./components/Header";
@@ -43,7 +45,7 @@ export default function App() {
   });
 
   const handleStop = useCallback(async () => {
-    try {p
+    try {
       await fetch("/api/stop", { method: "POST" });
     } catch {
       /* SSE session_error handles the rest */

@@ -1,180 +1,129 @@
-# Bland2Grand — Web Backend
+# Bland2Grand backend
 
-Flask API server that sits between the React frontend and the Arduino hardware. Handles recipe search, AI-generated blends, dispense orchestration, and real-time Server-Sent Events (SSE) for live progress streaming.
+Flask server between the React UI and the Arduino. Recipe search, dispense sequencing, SSE progress stream, optional AI blends via OpenRouter.
 
----
-
-## Overview
+## Data flow
 
 ```
-Frontend  ←SSE→  Flask Backend  ←HTTP→  Arduino UNO R4 WiFi
-              REST                    push
-                   ↕
-              SQLite DB
-                   ↕
-           OpenRouter AI API
+Frontend  ←SSE→  Flask  ←HTTP/UDP→  Arduino
+                    ↕
+                 SQLite
+                    ↕
+              OpenRouter (optional)
 ```
 
-The backend operates in two modes controlled by the `MOCK_ARDUINO` environment variable:
+**Mock mode** (`MOCK_ARDUINO=true`, default): simulates dispensing in Python — no hardware needed for UI work.
 
-- **Mock mode** (`MOCK_ARDUINO=true`, default) — simulates dispensing locally for UI development without any hardware.
-- **Real mode** (`MOCK_ARDUINO=false`) — sends commands to the Arduino and waits for push callbacks.
+**Real mode** (`MOCK_ARDUINO=false`): POSTs each spice to the Arduino and waits for push callbacks before continuing.
 
----
+## Files
 
-## Project Structure
-
-```
-bland2grand-backend/
-├ app.py              # Flask application — all route definitions
-├ config.py           # Environment variable loading (dotenv)
-├ database.py         # SQLite schema, CRUD helpers
-├ dispense.py         # Dispense orchestration, SSE broadcast, mock simulation
-├ search.py           # Recipe search — DB lookup → AI fallback
-├ ai_client.py        # OpenRouter API client (Claude / other LLMs)
-├ seed_recipes.py     # One-time DB seeding script (~100 curated recipes)
-├ provision.py        # Serial provisioning helper for Arduino WiFi credentials
-└ requirements.txt    # Python dependencies
-```
-
----
-
-## API Reference
-
-### General
-
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/api/health` | Health check — returns mock mode status |
-| `GET` | `/api/search?q=...` | Search recipes by name or cuisine category |
-| `GET` | `/api/recipes/<id>` | Fetch a single recipe by ID |
-| `POST` | `/api/dispense` | Start a dispense session |
-| `GET` | `/api/status/stream` | SSE stream — real-time dispense progress |
-| `POST` | `/api/calibrate` | Update per-slot calibration factor |
-| `POST` | `/api/recipe` | Save a custom recipe |
-
-### Arduino Push Endpoints
-
-These are called by the Arduino (not the frontend):
-
-| Method | Path | Triggered when… |
-|--------|------|-----------------|
-| `POST` | `/api/arduino/indexing` | Carousel starts rotating |
-| `POST` | `/api/arduino/dispense-start` | Auger begins dispensing a spice |
-| `POST` | `/api/arduino/weight-push` | Live weight update (~150 ms interval) |
-| `POST` | `/api/arduino/spice-complete` | One spice finished |
-| `POST` | `/api/arduino/session-complete` | All spices in the recipe finished |
-| `POST` | `/api/arduino/fault` | Hardware fault |
-
-### SSE Event Types
-
-The `/api/status/stream` endpoint emits JSON events:
-
-| `type` | Payload fields |
-|--------|---------------|
-| `connected` | — |
-| `heartbeat` | — |
-| `session_start` | `recipe_name`, `total_slots`, `slots[]` |
-| `indexing` | `slot`, `spice_name`, `slot_index`, `total_slots` |
-| `dispensing_start` | `slot`, `spice_name`, `target_weight`, `slot_index`, `total_slots` |
-| `weight_update` | `slot`, `current_weight`, `target_weight` |
-| `spice_complete` | `slot`, `spice_name`, `actual`, `target`, `status`, `slot_index` |
-| `session_complete` | `recipe_name`, `completed[]` |
-| `session_error` | `message`, `completed[]` |
-
----
+| File | What it does |
+|------|----------------|
+| `app.py` | Route definitions (REST + SSE + Arduino push endpoints) |
+| `config.py` | Reads `.env` |
+| `database.py` | SQLite schema and recipe CRUD |
+| `dispense.py` | Session thread, SSE broadcast, mock simulator, UDP weight listener |
+| `search.py` | Category shortcut → name search → AI fallback |
+| `ai_client.py` | OpenRouter JSON blend generation |
+| `seed_recipes.py` | One-time ~100 recipe seed |
+| `provision.py` | Push WiFi creds to Arduino over serial |
+| `slot_config.py` | Shared slot names (generated from repo root) |
 
 ## Setup
-
-### 1. Install dependencies
 
 ```bash
 cd bland2grand-backend
 python -m venv venv
-source venv/bin/activate   # Windows: venv\Scripts\activate
+venv\Scripts\activate          # Windows
+# source venv/bin/activate     # macOS/Linux
 pip install -r requirements.txt
-```
-
-### 2. Configure environment
-
-Create a `.env` file in `bland2grand-backend/`:
-
-```env
-ARDUINO_URL=http://192.168.2.xxx      # Arduino IP (real mode only)
-OPENROUTER_API_KEY=sk-or-...          # For AI recipe generation
-AI_MODEL=anthropic/claude-3-haiku     # Model string
-DATABASE_PATH=bland2grand.db
-FLASK_PORT=5000
-MOCK_ARDUINO=true                     # Set false for real hardware
-```
-
-### 3. Seed the database
-
-```bash
-python seed_recipes.py
-```
-
-This inserts ~100 curated recipes across 20+ cuisine categories. Safe to re-run — uses `INSERT OR IGNORE`.
-
-### 4. Run the server
-
-```bash
+python seed_recipes.py         # safe to re-run (INSERT OR IGNORE)
 python app.py
 ```
 
-Server starts on `http://0.0.0.0:5000`.
+`.env` example:
 
----
+```env
+ARDUINO_URL=http://192.168.137.50
+OPENROUTER_API_KEY=sk-or-...
+AI_MODEL=anthropic/claude-3-haiku
+DATABASE_PATH=bland2grand.db
+FLASK_PORT=5000
+MOCK_ARDUINO=true
+```
 
-## Recipe Search
+## API (frontend-facing)
 
-1. **Category match** — if the query matches a known cuisine keyword (e.g. `"mexican"`, `"cajun"`), returns all recipes in that category.
-2. **Name search** — SQL `LIKE` query against recipe names.
-3. **AI fallback** — if no local results, queries OpenRouter with a structured prompt and saves the generated blend to the DB for future searches.
-
----
-
-## Database Schema
-
-### `recipes`
-
-| Column | Type | Notes |
+| Method | Path | Notes |
 |--------|------|-------|
-| `id` | INTEGER PK | |
-| `name` | TEXT UNIQUE | |
-| `category` | TEXT | e.g. `"Mexican"`, `"AI Generated"` |
-| `description` | TEXT | |
-| `s1_cumin` … `s8_cayenne` | REAL | Grams per serving for each slot |
+| GET | `/api/health` | `{ status, mock_arduino }` |
+| GET | `/api/search?q=` | Up to 6 recipes; may hit AI if DB empty |
+| GET | `/api/recipes/<id>` | Single recipe |
+| POST | `/api/dispense` | `{ recipe_id, serving_count }` — starts background thread |
+| GET | `/api/status/stream` | SSE — see event types below |
+| POST | `/api/stop` | Cancel + UDP STOP to Arduino |
+| POST | `/api/calibrate` | Update slot cal factor |
+| POST | `/api/recipe` | Save custom blend |
 
-### `calibration`
+## Arduino push routes
 
-| Column | Type | Notes |
-|--------|------|-------|
-| `slot` | INTEGER PK | 1–8 |
-| `spice_name` | TEXT | |
-| `cal_factor` | REAL | HX711 counts per gram |
+Called by firmware, not the browser:
 
----
+| Method | Path | When |
+|--------|------|------|
+| POST | `/api/arduino/indexing` | Carousel moving |
+| POST | `/api/arduino/dispense-start` | Auger started |
+| POST | `/api/arduino/weight-push` | Live weight (HTTP or UDP relay) |
+| POST | `/api/arduino/spice-complete` | One spice done — unblocks dispense loop |
+| POST | `/api/arduino/session-complete` | All spices done |
+| POST | `/api/arduino/fault` | Error |
 
-## WiFi Provisioning
+Weight updates also arrive on **UDP port 5001** so the auger loop isn't blocked by HTTP.
 
-Flash the Arduino, then run:
+## SSE events
+
+`/api/status/stream` emits JSON lines:
+
+| `type` | Useful fields |
+|--------|----------------|
+| `connected` | Handshake |
+| `heartbeat` | Keep-alive |
+| `session_start` | `recipe_name`, `slots[]` |
+| `indexing` | `slot`, `spice_name`, `slot_index` |
+| `dispensing_start` | `target_weight` |
+| `weight_update` | `current_weight`, `target_weight` |
+| `spice_complete` | `actual`, `target`, `status` |
+| `session_complete` | `recipe_name` |
+| `session_error` | `message` |
+
+## Search logic
+
+1. Query matches a cuisine keyword (`mexican`, `cajun`, …) → return that category.
+2. Else SQL `LIKE` on recipe name.
+3. Else call OpenRouter, save as `"AI Generated"`, return the new row.
+
+No API key → step 3 is skipped.
+
+## Database
+
+**recipes** — `name`, `category`, `description`, plus `s1_cumin` … `s8_cayenne` (grams per serving).
+
+**calibration** — per-slot `cal_factor` (HX711 counts per gram).
+
+## WiFi provisioning
+
+After flashing firmware:
 
 ```bash
 python provision.py
+# or
+python provision.py --port COM3 --ssid MyNet --password secret
 ```
 
-The script auto-detects the serial port and your current WiFi network (Windows/macOS), sends credentials over Serial, and confirms `PROV:OK`.
+Sends JSON over serial; Arduino replies `PROV:OK`.
 
-Manual override:
-
-```bash
-python provision.py --port COM3 --ssid MyNetwork --password secret
-```
-
----
-
-## Slot Mapping
+## Slot map
 
 | Slot | Spice |
 |------|-------|

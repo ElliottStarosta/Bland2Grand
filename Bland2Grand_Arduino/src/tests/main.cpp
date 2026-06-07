@@ -95,7 +95,6 @@ void setup()
     Serial.println(F(""));
 }
 
-
 void loop()
 {
     sm.update();

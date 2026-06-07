@@ -7,6 +7,8 @@ import {
   faFloppyDisk,
   faTriangleExclamation,
   faCircleCheck,
+  faPencil,
+  faCheck,
 } from "@fortawesome/free-solid-svg-icons";
 import { SPICE_COLORS, SPICE_LABELS } from "../types";
 import type { Recipe } from "../types";
@@ -22,7 +24,6 @@ import {
   UNIT_CYCLE,
 } from "../types";
 import type { Unit } from "../types";
-//
 
 function toGrams(value: number, unit: Unit, slot: number): number {
   const density = SPICE_DENSITY_G_PER_ML[slot] ?? 0.85;
@@ -286,6 +287,12 @@ function SlotInput({
   onUnitChange,
 }: SlotInputProps) {
   const valRef = useRef<HTMLSpanElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const pencilRef = useRef<HTMLButtonElement>(null);
+  const checkRef = useRef<HTMLButtonElement>(null);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+
   const color = SPICE_COLORS[slot] ?? "#C8692A";
   const step = UNIT_STEPS[unit];
   const max = UNIT_MAX[unit];
@@ -299,6 +306,66 @@ function SlotInput({
       { y: dir > 0 ? 10 : -10, opacity: 0 },
       { y: 0, opacity: 1, duration: 0.2, ease: "back.out(2.5)" },
     );
+  };
+
+  const startEditing = () => {
+    // Pencil springs away, check bounces in
+    if (pencilRef.current) {
+      gsap.to(pencilRef.current, {
+        scale: 0,
+        opacity: 0,
+        duration: 0.14,
+        ease: "power2.in",
+      });
+    }
+    setDraft(fmtVal(value));
+    setEditing(true);
+    requestAnimationFrame(() => {
+      inputRef.current?.select();
+      if (checkRef.current) {
+        gsap.fromTo(
+          checkRef.current,
+          { scale: 0, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.35, ease: "back.out(2.8)" },
+        );
+      }
+    });
+  };
+
+  const commitEdit = () => {
+    const parsed = parseFloat(draft);
+    if (!isNaN(parsed)) {
+      const clamped = +Math.min(Math.max(parsed, 0), max).toFixed(2);
+      onChange(slot, clamped);
+    }
+    // Check springs away, pencil bounces back
+    if (checkRef.current) {
+      gsap.to(checkRef.current, {
+        scale: 0,
+        opacity: 0,
+        duration: 0.12,
+        ease: "power2.in",
+        onComplete: () => {
+          setEditing(false);
+          requestAnimationFrame(() => {
+            if (pencilRef.current) {
+              gsap.fromTo(
+                pencilRef.current,
+                { scale: 0, opacity: 0 },
+                { scale: 1, opacity: 1, duration: 0.35, ease: "back.out(2.8)" },
+              );
+            }
+          });
+        },
+      });
+    } else {
+      setEditing(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") commitEdit();
+    if (e.key === "Escape") commitEdit();
   };
 
   const inc = () => {
@@ -346,6 +413,19 @@ function SlotInput({
     }
     onUnitChange(slot, u);
     onChange(slot, converted);
+  };
+
+  const pillBase: React.CSSProperties = {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    flexShrink: 0,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    border: "1px solid transparent",
+    cursor: "pointer",
+    background: "transparent",
   };
 
   return (
@@ -414,17 +494,37 @@ function SlotInput({
             transition: "all 0.2s",
           }}
         >
+          {/* Value display / input */}
           <div className="flex items-baseline gap-1.5">
-            <span
-              ref={valRef}
-              className="font-body font-semibold tabular-nums"
-              style={{
-                fontSize: 22,
-                color: isActive ? color : "#7A7672",
-              }}
-            >
-              {fmtVal(value)}
-            </span>
+            {editing ? (
+              <input
+                ref={inputRef}
+                type="number"
+                inputMode="decimal"
+                value={draft}
+                min={0}
+                max={max}
+                step={step}
+                onChange={(e) => setDraft(e.target.value)}
+                onBlur={commitEdit}
+                onKeyDown={handleKeyDown}
+                className="font-body font-semibold tabular-nums bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                style={{
+                  fontSize: 22,
+                  color: isActive ? color : "#7A7672",
+                  width: 70,
+                  caretColor: color,
+                }}
+              />
+            ) : (
+              <span
+                ref={valRef}
+                className="font-body font-semibold tabular-nums"
+                style={{ fontSize: 22, color: isActive ? color : "#7A7672" }}
+              >
+                {fmtVal(value)}
+              </span>
+            )}
             <span
               className="font-body"
               style={{
@@ -436,17 +536,62 @@ function SlotInput({
             </span>
           </div>
 
-          {isActive && unit !== "g" && (
-            <span
-              className="font-body tabular-nums"
+          {/* Right side: grams equiv + pencil/check toggle */}
+          <div className="flex items-center gap-1.5">
+            {isActive && unit !== "g" && !editing && (
+              <span
+                className="font-body tabular-nums"
+                style={{ fontSize: 12, color: "#7A7672" }}
+              >
+                ≈ {gramsEquiv.toFixed(1)} g
+              </span>
+            )}
+
+            {/* Pencil — visible when not editing */}
+            <button
+              ref={pencilRef}
+              onClick={startEditing}
+              className="focus:outline-none"
               style={{
-                fontSize: 12,
-                color: "#7A7672",
+                ...pillBase,
+                background: isActive ? `${color}18` : "rgba(255,255,255,0.05)",
+                border: `1px solid ${isActive ? `${color}30` : "rgba(255,255,255,0.08)"}`,
+                // hide but keep in DOM so ref works
+                visibility: editing ? "hidden" : "visible",
+                pointerEvents: editing ? "none" : "auto",
               }}
             >
-              ≈ {gramsEquiv.toFixed(1)} g
-            </span>
-          )}
+              <FontAwesomeIcon
+                icon={faPencil}
+                style={{
+                  fontSize: 10,
+                  color: isActive ? `${color}99` : "#5A5652",
+                }}
+              />
+            </button>
+
+            {/* Check — only mounted when editing so GSAP fromTo works cleanly */}
+            {editing && (
+              <button
+                ref={checkRef}
+                onClick={commitEdit}
+                className="focus:outline-none"
+                style={{
+                  ...pillBase,
+                  // start hidden; GSAP animates in
+                  opacity: 0,
+                  transform: "scale(0)",
+                  background: `${color}25`,
+                  border: `1px solid ${color}50`,
+                }}
+              >
+                <FontAwesomeIcon
+                  icon={faCheck}
+                  style={{ fontSize: 10, color }}
+                />
+              </button>
+            )}
+          </div>
         </div>
 
         <PressButton
@@ -469,7 +614,6 @@ function SlotInput({
     </div>
   );
 }
-
 // Main screen
 interface Props {
   onSaved: (recipe: Recipe) => void;

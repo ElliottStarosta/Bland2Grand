@@ -11,7 +11,7 @@
     {
       "label": "Arduino: Flash + Serial",
       "type": "shell",
-      "command": "Get-Process | Where-Object { $_.CommandLine -like '*pio*monitor*' -or $_.CommandLine -like '*pio*device*' } | Stop-Process -Force -ErrorAction SilentlyContinue; Start-Sleep -Milliseconds 800; & \"$env:USERPROFILE\\.platformio\\penv\\Scripts\\pio.exe\" run --target upload; & \"$env:USERPROFILE\\.platformio\\penv\\Scripts\\pio.exe\" device monitor --baud 9600",
+      "command": "$cp = [Windows.Networking.Connectivity.NetworkInformation,Windows.Networking.Connectivity,ContentType=WindowsRuntime]::GetInternetConnectionProfile(); $tm = [Windows.Networking.NetworkOperators.NetworkOperatorTetheringManager,Windows.Networking.NetworkOperators,ContentType=WindowsRuntime]::CreateFromConnectionProfile($cp); $tm.StartTetheringAsync() | Out-Null; Start-Sleep -Seconds 2; Get-Process | Where-Object { $_.CommandLine -like '*pio*monitor*' -or $_.CommandLine -like '*pio*device*' } | Stop-Process -Force -ErrorAction SilentlyContinue; Start-Sleep -Milliseconds 800; & \"$env:USERPROFILE\\.platformio\\penv\\Scripts\\pio.exe\" run --target upload; & \"$env:USERPROFILE\\.platformio\\penv\\Scripts\\pio.exe\" device monitor --baud 9600",
       "options": {
         "cwd": "${workspaceFolder}/Bland2Grand_Arduino"
       },
@@ -67,10 +67,7 @@
     {
       "label": "Bland2Grand: Backend + Frontend",
       "dependsOrder": "parallel",
-      "dependsOn": [
-        "Backend: Flask",
-        "Frontend: Vite"
-      ],
+      "dependsOn": ["Backend: Flask", "Frontend: Vite"],
       "problemMatcher": []
     }
   ]

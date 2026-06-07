@@ -1,3 +1,5 @@
+// carousel.cpp - serial debug: type a slot number, carousel indexes open-loop.
+
 #include <Arduino.h>
 #include <AccelStepper.h>
 #include "Constants.h"

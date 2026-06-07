@@ -1,4 +1,6 @@
 #pragma once
+// WiFiComms - WiFi setup, HTTP server on :80, and outbound pushes to Flask.
+// Weight updates go over UDP so we don't block the auger step loop.
 
 #include <Arduino.h>
 #include <WiFiS3.h>
@@ -14,6 +16,7 @@ public:
 
     bool connect()
     {
+        // Static IP on the bland2grand hotspot so Flask can reach us at a fixed address.
         IPAddress local_IP(192, 168, 137, 50);
         IPAddress gateway(192, 168, 137, 1);
         IPAddress subnet(255, 255, 255, 0);
@@ -40,6 +43,7 @@ public:
         if (_stopUdp.begin(8889))
             Serial.println(F("[UDP] stop socket ready on 8889"));
 
+        // Outbound weight packets to Flask UDP listener (port 5001 on the PC).
         if (_udp.begin(8888))
         {
             Serial.println(F("[UDP] socket ready"));
@@ -71,8 +75,9 @@ public:
         return WiFi.status() == WL_CONNECTED;
     }
 
-    // HTTP POST helpers -- blocking, only call when motors idle
+    // Outbound event pushes to Flask (blocking HTTP — call only when motors are idle).
 
+    // Carousel has started moving to the requested slot.
     bool pushIndexing(uint8_t slot, const char *spiceName,
                       uint8_t slotIdx, uint8_t total)
     {
@@ -86,6 +91,7 @@ public:
         return _post("/api/arduino/indexing", b);
     }
 
+    // Carousel is one slot away; UI can prep the next animation beat.
     bool pushNearlyThere(uint8_t slot, const char *spiceName)
     {
         StaticJsonDocument<128> doc;
@@ -96,6 +102,7 @@ public:
         return _post("/api/arduino/nearly-there", b);
     }
 
+    // Auger has started; includes target weight for the progress bar.
     bool pushDispenseStart(uint8_t slot, const char *spiceName,
                            float targetGrams, uint8_t slotIdx, uint8_t total)
     {
@@ -122,6 +129,7 @@ public:
         return _post("/api/arduino/weight-push", b);
     }
 
+    // Unblocks Flask dispense loop — must fire once per accepted spice command.
     bool pushSpiceComplete(uint8_t slot, const char *spiceName,
                            float actual, float target, uint8_t slotIdx)
     {
@@ -137,6 +145,7 @@ public:
         return _post("/api/arduino/spice-complete", b);
     }
 
+    // Listens for STOP from Flask/backend cancel (port 8889).
     bool checkStopUDP()
     {
         int size = _stopUdp.parsePacket();
@@ -151,6 +160,24 @@ public:
                 return true;
         }
         return false;
+    }
+
+    bool pushNoBowl()
+    {
+        StaticJsonDocument<64> doc;
+        doc["status"] = "no_bowl";
+        String b;
+        serializeJson(doc, b);
+        return _post("/api/arduino/no-bowl", b);
+    }
+
+    bool pushBowlDetected()
+    {
+        StaticJsonDocument<64> doc;
+        doc["status"] = "bowl_detected";
+        String b;
+        serializeJson(doc, b);
+        return _post("/api/arduino/bowl-detected", b);
     }
 
     bool pushSessionComplete(const char *recipeName)
@@ -171,7 +198,7 @@ public:
         return _post("/api/arduino/fault", b);
     }
 
-    // Sends a weight update via UDP so no TCP handshake stalls the stepper ISR.
+    // Sends a weight update via UDP so no TCP handshake stalls the stepper loop.
     void pushWeightUDP(uint8_t slot, float current, float target)
     {
         char buf[80];
@@ -197,7 +224,7 @@ public:
             Serial.println(F("[UDP] beginPacket failed"));
         }
     }
-    //  Burst of fake progress updates — blocking, called after motors stop to animate the app progress bar smoothly.
+    // Burst of fake progress updates — blocking, called after motors stop to animate the app progress bar smoothly.
     void pushProgressBurst(uint8_t slot, float targetGrams, uint8_t steps = 8)
     {
         for (uint8_t i = 1; i <= steps; i++)
@@ -216,6 +243,7 @@ private:
     WiFiUDP _stopUdp;
     bool _serverStarted;
 
+    // Low-level POST to Flask; waits up to 2 s for a 200 response.
     bool _post(const char *path, const String &body)
     {
         WiFiClient client;

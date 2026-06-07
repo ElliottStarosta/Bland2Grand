@@ -1,3 +1,5 @@
+// roationTest.cpp - open-loop carousel ramp: 5 s forward, 5 s reverse.
+
 #include <Arduino.h>
 #include <AccelStepper.h>
 #include "Constants.h"
@@ -13,14 +15,14 @@ void setup() {
 
     unsigned long t0;
 
-    // --- Forward with acceleration ramp ---
+    // Forward with acceleration ramp
     stepper.move(99999999);   // give it a huge forward distance
     t0 = millis();
     while (millis() - t0 < 5000) {
         stepper.run();
     }
     
-    // --- Stop fully ---
+    // Stop fully
     stepper.stop();
     while (stepper.isRunning()) {
         stepper.run();
@@ -28,14 +30,14 @@ void setup() {
 
     delay(300);
 
-    // --- Backward with acceleration ramp ---
+    // Backward with acceleration ramp
     stepper.move(-99999999);  // huge backward distance
     t0 = millis();
     while (millis() - t0 < 5000) {
         stepper.run();
     }
 
-    // --- Final stop ---
+    // Final stop
     stepper.stop();
     while (stepper.isRunning()) {
         stepper.run();

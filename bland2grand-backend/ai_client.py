@@ -1,3 +1,5 @@
+"""OpenRouter client for AI-generated spice blends when the DB has no match."""
+
 import json
 import re
 import requests
@@ -10,15 +12,17 @@ _SYSTEM = (
     "Values are grams of each spice per single serving."
 )
 
-def _build_template() -> str:
-    slot_list = ", ".join(f"{k}={v.replace(' ', '')}" for k, v in SPICE_SLOTS.items())
-    keys = ", ".join(f'"{k}": g' for k in SPICE_SLOTS)
+def _build_template(dish: str) -> str:
+    slot_list = ", ".join(f"{k}={v}" for k, v in SPICE_SLOTS.items())
+
     return (
-        'Give me a spice blend for "{dish}" using only these 8 slots: '
-        f"{slot_list}. "
-        f'Return ONLY valid JSON in the form {{{keys}}} '
-        "where g is a float (0 if the spice is not used). "
-        "Use realistic and authentic amounts. Max 10g per slot per serving."
+        f'Create a spice blend for "{dish}" using ONLY these slots:\n'
+        f"{slot_list}\n\n"
+        "Return ONLY valid JSON.\n"
+        "Keys must be strings \"1\" through \"8\".\n"
+        "Values must be floats (grams per serving).\n"
+        "If a spice is not used, set it to 0.\n"
+        "No markdown. No explanation. JSON only."
     )
 
 
@@ -66,7 +70,8 @@ def get_blend_for_dish(dish_name: str) -> dict:
     Returns a dict: {"1": grams, "2": grams, …} for slots 1-8.
     Raises on API or parse error.
     """
-    prompt = _build_template().format(dish=dish_name)
+    prompt = _build_template(dish_name)
+    print(f"[AI] Prompt:\n{prompt}")
     raw = _call_api(prompt)
     blend = _parse_blend(raw)
     print(f"[AI] Blend for '{dish_name}': {blend}")

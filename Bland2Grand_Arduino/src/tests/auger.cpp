@@ -1,3 +1,5 @@
+// auger.cpp - smoke test: one full revolution forward then back.
+
 #include <Arduino.h>
 #include <AccelStepper.h>
 #include "Constants.h"

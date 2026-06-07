@@ -1,3 +1,5 @@
+"""Seed ~100 curated recipes into SQLite. Safe to run multiple times."""
+
 import sys
 import os
 from slot_config import SLOT_COLUMNS

@@ -1,3 +1,5 @@
+"""SQLite recipes + per-slot calibration tables."""
+
 import sqlite3
 from config import DATABASE_PATH, SPICE_SLOTS
 from slot_config import SLOT_COLUMNS
@@ -10,6 +12,7 @@ def get_connection() -> sqlite3.Connection:
 
 
 def init_db() -> None:
+    """Create tables if missing and seed default calibration rows."""
     conn = get_connection()
     cur = conn.cursor()
 
@@ -82,6 +85,7 @@ def _recipe_to_dict(row: sqlite3.Row) -> dict:
 
 
 def search_recipes(query: str, limit: int = 6) -> list[dict]:
+    """Case-insensitive substring match on recipe name."""
     conn = get_connection()
     rows = conn.execute(
         "SELECT * FROM recipes WHERE name LIKE ? COLLATE NOCASE ORDER BY name LIMIT ?",
@@ -120,6 +124,7 @@ def get_recipe_by_name(name: str) -> dict | None:
 def save_recipe(
     name: str, spices: dict, category: str = "AI Generated", description: str = ""
 ) -> int:
+    """Insert or replace a recipe; spices keys are slot ids \"1\"..\"8\" in grams."""
     conn = get_connection()
     cur = conn.cursor()
 

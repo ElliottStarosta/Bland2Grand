@@ -1,3 +1,5 @@
+"""Recipe search: category shortcut, name lookup, then OpenRouter if nothing hits."""
+
 from database import (
     search_recipes,
     search_recipes_by_category,

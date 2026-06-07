@@ -1,4 +1,11 @@
-export { SPICE_SLOTS, SPICE_COLORS, SPICE_DENSITY_G_PER_ML, SPICE_LABELS } from '../slotConfig'
+// Shared types for recipes, dispense progress, and SSE payloads.
+
+export {
+  SPICE_SLOTS,
+  SPICE_COLORS,
+  SPICE_DENSITY_G_PER_ML,
+  SPICE_LABELS,
+} from "../slotConfig";
 
 export type Screen =
   | "search"
@@ -51,10 +58,10 @@ export interface DispenseSession {
   totalWeight: number;
   totalTarget: number;
   lastCompletedSlot?: number;
+  awaitingBowl: boolean;
 }
 
-// SSE events
-
+// Payloads emitted by Flask on /api/status/stream (mirrors dispense.py broadcast types).
 export type SSEEvent =
   | { type: "connected" }
   | { type: "heartbeat" }
@@ -64,6 +71,8 @@ export type SSEEvent =
       total_slots: number;
       slots: { slot: number; name: string; target: number }[];
     }
+  | { type: "no_bowl" }
+  | { type: "bowl_detected" }
   | {
       type: "indexing";
       slot: number;
@@ -113,7 +122,6 @@ export interface CompletedSpice {
   actual: number;
   status: "done" | "timeout";
 }
-
 
 export const TSP_ML = 4.92;
 export const TBSP_ML = 14.79;

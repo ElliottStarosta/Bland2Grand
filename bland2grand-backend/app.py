@@ -31,6 +31,8 @@ from dispense import (
     handle_arduino_session_complete,
     handle_arduino_fault,
     handle_arduino_nearly_there,
+    handle_arduino_no_bowl,
+    handle_arduino_bowl_detected,
     start_udp_listener,
 )
 from search import find_recipes
@@ -91,8 +93,19 @@ def get_recipe(recipe_id: int):
         return jsonify({"error": "Recipe not found"}), 404
     return jsonify(recipe)
 
+@app.post("/api/arduino/no-bowl")
+def arduino_no_bowl():
+    data = request.get_json(silent=True) or {}
+    handle_arduino_no_bowl(data)
+    return jsonify({"ok": True})
 
-# Dispense
+@app.post("/api/arduino/bowl-detected")
+def arduino_bowl_detected():
+    data = request.get_json(silent=True) or {}
+    handle_arduino_bowl_detected(data)
+    return jsonify({"ok": True})
+
+# Dispense — start a multi-spice session (runs on a background thread in dispense.py)
 @app.post("/api/dispense")
 def dispense():
     if is_busy():
@@ -120,7 +133,7 @@ def dispense():
     )
 
 
-# SSE status stream
+# SSE — one long-lived stream per client; closes on session_complete or session_error
 @app.get("/api/status/stream")
 def status_stream():
     def generate():
@@ -129,7 +142,7 @@ def status_stream():
             yield f"data: {json.dumps({'type': 'connected'})}\n\n"
             while True:
                 try:
-                    event = q.get(timeout=5)  # shorter timeout = more frequent flushes
+                    event = q.get(timeout=5)  # heartbeat every 5 s if idle
                     payload = f"data: {json.dumps(event)}\n\n"
                     yield payload
                     if event.get("type") in ("session_complete", "session_error"):
@@ -187,7 +200,7 @@ def create_recipe():
     return jsonify({"status": "created", "recipe": recipe}), 201
 
 
-# Arduino push endpoint for "nearly there" notification sfx
+# Push routes — called by Arduino firmware, forwarded into SSE via dispense.py
 @app.post("/api/arduino/nearly-there")
 def arduino_nearly_there():
     data = request.get_json(silent=True) or {}
@@ -195,7 +208,7 @@ def arduino_nearly_there():
     return jsonify({"ok": True})
 
 
-# Arduino push endpoints
+# Arduino push endpoints (lifecycle events for one spice or whole session)
 @app.post("/api/arduino/indexing")
 def arduino_indexing():
     data = request.get_json(silent=True) or {}

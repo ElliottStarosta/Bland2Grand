@@ -1,30 +1,18 @@
-// ============================================================
-//  encoder_motor_test.cpp
-//  Bland2Grand — NEMA 23 + AS5600 Encoder Tracking Test
-//
-//  Slowly rotates the carousel motor and prints encoder counts,
-//  degrees, and step tracking side-by-side so you can verify
-//  the AS5600 is reading movement as the shaft turns.
-//
-//  To use:
-//    Edit platformio.ini:
-//      build_src_filter = +<tests/encoder_motor_test.cpp> -<main.cpp>
-//    Flash and open serial monitor at 115200 baud.
-// ============================================================
-
+// encoder_spin.cpp - bench test: spin the carousel and watch AS5600 counts.
+// Point platformio.ini at this file instead of main.cpp, then flash.
 #include <Arduino.h>
 #include <Wire.h>
 #include <AccelStepper.h>
 #include "Constants.h"
 
-// ---- AS5600 direct register reads (no library needed) ----
+// AS5600 direct register reads (no library needed)
 #define AS5600_ADDR   0x36
 #define REG_STATUS    0x0B
 #define REG_RAW_HI    0x0C
 #define REG_RAW_LO    0x0D
 #define REG_AGC       0x1A
 
-// ---- Motor config ----
+// Motor config
 // Slow speed: 200 microsteps/s (~11 rpm at 1/8 step) – easy to watch encoder
 static constexpr float TEST_SPEED        = 200.0f;  // microsteps / s
 static constexpr float TEST_ACCEL        = 400.0f;  // microsteps / s²
@@ -36,14 +24,14 @@ static constexpr uint32_t PRINT_EVERY_MS = 200;     // print every 200 ms
 // (1 slot = STEPS_PER_SLOT steps = 400 microsteps by default)
 static constexpr uint8_t  SLOTS_TO_TRAVEL = 4;
 
-// ---- Globals ----
+// Globals
 AccelStepper motor(AccelStepper::DRIVER, PIN_CAROUSEL_STEP, PIN_CAROUSEL_DIR);
 
 long   targetSteps    = 0;
 bool   movingForward  = true;
 long   totalStepsMoved = 0;
 
-// ---- AS5600 helpers ----
+// AS5600 helpers
 uint8_t readReg(uint8_t reg)
 {
     Wire.beginTransmission(AS5600_ADDR);
@@ -71,7 +59,7 @@ const char* magnetStatus(uint8_t status)
     return "OK";
 }
 
-// ---- Setup ----
+// Setup
 void setup()
 {
     Serial.begin(115200);
@@ -134,7 +122,7 @@ void setup()
     Serial.println(F("  -------|---------|----------|----------|-----|-------"));
 }
 
-// ---- Loop ----
+// Loop
 void loop()
 {
     static uint32_t lastPrint = 0;

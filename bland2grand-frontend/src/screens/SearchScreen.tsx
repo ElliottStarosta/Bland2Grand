@@ -1,3 +1,5 @@
+// Home screen — search bar, featured blends, cuisine shortcuts, custom blend entry.
+
 import { useState, useRef, useEffect, useCallback } from "react";
 import { gsap } from "gsap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -28,6 +30,7 @@ interface Props {
   onCustom: () => void;
 }
 
+// Quick-pick tiles that map to backend category search aliases.
 const CATEGORIES = [
   { label: "Mexican", icon: faFire, query: "Mexican" },
   { label: "Indian", icon: faSun, query: "Indian" },
@@ -41,6 +44,7 @@ const CATEGORIES = [
   { label: "Asian", icon: faBowlFood, query: "Asian" },
 ];
 
+// Curated cards — resolved by exact name via /api/search when tapped.
 const FEATURED = [
   { name: "Tacos al Pastor", category: "Mexican", slots: [1, 2, 3, 4, 5, 6, 7, 8] },
   { name: "Cajun Blackening", category: "Cajun", slots: [2, 3, 5, 6, 7, 8] },

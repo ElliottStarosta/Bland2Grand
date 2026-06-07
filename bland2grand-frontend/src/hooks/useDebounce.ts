@@ -1,3 +1,5 @@
+// Delay value updates until typing pauses (used by SearchScreen query).
+
 import { useEffect, useState } from 'react'
 
 export function useDebounce<T>(value: T, delay = 300): T {

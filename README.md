@@ -1,211 +1,150 @@
 # Bland2Grand
-An 8-slot automatic spice dispenser controlled by an Arduino UNO R4 WiFi, with a Flask backend and a React touch-screen frontend. Search hundreds of recipes or build a custom blend — the machine weighs and dispenses each spice automatically.
 
----
+An 8-slot automatic spice dispenser: Arduino moves the carousel and runs the auger, Flask handles recipes and dispense orchestration, and a React touch UI is what you actually tap on.
 
-## Quick Start — Running the App
+Search for a recipe (or build your own blend), pick servings, and the machine weighs out each spice in order.
 
-Follow these steps every time you want to use the machine.
+## How the pieces fit together
 
-### Step 1 — Enable the Mobile Hotspot
+```
+Phone/browser  →  React UI (port 5173)
+                      ↓ REST + SSE
+                 Flask backend (port 5000)
+                      ↓ HTTP + UDP
+                 Arduino UNO R4 WiFi (port 80)
+                      ↓ GPIO
+                 Carousel, auger, load cell
+```
 
-On the Windows PC, turn on the **bland2grand** mobile hotspot before doing anything else.
+The frontend never talks to the Arduino directly. Flask sends one spice command at a time, the Arduino pushes weight/progress events back, and Flask fans those out over Server-Sent Events to whoever is watching the dispense screen.
 
-> Settings → Network & Internet → Mobile hotspot → turn **On**
+## Running it day-to-day
 
-Make sure the hotspot is configured with these exact credentials:
+### 1. Turn on the hotspot
+
+On the Windows PC, enable the **bland2grand** mobile hotspot before powering the Arduino.
+
+Settings → Network & Internet → Mobile hotspot → On
 
 | Field | Value |
 |-------|-------|
-| **Network name** | `bland2grand` |
-| **Password** | `password` |
+| Network name | `bland2grand` |
+| Password | `password` |
 
-The Arduino connects to this network on boot. If the hotspot isn't on first, the Arduino won't get a WiFi connection.
+The Arduino joins this network on boot. If the hotspot comes up late, you'll see an X on the LED matrix until it reconnects.
 
----
+### 2. Power the Arduino
 
-### Step 2 — Power On the Arduino
-
-Plug in the Arduino UNO R4 WiFi (USB or barrel jack). Watch the LED matrix on the board:
+Plug in the UNO R4 WiFi. The onboard LED matrix shows:
 
 | Display | Meaning |
 |---------|---------|
-| **✕** (X) | Connecting to WiFi… |
-| **✓** (Checkmark) | Connected — ready to receive commands |
+| ✕ | Still connecting to WiFi |
+| ✓ | Connected — ready for commands |
 
-Wait for the checkmark before continuing. If it stays on X for more than ~15 seconds, check that the hotspot is on and the credentials in `main.cpp` match.
+If it sits on ✕ for ~15s, check hotspot credentials in `Bland2Grand_Arduino/src/main.cpp`.
 
----
+### 3. Start backend + frontend
 
-### Step 3 — Start the Full Stack
+In VS Code: **Command Palette** (`Ctrl+Shift+P`) → **Tasks: Run Task** → **Bland2Grand: Full Stack**
 
-In VS Code, open the **Command Palette** (`Ctrl + Shift + P`) and run:
+That starts Flask on `http://localhost:5000`, Vite on `http://localhost:5173`, and optionally the serial monitor.
 
-```
-Tasks: Run Task → Bland2Grand: Full Stack
-```
+Wait for `VITE ready` and `Starting Flask on port 5000`.
 
-This launches three things in parallel:
+### 4. Forward port 5173 (phone access)
 
-- **Flask backend** on `http://localhost:5000`
-- **Vite frontend** on `http://localhost:5173`
-- **Arduino serial monitor** (optional, for debugging)
+1. Open the **Ports** panel (`View → Open View… → Ports`)
+2. **Forward a Port** → enter `5173`
+3. Right-click the row → **Port Visibility → Public**
 
-Wait until the Vite terminal says `VITE ready` and the Flask terminal says `Starting Flask on port 5000`.
+Private visibility only works on the same machine; Public is what you need for a phone on the dev tunnel.
 
----
+### 5. Open the app
 
-### Step 4 — Forward the Port in VS Code
+**Phone:** copy the forwarded URL from Ports (e.g. `https://xxxx-5173.use.devtunnels.ms/`)
 
-To access the app from your phone, you need to forward and publicize port **5173**.
+**PC:** `http://localhost:5173`
 
-1. Open the **Ports** panel in VS Code
-   (`View → Open View… → Ports`, or look for the **PORTS** tab in the bottom panel)
-
-2. Click **Forward a Port** and enter `5173`
-
-3. Once the port appears in the list, **right-click** the forwarded address row
-
-4. Go to **Port Visibility → Public**
-
-> The port must be **Public** for your phone to access it over the internet tunnel. A private port only works from the same machine.
-
----
-
-### Step 5 — Open the App
-
-**On your phone (or any device):**
-Copy the forwarded URL from the Ports panel — it looks like:
-
-```
-https://w7wkw5k9-5173.use.devtunnels.ms/
-```
-
-Open that link in your phone's browser.
-
-**On the PC:**
-Go to `http://localhost:5173`
-
-The app will show the Bland2Grand idle screen. Tap anywhere to wake it, search for a recipe, and dispense!
-
----
+Tap the idle screen to wake it, search, dispense.
 
 ## Troubleshooting
 
-| Symptom | Fix |
-|---------|-----|
-| Arduino stuck on ✕ | Check the hotspot is on; verify SSID/password in `main.cpp` |
-| App loads but dispense fails | Check Flask is running; verify `FLASK_SERVER_HOST` in `Constants.h` matches the PC's hotspot IP (`192.168.137.1`) |
-| Port forwarding link doesn't work on phone | Make sure Port Visibility is set to **Public**, not Private |
-| Serial monitor won't open | Close any other program using the COM port (e.g. Arduino IDE serial monitor) |
-| Arduino not found on serial | Unplug and replug USB; check Device Manager for the correct COM port |
+| Symptom | What to try |
+|---------|-------------|
+| Arduino stuck on ✕ | Hotspot on? SSID/password match `main.cpp`? |
+| Dispense fails, UI loads fine | Flask running? `FLASK_SERVER_HOST` in firmware matches PC IP (`192.168.137.1` on hotspot) |
+| Tunnel link dead on phone | Port visibility set to **Public** |
+| Serial monitor won't open | Another app (Arduino IDE?) has the COM port |
+| No COM port | Replug USB, check Device Manager |
 
----
-
-## Project Overview
+## Repo layout
 
 ```
 Bland2Grand/
-├ Bland2Grand_Arduino/       # PlatformIO firmware (C++)
-│   └ src/
-│       ├ main.cpp           # Entry point — WiFi, HTTP server, dispense state machine
-│       ├ Constants.h        # All pin assignments, motor tuning, WiFi config
-│       └ ...                # Carousel, Auger, Scale, FlowModel modules
-│
-├ bland2grand-backend/       # Flask API server (Python)
-│   ├ app.py                 # All REST + SSE endpoints
-│   ├ dispense.py            # Dispense orchestration, mock mode
-│   ├ search.py              # Recipe search + AI fallback (OpenRouter)
-│   └ seed_recipes.py        # Seed ~100 curated recipes into SQLite
-│
-├ bland2grand-frontend/      # React touch UI (TypeScript + Vite)
-│   └ src/
-│       ├ App.tsx            # Screen router, idle timer
-│       ├ screens/           # Search, Results, Serving, Dispensing, Complete
-│       └ hooks/             # SSE stream manager, debounce, audio
-│
-└ .vscode/
-    └ tasks.json             # VS Code task definitions
+├── Bland2Grand_Arduino/     PlatformIO firmware (carousel, auger, scale, WiFi)
+├── bland2grand-backend/     Flask API, SQLite recipes, dispense loop
+├── bland2grand-frontend/    React kiosk UI
+├── generate_slots.py        Regenerates shared slot config from spice_slots.json
+└── .vscode/tasks.json       One-click full-stack task
 ```
 
----
+Each subfolder has its own README with more detail.
 
-## Development Setup (First Time)
+## First-time dev setup
 
-### Prerequisites
+**Needs:** Node 18+, Python 3.11+, PlatformIO (VS Code extension is fine)
 
-- [Node.js](https://nodejs.org/) ≥ 18
-- [Python](https://python.org/) ≥ 3.11
-- [PlatformIO](https://platformio.org/) (VS Code extension or CLI)
-
-### Backend
+**Backend**
 
 ```bash
 cd bland2grand-backend
 python -m venv venv
-venv\Scripts\activate          # Windows
+venv\Scripts\activate
 pip install -r requirements.txt
-python seed_recipes.py         # Populate the recipe database (run once)
+python seed_recipes.py    # once, to fill the recipe DB
 ```
 
-Create a `.env` file in `bland2grand-backend/`:
+Create `bland2grand-backend/.env`:
 
 ```env
 ARDUINO_URL=http://192.168.137.50
-OPENROUTER_API_KEY=sk-or-...        # Optional — enables AI recipe generation
+OPENROUTER_API_KEY=sk-or-...     # optional — AI blends when search misses
 AI_MODEL=anthropic/claude-3-haiku
 DATABASE_PATH=bland2grand.db
 FLASK_PORT=5000
-MOCK_ARDUINO=true                   # Set to false when running with real hardware
+MOCK_ARDUINO=true                # false when hardware is on the network
 ```
 
-### Frontend
+**Frontend**
 
 ```bash
 cd bland2grand-frontend
 npm install
 ```
 
-### Arduino
+**Arduino**
 
-Open `Bland2Grand_Arduino/` in VS Code with PlatformIO installed. Update WiFi credentials at the top of `src/main.cpp`:
+Open `Bland2Grand_Arduino/` in VS Code with PlatformIO. WiFi creds live at the top of `src/main.cpp`. Flash via the **Arduino: Flash** task or `pio run --target upload`.
 
-```cpp
-const char *WIFI_SSID     = "bland2grand";
-const char *WIFI_PASSWORD = "your_password";
-```
+## Hardware (quick reference)
 
-Flash with the **Arduino: Flash** task or `pio run --target upload`.
+| Part | Role |
+|------|------|
+| Arduino UNO R4 WiFi | Main controller |
+| NEMA 23 + TB6600 | Carousel |
+| NEMA 17 + TB6600 | Auger |
+| HX711 + load cell | Weight feedback |
 
----
+| Signal | Pin |
+|--------|-----|
+| Carousel STEP / DIR | D5 / D7 |
+| Auger STEP / DIR | D3 / D4 |
+| HX711 DOUT / SCK | A1 / A0 |
 
-## Hardware & Assembly
+Full wiring and calibration notes: `Bland2Grand_Arduino/README.md`.
 
-> Assembly instructions, wiring diagrams, and calibration procedures will be documented here.
-
-### Bill of Materials
-
-| Component | Quantity |
-|-----------|----------|
-| Arduino UNO R4 WiFi | 1 |
-| NEMA 23 stepper + TB6600 driver (carousel) | 1 |
-| NEMA 17 stepper + TB6600 driver (auger) | 1 |
-| HX711 load cell amplifier + load cell | 1 |
-
-### Pin Reference
-
-| Signal | Arduino Pin |
-|--------|-------------|
-| Carousel STEP | D5 |
-| Carousel DIR | D7 |
-| Auger STEP | D3 |
-| Auger DIR | D4 |
-| HX711 DOUT | D9 |
-| HX711 SCK | D10 |
-
----
-
-## Slot Mapping
+## Spice slots
 
 | Slot | Spice |
 |------|-------|
@@ -217,3 +156,5 @@ Flash with the **Arduino: Flash** task or `pio run --target upload`.
 | 6 | Onion Powder |
 | 7 | Black Pepper |
 | 8 | Cayenne |
+
+Slot names/colors are shared across firmware, backend, and frontend via `spice_slots.json` → run `generate_slots.py` after editing that file.

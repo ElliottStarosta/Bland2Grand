@@ -1,20 +1,6 @@
-// ============================================================
-//  main.cpp  —  Bland2Grand
-//
-//  Entry point. Wires together WiFiComms, CarouselDriver,
-//  and AugerDriver into a simple non-blocking state machine.
-//
-//   Load-cell toggle
-//  Dead-reckoning (default — no HX711 required):
-//    #define USE_LOAD_CELL 0
-//
-//  Closed-loop (HX711 required, pins in Constants.h):
-//    #define USE_LOAD_CELL 1
-//
-// ============================================================
-
-// Set to 1 to enable closed-loop HX711 weight feedback.
-// Set to 0 for dead-reckoning (cycle-count only, no scale needed).
+// main.cpp - Bland2Grand firmware entry point
+// Ties WiFi, carousel, and auger into a non-blocking dispense loop.
+// USE_LOAD_CELL=1 uses the HX711 scale; 0 estimates weight from motor cycles.
 #define USE_LOAD_CELL 1
 
 #include <Arduino.h>
@@ -30,15 +16,11 @@
 #include "Scale.h"
 #endif
 
-// -------------------------------------------------------
-//  WiFi credentials
-// -------------------------------------------------------
+// WiFi credentials
 static const char *WIFI_SSID = "bland2grand";
 static const char *WIFI_PASSWORD = "password";
 
-// -------------------------------------------------------
-//  LED Matrix frames
-// -------------------------------------------------------
+// LED Matrix frames
 ArduinoLEDMatrix matrix;
 
 static uint8_t FRAME_CHECK[8][12] = {
@@ -63,9 +45,7 @@ static uint8_t FRAME_X[8][12] = {
     {1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1},
 };
 
-// -------------------------------------------------------
-//  Subsystem instances
-// -------------------------------------------------------
+// Subsystem instances
 WiFiComms wifi(WIFI_SSID, WIFI_PASSWORD);
 CarouselDriver carousel(wifi);
 
@@ -76,21 +56,21 @@ AugerDriver auger(wifi, scale);
 AugerDriver auger(wifi);
 #endif
 
-// -------------------------------------------------------
-//  Dispense state machine
-// -------------------------------------------------------
+// Dispense state machine
 enum class DispenseState
 {
     IDLE,
-    INDEXING,      // carousel moving + dispense setup
-    DISPENSING,    // auger running forward
-    PARKING,       // auger forward-park to disengage spur gear
-    PUSH_COMPLETE, // send spice-complete, check session done
+    WAITING_FOR_BOWL,
+    INDEXING,
+    DISPENSING,
+    PARKING,
+    PUSH_COMPLETE,
     DONE
 };
 
 DispenseState dispenseState = DispenseState::IDLE;
 
+// Holds the spice Flask asked for on the last accepted POST / request.
 struct ActiveDispense
 {
     uint8_t slot = 0;
@@ -102,10 +82,9 @@ struct ActiveDispense
 };
 
 ActiveDispense active;
+bool _bowlTared = false;
 
-// -------------------------------------------------------
-//  State machine tick — called every loop()
-// -------------------------------------------------------
+// State machine tick — called every loop()
 void tickDispense()
 {
     switch (dispenseState)
@@ -114,25 +93,75 @@ void tickDispense()
         break;
 
     case DispenseState::INDEXING:
+    {
+#if USE_LOAD_CELL
+        if (active.slotIdx == 0 && !_bowlTared)
+        {
+            float bowlWeight = scale.readStable();
+
+            Serial.print(F("[Bowl] Scale reads: "));
+            Serial.print(bowlWeight, 2);
+            Serial.println(F("g"));
+
+            if (bowlWeight < MIN_BOWL_WEIGHT_G)
+            {
+                Serial.println(F("[Bowl] No bowl detected — waiting..."));
+                wifi.pushNoBowl();
+                dispenseState = DispenseState::WAITING_FOR_BOWL;
+                return;
+            }
+
+            Serial.println(F("[Bowl] Bowl confirmed — taring..."));
+            scale.tare();
+            _bowlTared = true;
+            Serial.println(F("[Bowl] Tare complete."));
+        }
+        else if (active.slotIdx > 0)
+        {
+            Serial.println(F("[Bowl] Retaring for next slot..."));
+            scale.tare();
+            Serial.println(F("[Bowl] Retare complete."));
+        }
+#endif
+
         wifi.pushIndexing(active.slot, active.spiceName,
                           active.slotIdx, active.total);
         auger.enableCoils();
-        carousel.goToSlot(active.slot, active.spiceName); // blocking — carousel settling
+        carousel.goToSlot(active.slot, active.spiceName);
+        auger.startDispense(active.slot, active.spiceName,
+                            active.targetGrams,
+                            active.slotIdx, active.total);
+        dispenseState = DispenseState::DISPENSING;
+        break;
+    }
 
-        #if USE_LOAD_CELL
-                scale.tare(); // tare HERE while everything is still — free time
-        #endif
+    case DispenseState::WAITING_FOR_BOWL:
+    {
+#if USE_LOAD_CELL
+        float w = scale.read();
 
-            auger.startDispense(active.slot, active.spiceName,
-                                active.targetGrams,
-                                active.slotIdx, active.total);
-            dispenseState = DispenseState::DISPENSING;
-            break;
+        Serial.print(F("[Bowl] Waiting... scale="));
+        Serial.print(w, 2);
+        Serial.println(F("g"));
+
+        if (w >= MIN_BOWL_WEIGHT_G)
+        {
+            Serial.println(F("[Bowl] Bowl detected! Proceeding..."));
+            wifi.pushBowlDetected();
+            delay(200);
+            dispenseState = DispenseState::INDEXING;
+        }
+#else
+        dispenseState = DispenseState::INDEXING;
+#endif
+        break;
+    }
+
     case DispenseState::DISPENSING:
     {
         static uint32_t lastStopCheck = 0;
         uint32_t now = millis();
-        if (now - lastStopCheck >= 200) // check stop every 200ms, not every loop
+        if (now - lastStopCheck >= 200)
         {
             lastStopCheck = now;
             if (wifi.checkStopUDP())
@@ -150,6 +179,7 @@ void tickDispense()
         }
         break;
     }
+
     case DispenseState::PARKING:
         if (auger.tickPark())
         {
@@ -167,22 +197,55 @@ void tickDispense()
         {
             Serial.println(F("[CMD] All spices done."));
             wifi.pushSessionComplete(active.recipeName);
-            // Return carousel to slot 1
             Serial.println(F("[Carousel] Returning to slot 1..."));
             carousel.goToSlot(1);
+            _bowlTared = false;
+
+#if USE_LOAD_CELL
+        // After session, tare with bowl+spice still on scale
+        delay(500);
+        scale.tare();
+        Serial.println(F("[Bowl] Post-session tare. Waiting for bowl removal (watch for negative dip)..."));
+
+        // Now poll — when bowl is removed, scale goes significantly negative
+        // (bowl was tared out, so removing it = -173g raw, clamped but detectable via raw read)
+        bool bowlRemoved = false;
+        while (!bowlRemoved)
+        {
+            long raw = scale.rawRead(); // raw ADC, uncalibrated
+            float w = scale.read();
+            Serial.print(F("[Bowl] raw="));
+            Serial.print(raw);
+            Serial.print(F("  filtered="));
+            Serial.println(w, 3);
+            
+            // When bowl is removed, the raw reading drops far below zero
+            // rawRead() returns ADC counts; a 173g bowl at gain 128 is a large negative swing
+            // Threshold: if filtered goes below -5g equivalent, bowl is gone
+            // We can't use filtered (clamped to 0), so check raw directly
+            // Raw counts: negative means below tare reference = bowl removed
+            if (raw < 500000L) // large negative ADC count = bowl removed
+            {
+                bowlRemoved = true;
+            }
+            delay(200);
+        }
+
+        Serial.println(F("[Bowl] Bowl removed! Settling then retaring..."));
+        delay(1000);
+        scale.tare();
+        Serial.println(F("[Bowl] Retared to empty scale. Ready for next session."));
+#endif
         }
         dispenseState = DispenseState::IDLE;
         break;
-
     case DispenseState::DONE:
         dispenseState = DispenseState::IDLE;
         break;
     }
 }
 
-// -------------------------------------------------------
-//  HTTP request handler
-// -------------------------------------------------------
+// Minimal HTTP server: GET /health, POST /stop, POST / (dispense command from Flask).
 void handleIncomingRequest(WiFiClient &client)
 {
     // Read headers
@@ -298,11 +361,10 @@ void handleIncomingRequest(WiFiClient &client)
     Serial.println(F(")"));
 
     dispenseState = DispenseState::INDEXING;
+    // wifi.pushNoBowl(); // tell frontend to start on the waiting screen
 }
 
-// -------------------------------------------------------
-//  setup()
-// -------------------------------------------------------
+// setup()
 void setup()
 {
     Serial.begin(9600);
@@ -313,13 +375,11 @@ void setup()
     matrix.begin();
     matrix.renderBitmap(FRAME_X, 8, 12); // show X until WiFi connects
 
-    Serial.println(F("============================================"));
 #if USE_LOAD_CELL
-    Serial.println(F("  Bland2Grand  —  Closed-Loop (Load Cell)"));
+    Serial.println(F("[boot] Bland2Grand - closed-loop (load cell)"));
 #else
-    Serial.println(F("  Bland2Grand  —  Dead-Reckoning Mode"));
+    Serial.println(F("[boot] Bland2Grand - dead-reckoning mode"));
 #endif
-    Serial.println(F("============================================"));
 
     // Subsystems
     carousel.begin();
@@ -337,12 +397,9 @@ void setup()
     matrix.renderBitmap(FRAME_CHECK, 8, 12); // show checkmark on connect
     wifi.startServer();
 
-    Serial.println(F("============================================"));
+    Serial.println(F("[boot] ready"));
 }
 
-// -------------------------------------------------------
-//  loop()
-// -------------------------------------------------------
 void loop()
 {
     // Always tick the state machine first (keeps motors smooth)

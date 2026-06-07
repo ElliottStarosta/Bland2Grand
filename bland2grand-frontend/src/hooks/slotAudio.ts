@@ -1,3 +1,5 @@
+// Preloaded MP3 voice lines per slot (public/audio/{spice}.mp3).
+
 import { SPICE_SLOTS } from '../slotConfig'
 
 function toAudioSlug(name: string): string {

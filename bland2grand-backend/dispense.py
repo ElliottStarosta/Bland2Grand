@@ -1,3 +1,10 @@
+"""
+Dispense orchestration: SSE fan-out, Arduino push handlers, mock mode.
+
+Flask posts one spice at a time to the Arduino and waits for a push back
+before moving on. The frontend listens on /api/status/stream for live updates.
+"""
+
 import queue
 import random
 import threading
@@ -9,7 +16,6 @@ from typing import Optional
 import requests
 from config import ARDUINO_URL, MOCK_ARDUINO, SPICE_SLOTS
 
-
 # SSE client registry
 _sse_clients: list[queue.Queue] = []
 _clients_lock = threading.Lock()
@@ -17,9 +23,11 @@ _clients_lock = threading.Lock()
 # Session state
 _udp_thread: threading.Thread | None = None
 
+
+# UDP listener — Arduino sends weight updates here to avoid blocking its step loop.
 def _udp_listener() -> None:
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.bind(('0.0.0.0', 5001))
+    sock.bind(("0.0.0.0", 5001))
     sock.settimeout(1.0)
     print("[UDP] Listening on port 5001")
     while True:
@@ -32,6 +40,8 @@ def _udp_listener() -> None:
             continue
         except Exception as e:
             print(f"[UDP] Error: {e}")
+
+
 def start_udp_listener() -> None:
     global _udp_thread
     if _udp_thread and _udp_thread.is_alive():
@@ -39,7 +49,9 @@ def start_udp_listener() -> None:
     _udp_thread = threading.Thread(target=_udp_listener, daemon=True)
     _udp_thread.start()
 
+
 start_udp_listener()
+
 
 def register_sse_client() -> queue.Queue:
     q: queue.Queue = queue.Queue(maxsize=50)
@@ -65,9 +77,11 @@ def _broadcast(event: dict) -> None:
             except queue.Full:
                 pass
 
+
 def broadcast(event: dict) -> None:
     """Public wrapper to broadcast an event to all SSE clients."""
     _broadcast(event)
+
 
 # Spice-complete signal
 class _SpiceCompleteSignal:
@@ -130,6 +144,22 @@ def handle_arduino_dispense_start(data: dict) -> None:
             "target_weight": data.get("target_weight", 0.0),
             "slot_index": data.get("slot_index", 0),
             "total_slots": data.get("total_slots", 1),
+        }
+    )
+
+
+def handle_arduino_no_bowl(data: dict) -> None:
+    _broadcast(
+        {
+            "type": "no_bowl",
+        }
+    )
+
+
+def handle_arduino_bowl_detected(data: dict) -> None:
+    _broadcast(
+        {
+            "type": "bowl_detected",
         }
     )
 
@@ -218,12 +248,16 @@ def _mock_dispense_spice(slot: int, target_grams: float) -> dict:
 
     return {"status": "done", "actual": round(current, 2)}
 
+
 def handle_arduino_nearly_there(data: dict) -> None:
-    _broadcast({
-        "type": "nearly_there",
-        "slot": data.get("slot"),
-        "spice_name": data.get("spice_name", ""),
-    })
+    _broadcast(
+        {
+            "type": "nearly_there",
+            "slot": data.get("slot"),
+            "spice_name": data.get("spice_name", ""),
+        }
+    )
+
 
 def _friendly_error(exc: Exception) -> str:
     msg = str(exc)
@@ -235,7 +269,8 @@ def _friendly_error(exc: Exception) -> str:
         return "Could not reach Arduino -- check WiFi and IP address."
     return "Hardware error -- check Arduino connection."
 
-# Main dispense orchestration
+
+# Main dispense orchestration — one background thread, one spice POST at a time.
 def start_dispense(recipe: dict, serving_count: int) -> tuple[bool, str]:
     if _session.busy:
         return False, "A dispense is already in progress."
@@ -254,14 +289,16 @@ def start_dispense(recipe: dict, serving_count: int) -> tuple[bool, str]:
         _session.active = True
         time.sleep(0.3)
         try:
-            _broadcast({
-                "type": "session_start",
-                "recipe_name": recipe["name"],
-                "total_slots": len(targets),
-                "slots": [
-                    {"slot": s, "name": n, "target": g} for s, n, g in targets
-                ],
-            })
+            _broadcast(
+                {
+                    "type": "session_start",
+                    "recipe_name": recipe["name"],
+                    "total_slots": len(targets),
+                    "slots": [
+                        {"slot": s, "name": n, "target": g} for s, n, g in targets
+                    ],
+                }
+            )
 
             for idx, (slot, name, grams) in enumerate(targets):
                 if not _session.active:
@@ -270,52 +307,102 @@ def start_dispense(recipe: dict, serving_count: int) -> tuple[bool, str]:
                 _spice_signal.reset()
 
                 payload = {
-                    "carousel":    slot,
-                    "grams":       grams,
-                    "spice_name":  name,
+                    "carousel": slot,
+                    "grams": grams,
+                    "spice_name": name,
                     "recipe_name": recipe["name"],
-                    "slot_index":  idx,
+                    "slot_index": idx,
                     "total_slots": len(targets),
                 }
 
-                try:
-                    resp = requests.post(
-                        f"{ARDUINO_URL}/",
-                        json=payload,
-                        timeout=5,
+                # POST one spice — retry silently while Arduino is waiting for bowl
+                # (Arduino won't respond to HTTP during bowl detection / tare)
+                posted = False
+                post_deadline = time.time() + 120  # wait up to 2 min for bowl
+                while not posted and time.time() < post_deadline:
+                    if not _session.active:
+                        return
+                    try:
+                        resp = requests.post(
+                            f"{ARDUINO_URL}/",
+                            json=payload,
+                            timeout=5,
+                        )
+                        if resp.status_code == 200:
+                            posted = True
+                        elif resp.status_code == 409:
+                            # Arduino busy — wait and retry
+                            print(f"[Dispense] Arduino busy (409), retrying...")
+                            time.sleep(1)
+                        else:
+                            raise RuntimeError(f"Arduino returned {resp.status_code}")
+                    except requests.exceptions.ConnectionError:
+                        # Arduino not responding — likely mid-tare or bowl wait, retry silently
+                        print(
+                            f"[Dispense] Arduino not responding, retrying (bowl wait?)..."
+                        )
+                        time.sleep(1)
+                    except requests.exceptions.Timeout:
+                        print(f"[Dispense] Arduino timeout, retrying...")
+                        time.sleep(1)
+                    except Exception as exc:
+                        print(f"[Dispense] Failed to reach Arduino: {exc}")
+                        _broadcast(
+                            {
+                                "type": "session_error",
+                                "message": _friendly_error(exc),
+                                "completed": [],
+                            }
+                        )
+                        return
+
+                if not posted:
+                    _broadcast(
+                        {
+                            "type": "session_error",
+                            "message": "Arduino unreachable after 2 minutes.",
+                            "completed": [],
+                        }
                     )
-                    if resp.status_code != 200:
-                        raise RuntimeError(f"Arduino returned {resp.status_code}")
-                except Exception as exc:
-                    print(f"[Dispense] Failed to reach Arduino: {exc}")
-                    _broadcast({"type": "session_error", "message": _friendly_error(exc), "completed": []})
                     return
 
+                # Block until Arduino pushes spice-complete (or timeout)
                 completed = _spice_signal.wait(timeout_s=120)
                 if not completed or _spice_signal.result.get("status") == "fault":
-                    _broadcast({
-                        "type": "session_error",
-                        "message": f"Timeout or fault on slot {slot}",
-                        "completed": [],
-                    })
+                    _broadcast(
+                        {
+                            "type": "session_error",
+                            "message": f"Timeout or fault on slot {slot}",
+                            "completed": [],
+                        }
+                    )
                     return
 
             if _session.active:
-                _broadcast({
-                    "type": "session_complete",
-                    "recipe_name": recipe["name"],
-                    "completed": [n for _, n, _ in targets],
-                })
+                _broadcast(
+                    {
+                        "type": "session_complete",
+                        "recipe_name": recipe["name"],
+                        "completed": [n for _, n, _ in targets],
+                    }
+                )
 
         except Exception as exc:
             print(f"[Dispense] Error: {exc}")
-            _broadcast({"type": "session_error", "message": _friendly_error(exc), "completed": []})
+            _broadcast(
+                {
+                    "type": "session_error",
+                    "message": _friendly_error(exc),
+                    "completed": [],
+                }
+            )
         finally:
             _session.active = False
 
     _session.thread = threading.Thread(target=_run, daemon=True)
     _session.thread.start()
     return True, "Dispense started."
+
 
 def is_busy() -> bool:
     return _session.busy

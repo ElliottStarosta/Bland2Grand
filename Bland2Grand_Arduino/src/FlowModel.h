@@ -1,4 +1,7 @@
 #pragma once
+// FlowModel - per-slot linear regression of auger cycles vs weight, persisted in EEPROM.
+// Learns coast (in-flight grams after motor stop) so we can stop early and still hit target.
+
 #include <Arduino.h>
 #include <EEPROM.h>
 #include "Constants.h"
@@ -157,6 +160,7 @@ private:
         EEPROM.get(addr + 8, c);
         EEPROM.get(addr + 12, n);
 
+        // Reject corrupt or uninitialized EEPROM (e.g. first boot after flash).
         bool valid_slope = !isnan(s) && !isinf(s) && s > 0.001f && s < 50.0f;
         bool valid_intercept = !isnan(i) && !isinf(i);
         bool valid_coast = !isnan(c) && !isinf(c) && c >= 0.0f && c <= MAX_COAST_GRAMS;

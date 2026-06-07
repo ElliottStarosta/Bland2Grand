@@ -1,3 +1,5 @@
+// Search results list — staggered SpiceCard entries.
+
 import { useRef, useEffect } from 'react'
 import { gsap } from 'gsap'
 import { SpiceCard } from '../components/SpiceCard'

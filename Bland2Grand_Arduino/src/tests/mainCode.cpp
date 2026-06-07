@@ -1,20 +1,5 @@
-// ============================================================
-//  main.cpp  —  Bland2Grand
-//
-//  Entry point. Wires together WiFiComms, CarouselDriver,
-//  and AugerDriver into a simple non-blocking state machine.
-//
-//   Load-cell toggle 
-//  Dead-reckoning (default — no HX711 required):
-//    #define USE_LOAD_CELL 0
-//
-//  Closed-loop (HX711 required, pins in Constants.h):
-//    #define USE_LOAD_CELL 1
-//  
-// ============================================================
-
-// Set to 1 to enable closed-loop HX711 weight feedback.
-// Set to 0 for dead-reckoning (cycle-count only, no scale needed).
+// mainCode.cpp - copy of main.cpp used for bench testing (dead-reckoning mode).
+// Same dispense loop as production; flip USE_LOAD_CELL if you want the scale.
 #define USE_LOAD_CELL 0
 
 #include <Arduino.h>
@@ -30,15 +15,11 @@
 #include "Scale.h"
 #endif
 
-// -------------------------------------------------------
-//  WiFi credentials
-// -------------------------------------------------------
+// WiFi credentials
 static const char *WIFI_SSID     = "bland2grand";
 static const char *WIFI_PASSWORD = "password";
 
-// -------------------------------------------------------
-//  LED Matrix frames
-// -------------------------------------------------------
+// LED Matrix frames
 ArduinoLEDMatrix matrix;
 
 static uint8_t FRAME_CHECK[8][12] = {
@@ -63,9 +44,7 @@ static uint8_t FRAME_X[8][12] = {
     {1,1,1,0,0,0,0,0,0,1,1,1},
 };
 
-// -------------------------------------------------------
-//  Subsystem instances
-// -------------------------------------------------------
+// Subsystem instances
 WiFiComms wifi(WIFI_SSID, WIFI_PASSWORD);
 CarouselDriver carousel(wifi);
 
@@ -76,9 +55,7 @@ AugerDriver auger(wifi, scale);
 AugerDriver auger(wifi);
 #endif
 
-// -------------------------------------------------------
-//  Dispense state machine
-// -------------------------------------------------------
+// Dispense state machine
 enum class DispenseState
 {
     IDLE,
@@ -103,9 +80,7 @@ struct ActiveDispense
 
 ActiveDispense active;
 
-// -------------------------------------------------------
-//  State machine tick — called every loop()
-// -------------------------------------------------------
+// State machine tick — called every loop()
 void tickDispense()
 {
     switch (dispenseState)
@@ -163,9 +138,7 @@ void tickDispense()
     }
 }
 
-// -------------------------------------------------------
-//  HTTP request handler
-// -------------------------------------------------------
+// HTTP request handler
 void handleIncomingRequest(WiFiClient &client)
 {
     // Read headers
@@ -268,9 +241,7 @@ void handleIncomingRequest(WiFiClient &client)
     dispenseState = DispenseState::INDEXING;
 }
 
-// -------------------------------------------------------
-//  setup()
-// -------------------------------------------------------
+// setup()
 void setup()
 {
     Serial.begin(9600);
@@ -279,13 +250,10 @@ void setup()
     matrix.begin();
     matrix.renderBitmap(FRAME_X, 8, 12); // show X until WiFi connects
 
-    Serial.println(F("============================================"));
-#if USE_LOAD_CELL
-    Serial.println(F("  Bland2Grand  —  Closed-Loop (Load Cell)"));
+    Serial.println(F("[boot] Bland2Grand - closed-loop (load cell)"));
 #else
-    Serial.println(F("  Bland2Grand  —  Dead-Reckoning Mode"));
+    Serial.println(F("[boot] Bland2Grand - dead-reckoning mode"));
 #endif
-    Serial.println(F("============================================"));
 
     // Subsystems
     carousel.begin();
@@ -303,12 +271,9 @@ void setup()
     matrix.renderBitmap(FRAME_CHECK, 8, 12); // show checkmark on connect
     wifi.startServer();
 
-    Serial.println(F("============================================"));
+    Serial.println(F("[boot] ready"));
 }
 
-// -------------------------------------------------------
-//  loop()
-// -------------------------------------------------------
 void loop()
 {
     // Always tick the state machine first (keeps motors smooth)

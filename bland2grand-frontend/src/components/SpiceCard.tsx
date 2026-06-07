@@ -1,3 +1,5 @@
+// Recipe list card — spice bar preview, category badge, tap to select.
+
 import { useRef, useEffect } from 'react'
 import { gsap } from 'gsap'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'

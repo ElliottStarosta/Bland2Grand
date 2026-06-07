@@ -1,24 +1,5 @@
-// ============================================================
-//  slot_auger_test.cpp
-//  Bland2Grand — Manual Slot + Auger Engagement Test
-//
-//  On power-up assumes the carousel is already on slot 1.
-//  Type a slot number (1-8) in the serial monitor and press
-//  Enter. The carousel indexes to that slot using the shortest
-//  path, then the auger spins for one full revolution forward
-//  and reverses back (back-purge), then stops and waits for
-//  the next command.
-//
-//  No encoder, no scale, no WiFi required.
-//
-//  To flash:
-//    Make sure platformio.ini has:
-//      build_src_filter = +<main.cpp> -<tests/>
-//    Drop this file in as src/main.cpp
-//    pio run --target upload
-//    pio device monitor --baud 115200
-// ============================================================
-
+// c_spin.cpp - manual slot picker: type 1-8 in serial, carousel moves, auger spins once.
+// Handy for checking mechanical engagement without WiFi or a scale.
 #include <Arduino.h>
 #include <AccelStepper.h>
 #include "Constants.h"

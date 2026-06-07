@@ -1,3 +1,5 @@
+// Typed fetch wrapper for all backend /api routes (Vite proxies to Flask in dev).
+
 import type { Recipe } from '../../types'
 
 const BASE = '/api'

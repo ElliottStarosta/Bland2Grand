@@ -1,0 +1,79 @@
+"filename", "language", "JSON", "Markdown", "PostCSS", "JSON with Comments", "Batch", "Python", "JavaScript", "HTML", "sqlite3-editor-database", "pip requirements", "Ini", "C++", "TypeScript", "TypeScript JSX", "CMake", "comment", "blank", "total"
+"c:\Users\starl\Documents\GitHub\Bland2Grand\Bland2Grand_Arduino\.pio\libdeps\uno_r4_wifi\Unity\unityConfig.cmake", "CMake", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1
+"c:\Users\starl\Documents\GitHub\Bland2Grand\Bland2Grand_Arduino\README.md", "Markdown", 0, 120, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 168
+"c:\Users\starl\Documents\GitHub\Bland2Grand\Bland2Grand_Arduino\platformio.ini", "Ini", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11, 0, 0, 0, 0, 0, 1, 12
+"c:\Users\starl\Documents\GitHub\Bland2Grand\Bland2Grand_Arduino\src\AugerDriver.h", "C++", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 296, 0, 0, 0, 103, 63, 462
+"c:\Users\starl\Documents\GitHub\Bland2Grand\Bland2Grand_Arduino\src\CarouselDriver.h", "C++", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 112, 0, 0, 0, 1, 23, 136
+"c:\Users\starl\Documents\GitHub\Bland2Grand\Bland2Grand_Arduino\src\Constants.h", "C++", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 58, 0, 0, 0, 28, 36, 122
+"c:\Users\starl\Documents\GitHub\Bland2Grand\Bland2Grand_Arduino\src\FlowModel.h", "C++", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 135, 0, 0, 0, 21, 23, 179
+"c:\Users\starl\Documents\GitHub\Bland2Grand\Bland2Grand_Arduino\src\Scale.h", "C++", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 103, 0, 0, 0, 17, 20, 140
+"c:\Users\starl\Documents\GitHub\Bland2Grand\Bland2Grand_Arduino\src\SlotConfig.h", "C++", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 0, 0, 0, 5, 4, 33
+"c:\Users\starl\Documents\GitHub\Bland2Grand\Bland2Grand_Arduino\src\StateMachine.h", "C++", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 252, 0, 0, 0, 23, 37, 312
+"c:\Users\starl\Documents\GitHub\Bland2Grand\Bland2Grand_Arduino\src\WiFiComms.h", "C++", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 212, 0, 0, 0, 10, 31, 253
+"c:\Users\starl\Documents\GitHub\Bland2Grand\Bland2Grand_Arduino\src\main.cpp", "C++", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 268, 0, 0, 0, 51, 42, 361
+"c:\Users\starl\Documents\GitHub\Bland2Grand\Bland2Grand_Arduino\src\tests\auger.cpp", "C++", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 37, 0, 0, 0, 3, 14, 54
+"c:\Users\starl\Documents\GitHub\Bland2Grand\Bland2Grand_Arduino\src\tests\c_spin.cpp", "C++", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 106, 0, 0, 0, 33, 27, 166
+"c:\Users\starl\Documents\GitHub\Bland2Grand\Bland2Grand_Arduino\src\tests\calibration.cpp", "C++", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 200, 0, 0, 0, 27, 48, 275
+"c:\Users\starl\Documents\GitHub\Bland2Grand\Bland2Grand_Arduino\src\tests\carousel.cpp", "C++", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 72, 0, 0, 0, 2, 23, 97
+"c:\Users\starl\Documents\GitHub\Bland2Grand\Bland2Grand_Arduino\src\tests\encoder_cal.cpp", "C++", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 80, 0, 0, 0, 2, 14, 96
+"c:\Users\starl\Documents\GitHub\Bland2Grand\Bland2Grand_Arduino\src\tests\encoder_spin.cpp", "C++", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 124, 0, 0, 0, 34, 29, 187
+"c:\Users\starl\Documents\GitHub\Bland2Grand\Bland2Grand_Arduino\src\tests\ipTest.cpp", "C++", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 264, 0, 0, 0, 47, 55, 366
+"c:\Users\starl\Documents\GitHub\Bland2Grand\Bland2Grand_Arduino\src\tests\main.cpp", "C++", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 76, 0, 0, 0, 13, 17, 106
+"c:\Users\starl\Documents\GitHub\Bland2Grand\Bland2Grand_Arduino\src\tests\mainCode.cpp", "C++", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 234, 0, 0, 0, 51, 42, 327
+"c:\Users\starl\Documents\GitHub\Bland2Grand\Bland2Grand_Arduino\src\tests\roationTest.cpp", "C++", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 31, 0, 0, 0, 4, 11, 46
+"c:\Users\starl\Documents\GitHub\Bland2Grand\Bland2Grand_Arduino\test.md", "Markdown", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1
+"c:\Users\starl\Documents\GitHub\Bland2Grand\Gantt\index.html", "HTML", 0, 0, 0, 0, 0, 0, 0, 175, 0, 0, 0, 0, 0, 0, 0, 8, 18, 201
+"c:\Users\starl\Documents\GitHub\Bland2Grand\Gantt\main.js", "JavaScript", 0, 0, 0, 0, 0, 0, 1646, 0, 0, 0, 0, 0, 0, 0, 0, 28, 112, 1786
+"c:\Users\starl\Documents\GitHub\Bland2Grand\Gantt\run-dev.bat", "Batch", 0, 0, 0, 0, 25, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 29
+"c:\Users\starl\Documents\GitHub\Bland2Grand\Gantt\server.py", "Python", 0, 0, 0, 0, 0, 73, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 19, 107
+"c:\Users\starl\Documents\GitHub\Bland2Grand\Gantt\styles.css", "PostCSS", 0, 0, 760, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 63, 47, 870
+"c:\Users\starl\Documents\GitHub\Bland2Grand\Gantt\tasks.json", "JSON with Comments", 0, 0, 0, 1417, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1417
+"c:\Users\starl\Documents\GitHub\Bland2Grand\README.md", "Markdown", 0, 153, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 67, 220
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-backend\README.md", "Markdown", 0, 137, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 52, 189
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-backend\ai_client.py", "Python", 0, 0, 0, 0, 0, 58, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 9, 76
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-backend\app.py", "Python", 0, 0, 0, 0, 0, 171, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 52, 247
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-backend\bland2grand.db", "sqlite3-editor-database", 0, 0, 0, 0, 0, 0, 0, 0, 543, 0, 0, 0, 0, 0, 0, 0, 10, 553
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-backend\config.py", "Python", 0, 0, 0, 0, 0, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 14
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-backend\database.py", "Python", 0, 0, 0, 0, 0, 129, 0, 0, 0, 0, 0, 0, 0, 0, 0, 18, 6, 153
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-backend\dispense.py", "Python", 0, 0, 0, 0, 0, 253, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 59, 322
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-backend\provision.py", "Python", 0, 0, 0, 0, 0, 133, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 24, 162
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-backend\requirements.txt", "pip requirements", 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 4
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-backend\search.py", "Python", 0, 0, 0, 0, 0, 64, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 9, 82
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-backend\seed_recipes.py", "Python", 0, 0, 0, 0, 0, 232, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13, 106, 351
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-backend\simulate.py", "Python", 0, 0, 0, 0, 0, 78, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 15, 100
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-backend\slot_config.py", "Python", 0, 0, 0, 0, 0, 40, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 5, 48
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-frontend\README.md", "Markdown", 0, 121, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 41, 162
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-frontend\eslint.config.js", "JavaScript", 0, 0, 0, 0, 0, 0, 22, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 24
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-frontend\index.html", "HTML", 0, 0, 0, 0, 0, 0, 0, 23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 23
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-frontend\package-lock.json", "JSON", 2750, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2751
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-frontend\package.json", "JSON", 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 31
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-frontend\postcss.config.js", "JavaScript", 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-frontend\src\App.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 212, 0, 13, 25, 250
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-frontend\src\components\Bowl.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 214, 0, 17, 36, 267
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-frontend\src\components\Header.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 122, 0, 0, 10, 132
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-frontend\src\components\SlotRow.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 107, 0, 4, 12, 123
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-frontend\src\components\SpiceCard.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 142, 0, 5, 11, 158
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-frontend\src\hooks\slotAudio.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 37, 0, 0, 0, 8, 45
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-frontend\src\hooks\useDebounce.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 0, 0, 0, 1, 10
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-frontend\src\hooks\useDispenseStream.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 243, 0, 0, 0, 35, 278
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-frontend\src\index.css", "PostCSS", 0, 0, 197, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 19, 27, 243
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-frontend\src\main.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 0, 0, 2, 11
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-frontend\src\screens\CompleteScreen.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 166, 0, 5, 15, 186
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-frontend\src\screens\CustomRecipeScreen.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 716, 0, 23, 47, 786
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-frontend\src\screens\DispensingScreen.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 156, 0, 5, 15, 176
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-frontend\src\screens\IdleScreen.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 513, 0, 28, 47, 588
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-frontend\src\screens\ResultsScreen.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 41, 0, 0, 7, 48
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-frontend\src\screens\SearchScreen.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 346, 0, 6, 30, 382
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-frontend\src\screens\ServingScreen.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 243, 0, 13, 20, 276
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-frontend\src\screens\lib\api.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 44, 0, 0, 0, 8, 52
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-frontend\src\slotConfig.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 31, 0, 0, 3, 5, 39
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-frontend\src\types\index.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 113, 0, 0, 2, 15, 130
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-frontend\src\vite-env.d.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 1, 1, 7
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-frontend\tailwind.config.js", "JavaScript", 0, 0, 0, 0, 0, 0, 35, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 36
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-frontend\tsconfig.app.json", "JSON", 24, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 3, 29
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-frontend\tsconfig.json", "JSON with Comments", 0, 0, 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-frontend\tsconfig.node.json", "JSON", 22, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 3, 27
+"c:\Users\starl\Documents\GitHub\Bland2Grand\bland2grand-frontend\vite.config.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 28, 0, 0, 1, 2, 31
+"c:\Users\starl\Documents\GitHub\Bland2Grand\generate_slots.py", "Python", 0, 0, 0, 0, 0, 219, 0, 0, 0, 0, 0, 0, 0, 0, 0, 105, 38, 362
+"c:\Users\starl\Documents\GitHub\Bland2Grand\spice_slots.json", "JSON", 52, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 54
+"Total", "-", 2878, 531, 957, 1437, 25, 1461, 1709, 198, 543, 4, 11, 2684, 510, 2987, 1, 943, 1695, 18574

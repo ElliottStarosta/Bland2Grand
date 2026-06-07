@@ -1,3 +1,5 @@
+// Single spice row on the dispense screen — icon, bar, live weight readout.
+
 import { useEffect, useRef } from 'react'
 import { gsap } from 'gsap'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
