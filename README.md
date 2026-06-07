@@ -136,25 +136,11 @@ Open `Bland2Grand_Arduino/` in VS Code with PlatformIO. WiFi creds live at the t
 | NEMA 17 + TB6600 | Auger |
 | HX711 + load cell | Weight feedback |
 
-| Signal | Pin |
-|--------|-----|
-| Carousel STEP / DIR | D5 / D7 |
-| Auger STEP / DIR | D3 / D4 |
-| HX711 DOUT / SCK | A1 / A0 |
-
-Full wiring and calibration notes: `Bland2Grand_Arduino/README.md`.
-
-## Spice slots
-
-| Slot | Spice |
-|------|-------|
-| 1 | Cumin |
-| 2 | Paprika |
-| 3 | Garlic Powder |
-| 4 | Salt |
-| 5 | Oregano |
-| 6 | Onion Powder |
-| 7 | Black Pepper |
-| 8 | Cayenne |
-
-Slot names/colors are shared across firmware, backend, and frontend via `spice_slots.json` → run `generate_slots.py` after editing that file.
+| Signal | Arduino Pin |
+|--------|-------------|
+| Carousel STEP | D5 |
+| Carousel DIR | D7 |
+| Auger STEP | D3 |
+| Auger DIR | D4 |
+| HX711 SCK | A0 |
+| HX711 DOUT | A1 |
