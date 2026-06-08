@@ -224,7 +224,15 @@ private:
 
         // Wait until the current rev finishes
         if (_stepper.distanceToGo() != 0)
+        {
+            uint32_t now = millis();
+            if (now - _lastPushMs >= WIFI_PUSH_INTERVAL_MS)
+            {
+                _lastPushMs = now;
+                _wifi.pushWeightUDP(_slot, _lastRevWeight, _targetGrams);
+            }
             return false;
+        }
 
         // Rev just completed — read scale (motor is stopped so reading is clean)
         float current = _readStableWeight();
@@ -293,7 +301,15 @@ private:
         _stepper.run();
 
         if (_stepper.distanceToGo() != 0)
+        {
+            uint32_t now = millis();
+            if (now - _lastPushMs >= WIFI_PUSH_INTERVAL_MS)
+            {
+                _lastPushMs = now;
+                _wifi.pushWeightUDP(_slot, _lastRevWeight, _targetGrams);
+            }
             return false;
+        }
 
         switch (_tapPhase)
         {
@@ -314,7 +330,7 @@ private:
             _tapPhase = TapPhase::POST;
             long postSteps = STEPS_PER_AUGER_CYCLE / 4; // last quarter
             _stepper.setMaxSpeed(AUGER_FULL_SPEED_STEPS_S);
-            _stepper.setAcceleration(AUGER_FULL_SPEED_STEPS_S * 4.0f);
+            _stepper.setAcceleration(AUGER_NUDGE_MAX_SPEED * 4.0f);
             _stepper.move(-postSteps);
             return false;
         }
@@ -330,7 +346,7 @@ private:
                 _tapPhase = TapPhase::PRE;
                 long preSteps = STEPS_PER_AUGER_CYCLE / 4;
                 _stepper.setMaxSpeed(AUGER_FULL_SPEED_STEPS_S);
-                _stepper.setAcceleration(AUGER_FULL_SPEED_STEPS_S * 4.0f);
+                _stepper.setAcceleration(AUGER_NUDGE_MAX_SPEED * 4.0f);
                 _stepper.move(-preSteps);
                 return false;
             }
@@ -395,7 +411,7 @@ private:
         tapRevs = max(tapRevs, 0.1f);
 
         float speedFraction = constrain(remaining / _targetGrams, 0.15f, 0.75f);
-        _tapContactSpeed = AUGER_FULL_SPEED_STEPS_S * speedFraction;
+        _tapContactSpeed = AUGER_NUDGE_MAX_SPEED * speedFraction;
         _tapRevsRemaining = max(1L, lroundf(tapRevs));
         _totalSteps += _tapRevsRemaining * STEPS_PER_AUGER_CYCLE;
 
@@ -409,7 +425,7 @@ private:
         _tapPhase = TapPhase::PRE;
         long preSteps = STEPS_PER_AUGER_CYCLE / 4;
         _stepper.setMaxSpeed(AUGER_FULL_SPEED_STEPS_S);
-        _stepper.setAcceleration(AUGER_FULL_SPEED_STEPS_S * 4.0f);
+        _stepper.setAcceleration(AUGER_NUDGE_MAX_SPEED * 4.0f);
         _stepper.move(-preSteps);
     }
     // Read stable weight — blocks until SETTLE_READS consecutive readings

@@ -71,10 +71,10 @@ export function useDispenseStream() {
         case "heartbeat":
           return prev;
         case "no_bowl":
-            return { ...prev, awaitingBowl: true };
+          return { ...prev, awaitingBowl: true };
 
         case "bowl_detected":
-            return { ...prev, awaitingBowl: false };
+          return { ...prev, awaitingBowl: false };
 
         case "session_start": {
           const slots: SlotProgress[] = event.slots.map((s) => ({
@@ -126,8 +126,11 @@ export function useDispenseStream() {
         }
 
         case "weight_update": {
-          const slots = prev.slots.map((s) =>
-            s.slot !== event.slot ? s : { ...s, current: event.current_weight },
+          const slots = prev.slots.map(
+            (s) =>
+              s.slot !== event.slot
+                ? s
+                : { ...s, current: Math.max(s.current, event.current_weight) }, // never go down
           );
           const totalWeight = slots.reduce((sum, s) => sum + s.current, 0);
           return { ...prev, slots, totalWeight };
@@ -138,8 +141,8 @@ export function useDispenseStream() {
             s.slot === event.slot
               ? {
                   ...s,
-                  current: event.actual,
-                  actual: event.actual,
+                  current: Math.max(s.current, event.actual), // never go down
+                  actual: Math.max(s.current, event.actual),
                   status:
                     event.status === "done"
                       ? ("done" as const)

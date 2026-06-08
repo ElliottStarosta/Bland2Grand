@@ -44,7 +44,7 @@ static constexpr float HOMING_SPEED_STEPS_S = 500.0f;
 static constexpr float INDEX_SPEED_STEPS_S = 3000.0f;
 static constexpr float INDEX_ACCEL_STEPS_S2 = 500.0f;
 
-static constexpr uint16_t STEPS_PER_SLOT_CORRECTION = 100;
+static constexpr uint16_t STEPS_PER_SLOT_CORRECTION = 143;
 
 // Settle delay after index before dispense begins (ms)
 static constexpr uint16_t INDEX_SETTLE_MS = 1000;
@@ -57,12 +57,13 @@ static constexpr uint16_t STEPS_PER_AUGER_CYCLE = STEPS_PER_REV;
 // This sweeps spice back up the helix and re-parks the toothless arc.
 static constexpr float BACK_PURGE_SPEED_STEPS_S = 1600.0f;
 
+
 // Delay after back-purge before disabling coils (ms)
 static constexpr uint16_t AUGER_COIL_DISABLE_DELAY_MS = 200;
 
 // Auger Speed Ramp
-
 static constexpr float AUGER_FULL_SPEED_STEPS_S = 3200.0f;
+static constexpr float AUGER_NUDGE_MAX_SPEED = AUGER_FULL_SPEED_STEPS_S * 0.35f;  
 
 // Three-stage closed-loop ramp keyed to (steps_done / total_steps)
 static constexpr float RAMP_STAGE2_THRESHOLD = 0.80f;
@@ -128,7 +129,7 @@ static constexpr float SCALE_CAPACITY_G = 1000.0f;
 static constexpr float SCALE_OVERLOAD_G = 1500.0f;
 static constexpr float SCALE_ACCURACY_G = 0.30f;
 static constexpr float SCALE_CAL_FACTOR = 687.473f;
-static constexpr float MIN_BOWL_WEIGHT_G = 100.0f;
+static constexpr float MIN_BOWL_WEIGHT_G = 50.0f;
 
 // Flow Model (EEPROM-backed regression)
 

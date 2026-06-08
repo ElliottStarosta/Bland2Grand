@@ -2,7 +2,7 @@
   "slots": {
     "1": {
       "name": "Salt",
-      "density_g_ml": 1.12,
+      "density_g_ml": 1.22,
       "grams_per_rev": 0.1033,
       "color": "#E8EEF2"
     },
@@ -21,7 +21,7 @@
    
     "4": {
         "name": "Garlic Powder",
-        "density_g_ml": 0.55,
+        "density_g_ml": 0.50,
         "grams_per_rev": 0.8,
         "color": "#D4C57A"
     },

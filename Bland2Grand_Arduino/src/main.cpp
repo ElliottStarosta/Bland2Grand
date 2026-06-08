@@ -151,6 +151,16 @@ void tickDispense()
             delay(200);
             dispenseState = DispenseState::INDEXING;
         }
+        else
+        {
+            static uint32_t lastNoBowlPush = 0;
+            uint32_t now = millis();
+            if (now - lastNoBowlPush >= 1000)
+            {
+                lastNoBowlPush = now;
+                wifi.pushNoBowl();
+            }
+        }
 #else
         dispenseState = DispenseState::INDEXING;
 #endif
@@ -202,39 +212,39 @@ void tickDispense()
             _bowlTared = false;
 
 #if USE_LOAD_CELL
-        // After session, tare with bowl+spice still on scale
-        delay(500);
-        scale.tare();
-        Serial.println(F("[Bowl] Post-session tare. Waiting for bowl removal (watch for negative dip)..."));
+            // After session, tare with bowl+spice still on scale
+            delay(500);
+            scale.tare();
+            Serial.println(F("[Bowl] Post-session tare. Waiting for bowl removal (watch for negative dip)..."));
 
-        // Now poll — when bowl is removed, scale goes significantly negative
-        // (bowl was tared out, so removing it = -173g raw, clamped but detectable via raw read)
-        bool bowlRemoved = false;
-        while (!bowlRemoved)
-        {
-            long raw = scale.rawRead(); // raw ADC, uncalibrated
-            float w = scale.read();
-            Serial.print(F("[Bowl] raw="));
-            Serial.print(raw);
-            Serial.print(F("  filtered="));
-            Serial.println(w, 3);
-            
-            // When bowl is removed, the raw reading drops far below zero
-            // rawRead() returns ADC counts; a 173g bowl at gain 128 is a large negative swing
-            // Threshold: if filtered goes below -5g equivalent, bowl is gone
-            // We can't use filtered (clamped to 0), so check raw directly
-            // Raw counts: negative means below tare reference = bowl removed
-            if (raw < 500000L) // large negative ADC count = bowl removed
+            // Now poll — when bowl is removed, scale goes significantly negative
+            // (bowl was tared out, so removing it = -173g raw, clamped but detectable via raw read)
+            bool bowlRemoved = false;
+            while (!bowlRemoved)
             {
-                bowlRemoved = true;
-            }
-            delay(200);
-        }
+                long raw = scale.rawRead(); // raw ADC, uncalibrated
+                float w = scale.read();
+                Serial.print(F("[Bowl] raw="));
+                Serial.print(raw);
+                Serial.print(F("  filtered="));
+                Serial.println(w, 3);
 
-        Serial.println(F("[Bowl] Bowl removed! Settling then retaring..."));
-        delay(1000);
-        scale.tare();
-        Serial.println(F("[Bowl] Retared to empty scale. Ready for next session."));
+                // When bowl is removed, the raw reading drops far below zero
+                // rawRead() returns ADC counts; a 173g bowl at gain 128 is a large negative swing
+                // Threshold: if filtered goes below -5g equivalent, bowl is gone
+                // We can't use filtered (clamped to 0), so check raw directly
+                // Raw counts: negative means below tare reference = bowl removed
+                if (raw < 500000L) // large negative ADC count = bowl removed
+                {
+                    bowlRemoved = true;
+                }
+                delay(200);
+            }
+
+            Serial.println(F("[Bowl] Bowl removed! Settling then retaring..."));
+            delay(1000);
+            scale.tare();
+            Serial.println(F("[Bowl] Retared to empty scale. Ready for next session."));
 #endif
         }
         dispenseState = DispenseState::IDLE;
