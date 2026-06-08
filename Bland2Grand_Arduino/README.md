@@ -24,8 +24,6 @@ IDLE → INDEXING → DISPENSING → PARKING → (next spice or done)
 | NEMA 23 + TB6600 | 8-slot carousel |
 | NEMA 17 + TB6600 | Auger / half-spur gear |
 | HX711 + load cell | Gram feedback (optional) |
-| AS5600 | Carousel angle (test/cal sketches) |
-
 ### Pins (see `Constants.h`)
 
 | Signal | Pin |
@@ -33,7 +31,6 @@ IDLE → INDEXING → DISPENSING → PARKING → (next spice or done)
 | Carousel STEP / DIR | D5 / D7 |
 | Auger STEP / DIR | D3 / D4 |
 | HX711 DOUT / SCK | A1 / A0 |
-| AS5600 I²C | A4 / A5 |
 
 ## Source files
 
@@ -46,18 +43,6 @@ IDLE → INDEXING → DISPENSING → PARKING → (next spice or done)
 | `Scale.h` | HX711 wrapper |
 | `WiFiComms.h` | WiFi, HTTP server, Flask pushes, UDP weight |
 | `SlotConfig.h` | Generated spice names |
-
-### Test sketches (`src/tests/`)
-
-Swap in via `platformio.ini` `build_src_filter`:
-
-| Sketch | Purpose |
-|--------|---------|
-| `carousel.cpp` | Interactive slot moves over serial |
-| `calibration.cpp` | Find HX711 cal factor |
-| `encoder_spin.cpp` | AS5600 vs step count |
-| `c_spin.cpp` | Pick slot 1–8, spin auger once |
-| `ipTest.cpp` | Full WiFi stack, no scale |
 
 ## Closed-loop dispense (load cell)
 
@@ -91,11 +76,6 @@ pio device monitor --baud 9600
 
 VS Code task **Arduino: Flash** works too.
 
-### Run a test sketch
-
-```ini
-build_src_filter = +<tests/carousel.cpp> -<main.cpp>
-```
 
 ## PlatformIO libs
 
@@ -105,12 +85,6 @@ AccelStepper, HX711, AS5600, ArduinoJson, ArduinoOTA
 
 (listed in `platformio.ini`)
 
-## Calibration
-
-1. Flash `encoder_cal.cpp` or `encoder_spin.cpp`, note raw AS5600 at slot 1.
-2. Update `MODULE_1_SHAFT_COUNTS` in `Constants.h` if using encoder homing.
-3. Flash `calibration.cpp` phase 1 with a known weight to find `SCALE_CAL_FACTOR`.
-4. Reflash `main.cpp` with `USE_LOAD_CELL 1`.
 
 ## EEPROM map (approximate)
 

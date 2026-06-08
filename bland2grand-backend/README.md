@@ -122,16 +122,3 @@ python provision.py --port COM3 --ssid MyNet --password secret
 ```
 
 Sends JSON over serial; Arduino replies `PROV:OK`.
-
-## Slot map
-
-| Slot | Spice |
-|------|-------|
-| 1 | Cumin |
-| 2 | Paprika |
-| 3 | Garlic Powder |
-| 4 | Salt |
-| 5 | Oregano |
-| 6 | Onion Powder |
-| 7 | Black Pepper |
-| 8 | Cayenne |

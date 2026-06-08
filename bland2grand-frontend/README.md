@@ -81,18 +81,3 @@ Defined in `index.css` and mirrored in `tailwind.config.js`:
 | `--color-muted` | `#6A6662` | Secondary text |
 
 Fonts: **Cormorant** (headings), **Outfit** (UI).
-
-## Spice colors (UI)
-
-| Slot | Spice | Color |
-|------|-------|-------|
-| 1 | Cumin | `#8B6914` |
-| 2 | Paprika | `#C94020` |
-| 3 | Garlic Powder | `#D4C57A` |
-| 4 | Salt | `#E8EEF2` |
-| 5 | Oregano | `#4E7C55` |
-| 6 | Onion Powder | `#D4A870` |
-| 7 | Black Pepper | `#6f009a` |
-| 8 | Cayenne | `#C63B0A` |
-
-See root `spice_slots.json` + `generate_slots.py` for the single source of truth.
