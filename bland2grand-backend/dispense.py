@@ -12,6 +12,9 @@ import socket
 import json
 import time
 from typing import Optional
+import subprocess
+import sys
+
 
 import requests
 from config import ARDUINO_URL, MOCK_ARDUINO, SPICE_SLOTS
@@ -26,21 +29,41 @@ _udp_thread: threading.Thread | None = None
 
 # UDP listener — Arduino sends weight updates here to avoid blocking its step loop.
 def _udp_listener() -> None:
+    if sys.platform == "win32":
+        try:
+            result = subprocess.check_output("netstat -ano", shell=True).decode()
+            pids = set()
+            for line in result.strip().splitlines():
+                if ":5001" in line:
+                    parts = line.split()
+                    if parts:
+                        pids.add(parts[-1])
+            for pid in pids:
+                if pid.isdigit():
+                    subprocess.call(f"taskkill /PID {pid} /F",
+                                    shell=True,
+                                    stdout=subprocess.DEVNULL,
+                                    stderr=subprocess.DEVNULL)
+                    print(f"[UDP] Killed PID {pid} on port 5001")
+        except Exception as e:
+            print(f"[UDP] Pre-kill failed: {e}")
+        time.sleep(0.5)
+
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind(("0.0.0.0", 5001))
     sock.settimeout(1.0)
     print("[UDP] Listening on port 5001")
     while True:
         try:
             data, addr = sock.recvfrom(256)
-            print(f"[UDP] GOT: {data.decode()}")  # ADD THIS LINE
+            print(f"[UDP] GOT: {data.decode()}")
             payload = json.loads(data.decode())
             handle_arduino_weight_push(payload)
         except socket.timeout:
             continue
         except Exception as e:
             print(f"[UDP] Error: {e}")
-
 
 def start_udp_listener() -> None:
     global _udp_thread

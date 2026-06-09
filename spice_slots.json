@@ -3,13 +3,13 @@
     "1": {
       "name": "Salt",
       "density_g_ml": 1.22,
-      "grams_per_rev": 0.1033,
+      "grams_per_rev": 0.125,
       "color": "#E8EEF2"
     },
      "2": {
         "name": "Black Pepper",
         "density_g_ml": 0.5,
-        "grams_per_rev": 0.0562,
+        "grams_per_rev": 0.0662,
         "color": "#6f009a"
     },
     "3": {
@@ -34,7 +34,7 @@
     "6": {
       "name": "Paprika",
       "density_g_ml": 0.45,
-      "grams_per_rev": 0.65,
+      "grams_per_rev": 0.15,
       "color": "#C94020"
     },
      "7": {

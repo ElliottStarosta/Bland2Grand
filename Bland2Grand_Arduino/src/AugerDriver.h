@@ -224,15 +224,7 @@ private:
 
         // Wait until the current rev finishes
         if (_stepper.distanceToGo() != 0)
-        {
-            uint32_t now = millis();
-            if (now - _lastPushMs >= WIFI_PUSH_INTERVAL_MS)
-            {
-                _lastPushMs = now;
-                _wifi.pushWeightUDP(_slot, _lastRevWeight, _targetGrams);
-            }
             return false;
-        }
 
         // Rev just completed — read scale (motor is stopped so reading is clean)
         float current = _readStableWeight();
@@ -301,15 +293,7 @@ private:
         _stepper.run();
 
         if (_stepper.distanceToGo() != 0)
-        {
-            uint32_t now = millis();
-            if (now - _lastPushMs >= WIFI_PUSH_INTERVAL_MS)
-            {
-                _lastPushMs = now;
-                _wifi.pushWeightUDP(_slot, _lastRevWeight, _targetGrams);
-            }
             return false;
-        }
 
         switch (_tapPhase)
         {
