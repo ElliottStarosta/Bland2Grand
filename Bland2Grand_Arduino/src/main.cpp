@@ -1,5 +1,3 @@
-// main.cpp - Bland2Grand firmware entry point
-// Ties WiFi, carousel, and auger into a non-blocking dispense loop.
 // USE_LOAD_CELL=1 uses the HX711 scale; 0 estimates weight from motor cycles.
 #define USE_LOAD_CELL 1
 
