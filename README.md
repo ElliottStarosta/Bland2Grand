@@ -91,6 +91,44 @@ Bland2Grand/
 
 Each subfolder has its own README with more detail.
 
+## Updating spice slots
+
+The spice carousel configuration is stored in `spice_slots.json`.
+
+Each slot entry defines:
+
+* `name` — spice name shown in the UI
+* `density_g_ml` — bulk density used for calculations
+* `grams_per_rev` — grams dispensed per auger revolution
+* `color` — UI display color
+
+Example:
+
+```json
+"1": {
+  "name": "Salt",
+  "density_g_ml": 1.22,
+  "grams_per_rev": 0.125,
+  "color": "#E8EEF2"
+}
+```
+
+When changing the spices loaded into the machine:
+
+1. Edit `spice_slots.json`.
+2. Update the appropriate slot entries.
+3. Keep slot numbers in **strict numerical order** (`1, 2, 3, ...`).
+4. Do not duplicate slot numbers.
+5. Run:
+
+```bash
+python generate_slots.py
+```
+
+This regenerates the shared slot configuration used by the frontend, backend, and Arduino firmware.
+
+If `generate_slots.py` is not run after modifying `spice_slots.json`, the machine may display incorrect spice names or dispense from the wrong slot.
+
 ## First-time dev setup
 
 **Needs:** Node 18+, Python 3.11+, PlatformIO (VS Code extension is fine)
