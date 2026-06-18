@@ -1,4 +1,4 @@
-# Bland2Grand
+  # Bland2Grand
 
 An 8-slot automatic spice dispenser: Arduino moves the carousel and runs the auger, Flask handles recipes and dispense orchestration, and a React touch UI is what you actually tap on.
 
@@ -32,6 +32,28 @@ The project was documented throughout development in a series of weekly engineer
 - [Week 8 Journal](https://lying-denim-736.notion.site/Journal-8-33765230a78b806ebfbeec2ee93a6579?pvs=74)
 - [Week 9 Journal](https://lying-denim-736.notion.site/Journal-9-33765230a78b80528cf1d645e4d33567?pvs=74)
 - [Week 10 Journal](https://lying-denim-736.notion.site/Journal-10-34865230a78b807989e8eb5f8e950e21?pvs=74)
+
+## Design Documentation
+
+The complete engineering design package for Bland2Grand is available below:
+
+### Hardware Requirements Specification (HRS)
+
+Defines the functional and technical requirements that guided the hardware design.
+
+📄 [View HRS](docs/HRS.pdf)
+
+### Preliminary Design Document (PDD)
+
+Describes the initial system architecture, subsystem decomposition, concepts considered, and design rationale.
+
+📄 [View PDD](docs/PDD.pdf)
+
+### Hardware Design Document (HDD)
+
+Contains the finalized hardware design, schematics, component selections, calculations, and implementation details.
+
+📄 [View HDD](docs/HDD.pdf)
 
 ## Running it day-to-day
 
