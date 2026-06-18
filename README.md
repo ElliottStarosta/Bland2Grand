@@ -22,21 +22,16 @@ The frontend never talks to the Arduino directly. Flask sends one spice command 
 
 The project was documented throughout development in a series of weekly engineering journals covering design decisions, hardware integration, software development, testing, and project management.
 
-| Week    | Journal                        |
-| ------- | ------------------------------ |
-| Week 1  | [Journal](https://lying-denim-736.notion.site/Journal-1-33765230a78b8010af24f441907a132c?pvs=73)  |
-| Week 2  | [Journal](https://lying-denim-736.notion.site/Journal-2-33765230a78b808d91aac0a6b3ddb459?pvs=73)  |
-| Week 3  | [Journal](https://lying-denim-736.notion.site/Journal-3-33765230a78b80e9b983e4aa1db35312?pvs=4)  |
-| Week 4  | [Journal](https://lying-denim-736.notion.site/Journal-4-33765230a78b8081bd38f594ebceb503?pvs=73)  |
-| Week 5  | [Journal](https://lying-denim-736.notion.site/Journal-5-33765230a78b80ebb033f5e4358f1c1f)  |
-| Week 6  | [Journal](https://lying-denim-736.notion.site/Journal-6-33765230a78b804fb087c1ad0b55b3ff?source=copy_link)  |
-| Week 7  | [Journal](https://lying-denim-736.notion.site/Journal-7-33765230a78b80bd848ce638972f48d1?pvs=74)  |
-| Week 8  | [Journal](https://lying-denim-736.notion.site/Journal-8-33765230a78b806ebfbeec2ee93a6579?pvs=74)  |
-| Week 9  | [Journal](https://lying-denim-736.notion.site/Journal-9-33765230a78b80528cf1d645e4d33567?pvs=74)  |
-| Week 10 | [Journal](https://lying-denim-736.notion.site/Journal-10-34865230a78b807989e8eb5f8e950e21?pvs=74) |
-
-These journals provide a chronological record of the project, including milestones, challenges encountered, testing results, and design iterations.
-
+- [Week 1 Journal](https://lying-denim-736.notion.site/Journal-1-33765230a78b8010af24f441907a132c?pvs=73)
+- [Week 2 Journal](https://lying-denim-736.notion.site/Journal-2-33765230a78b808d91aac0a6b3ddb459?pvs=73)
+- [Week 3 Journal](https://lying-denim-736.notion.site/Journal-3-33765230a78b80e9b983e4aa1db35312?pvs=4)
+- [Week 4 Journal](https://lying-denim-736.notion.site/Journal-4-33765230a78b8081bd38f594ebceb503?pvs=73)
+- [Week 5 Journal](https://lying-denim-736.notion.site/Journal-5-33765230a78b80ebb033f5e4358f1c1f)
+- [Week 6 Journal](https://lying-denim-736.notion.site/Journal-6-33765230a78b804fb087c1ad0b55b3ff?source=copy_link)
+- [Week 7 Journal](https://lying-denim-736.notion.site/Journal-7-33765230a78b80bd848ce638972f48d1?pvs=74)
+- [Week 8 Journal](https://lying-denim-736.notion.site/Journal-8-33765230a78b806ebfbeec2ee93a6579?pvs=74)
+- [Week 9 Journal](https://lying-denim-736.notion.site/Journal-9-33765230a78b80528cf1d645e4d33567?pvs=74)
+- [Week 10 Journal](https://lying-denim-736.notion.site/Journal-10-34865230a78b807989e8eb5f8e950e21?pvs=74)
 
 ## Running it day-to-day
 
