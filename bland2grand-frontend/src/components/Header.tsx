@@ -1,4 +1,4 @@
-// Top app bar — screen title, subtitle, optional back button; animates on screen change.
+// Top app bar -- screen title, subtitle, optional back button; animates on screen change.
 
 import { useRef, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -13,21 +13,21 @@ interface Props {
 }
 
 const TITLES: Record<Screen, string> = {
-  search:     "bland2grand",
-  results:    "Recipes",
-  serving:    "Servings",
+  search: "bland2grand",
+  results: "Recipes",
+  serving: "Servings",
   dispensing: "Dispensing",
-  complete:   "Ready",
-  custom:     "Custom Blend",
+  complete: "Ready",
+  custom: "Custom Blend",
 };
 
 const SUBTITLES: Record<Screen, string> = {
-  search:     "Spice Dispensing System",
-  results:    "Select your spice blend",
-  serving:    "How many portions?",
+  search: "Spice Dispensing System",
+  results: "Select your spice blend",
+  serving: "How many portions?",
   dispensing: "Measuring your spices",
-  complete:   "Your blend is ready",
-  custom:     "Build your own mix",
+  complete: "Your blend is ready",
+  custom: "Build your own mix",
 };
 
 const BASE_TITLE_STYLE = {
@@ -41,18 +41,23 @@ const BASE_TITLE_STYLE = {
 
 export function Header({ screen, onBack }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const titleRef     = useRef<HTMLHeadingElement>(null);
-  const subtitleRef  = useRef<HTMLParagraphElement>(null);
-  const prevScreen   = useRef(screen);
-  const isSearch     = screen === "search";
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const subtitleRef = useRef<HTMLParagraphElement>(null);
+  const prevScreen = useRef(screen);
+  const isSearch = screen === "search";
 
   // Cross-fade title/subtitle when navigating between screens.
   useEffect(() => {
     if (prevScreen.current === screen) return;
     prevScreen.current = screen;
-    gsap.timeline()
+    gsap
+      .timeline()
       .to([titleRef.current, subtitleRef.current], {
-        y: -6, opacity: 0, duration: 0.15, stagger: 0.03, ease: "power2.in",
+        y: -6,
+        opacity: 0,
+        duration: 0.15,
+        stagger: 0.03,
+        ease: "power2.in",
       })
       .fromTo(
         [titleRef.current, subtitleRef.current],
@@ -62,7 +67,8 @@ export function Header({ screen, onBack }: Props) {
   }, [screen]);
 
   useEffect(() => {
-    gsap.fromTo(containerRef.current,
+    gsap.fromTo(
+      containerRef.current,
       { y: -16, opacity: 0 },
       { y: 0, opacity: 1, duration: 0.6, ease: "power3.out" },
     );
@@ -88,10 +94,15 @@ export function Header({ screen, onBack }: Props) {
         <div className="min-w-0">
           <h1
             ref={titleRef}
-            style={{ ...BASE_TITLE_STYLE, fontSize: isSearch ? "1.5rem" : "1.6rem" }}
+            style={{
+              ...BASE_TITLE_STYLE,
+              fontSize: isSearch ? "1.5rem" : "1.6rem",
+            }}
           >
             {isSearch ? (
-              <>bland<span style={{ fontSize: "2.1rem" }}>2</span>grand</>
+              <>
+                bland<span style={{ fontSize: "2.1rem" }}>2</span>grand
+              </>
             ) : (
               TITLES[screen]
             )}
@@ -99,21 +110,25 @@ export function Header({ screen, onBack }: Props) {
           <p
             ref={subtitleRef}
             className="font-body truncate"
-            style={isSearch ? {
-              fontSize: "0.52rem",
-              fontWeight: 400,
-              color: "#5a5652",
-              letterSpacing: "0.34em",
-              textTransform: "uppercase",
-              marginTop: 5,
-            } : {
-              fontSize: 11,
-              fontWeight: 300,
-              color: "#6A6662",
-              letterSpacing: "0.04em",
-              textTransform: "uppercase",
-              marginTop: 4,
-            }}
+            style={
+              isSearch
+                ? {
+                    fontSize: "0.52rem",
+                    fontWeight: 400,
+                    color: "#5a5652",
+                    letterSpacing: "0.34em",
+                    textTransform: "uppercase",
+                    marginTop: 5,
+                  }
+                : {
+                    fontSize: 11,
+                    fontWeight: 300,
+                    color: "#6A6662",
+                    letterSpacing: "0.04em",
+                    textTransform: "uppercase",
+                    marginTop: 4,
+                  }
+            }
           >
             {SUBTITLES[screen]}
           </p>
@@ -127,7 +142,10 @@ export function Header({ screen, onBack }: Props) {
           style={{ background: "#161411", border: "1px solid #252220" }}
           aria-label="Go back"
         >
-          <FontAwesomeIcon icon={faChevronLeft} style={{ color: "#6A6662", fontSize: 13 }} />
+          <FontAwesomeIcon
+            icon={faChevronLeft}
+            style={{ color: "#6A6662", fontSize: 13 }}
+          />
         </button>
       )}
     </header>

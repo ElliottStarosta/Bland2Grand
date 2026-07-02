@@ -82,7 +82,7 @@ struct ActiveDispense
 ActiveDispense active;
 bool _bowlTared = false;
 
-// State machine tick — called every loop()
+// State machine tick -- called every loop()
 void tickDispense()
 {
     switch (dispenseState)
@@ -103,13 +103,13 @@ void tickDispense()
 
             if (bowlWeight < MIN_BOWL_WEIGHT_G)
             {
-                Serial.println(F("[Bowl] No bowl detected — waiting..."));
+                Serial.println(F("[Bowl] No bowl detected -- waiting..."));
                 wifi.pushNoBowl();
                 dispenseState = DispenseState::WAITING_FOR_BOWL;
                 return;
             }
 
-            Serial.println(F("[Bowl] Bowl confirmed — taring..."));
+            Serial.println(F("[Bowl] Bowl confirmed -- taring..."));
             scale.tare();
             _bowlTared = true;
             Serial.println(F("[Bowl] Tare complete."));
@@ -205,7 +205,7 @@ void tickDispense()
         scale.tare();
         Serial.println(F("[Bowl] Post-session tare. Waiting for bowl removal (watch for negative dip)..."));
 
-        // Now poll — when bowl is removed, scale goes significantly negative
+        // Now poll -- when bowl is removed, scale goes significantly negative
         // (bowl was tared out, so removing it = -173g raw, clamped but detectable via raw read)
         bool bowlRemoved = false;
         while (!bowlRemoved)
@@ -284,7 +284,7 @@ void handleIncomingRequest(WiFiClient &client)
         client.println(F("Connection: close\r\n"));
         client.println(F("{\"status\":\"stopped\"}"));
         client.stop();
-        Serial.println(F("[CMD] STOP received — aborting dispense."));
+        Serial.println(F("[CMD] STOP received -- aborting dispense."));
         dispenseState = DispenseState::PUSH_COMPLETE;
         return;
     }
@@ -322,7 +322,7 @@ void handleIncomingRequest(WiFiClient &client)
     StaticJsonDocument<256> doc;
     if (deserializeJson(doc, body) != DeserializationError::Ok || !doc.containsKey("carousel") || !doc.containsKey("grams"))
     {
-        Serial.println(F("[HTTP] Bad request — missing carousel or grams"));
+        Serial.println(F("[HTTP] Bad request -- missing carousel or grams"));
         client.println(F("HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n"));
         client.stop();
         return;
@@ -385,7 +385,7 @@ void setup()
 
 #if USE_LOAD_CELL
     if (!scale.begin())
-        Serial.println(F("[WARN] HX711 not responding — check wiring."));
+        Serial.println(F("[WARN] HX711 not responding -- check wiring."));
     else
         Serial.println(F("[OK] HX711 scale ready."));
 #endif

@@ -60,13 +60,13 @@ npm run build      # output in dist/
 
 ## Notable bits
 
-**Bowl.tsx** — Each spice gets a band in the SVG bowl. Grain texture is procedural (seeded random). Drip animation runs while a slot is actively dispensing.
+**Bowl.tsx** -- Each spice gets a band in the SVG bowl. Grain texture is procedural (seeded random). Drip animation runs while a slot is actively dispensing.
 
-**useDispenseStream.ts** — `connectAndDispense()` opens SSE, waits for `connected`, then POSTs dispense so early events aren't dropped. Session state is a reducer over SSE payloads.
+**useDispenseStream.ts** -- `connectAndDispense()` opens SSE, waits for `connected`, then POSTs dispense so early events aren't dropped. Session state is a reducer over SSE payloads.
 
-**IdleScreen.tsx** — Full-screen overlay at z-40. `useIdleTimer(timeout, onIdle)` resets via `wakeUp()` when the user taps. GSAP timelines use an `initiated` ref so remounting doesn't replay entrance animations.
+**IdleScreen.tsx** -- Full-screen overlay at z-40. `useIdleTimer(timeout, onIdle)` resets via `wakeUp()` when the user taps. GSAP timelines use an `initiated` ref so remounting doesn't replay entrance animations.
 
-**CustomRecipeScreen.tsx** — Build a blend in g, tsp, or tbsp. Unit picker bubbles animate out with GSAP; values convert through gram equivalents.
+**CustomRecipeScreen.tsx** -- Build a blend in g, tsp, or tbsp. Unit picker bubbles animate out with GSAP; values convert through gram equivalents.
 
 ## Design tokens
 

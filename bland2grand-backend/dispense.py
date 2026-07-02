@@ -27,7 +27,7 @@ _clients_lock = threading.Lock()
 _udp_thread: threading.Thread | None = None
 
 
-# UDP listener — Arduino sends weight updates here to avoid blocking its step loop.
+# UDP listener -- Arduino sends weight updates here to avoid blocking its step loop.
 def _udp_listener() -> None:
     if sys.platform == "win32":
         try:
@@ -293,7 +293,7 @@ def _friendly_error(exc: Exception) -> str:
     return "Hardware error -- check Arduino connection."
 
 
-# Main dispense orchestration — one background thread, one spice POST at a time.
+# Main dispense orchestration -- one background thread, one spice POST at a time.
 def start_dispense(recipe: dict, serving_count: int) -> tuple[bool, str]:
     if _session.busy:
         return False, "A dispense is already in progress."
@@ -338,7 +338,7 @@ def start_dispense(recipe: dict, serving_count: int) -> tuple[bool, str]:
                     "total_slots": len(targets),
                 }
 
-                # POST one spice — retry silently while Arduino is waiting for bowl
+                # POST one spice -- retry silently while Arduino is waiting for bowl
                 # (Arduino won't respond to HTTP during bowl detection / tare)
                 posted = False
                 post_deadline = time.time() + 120  # wait up to 2 min for bowl
@@ -354,13 +354,13 @@ def start_dispense(recipe: dict, serving_count: int) -> tuple[bool, str]:
                         if resp.status_code == 200:
                             posted = True
                         elif resp.status_code == 409:
-                            # Arduino busy — wait and retry
+                            # Arduino busy -- wait and retry
                             print(f"[Dispense] Arduino busy (409), retrying...")
                             time.sleep(1)
                         else:
                             raise RuntimeError(f"Arduino returned {resp.status_code}")
                     except requests.exceptions.ConnectionError:
-                        # Arduino not responding — likely mid-tare or bowl wait, retry silently
+                        # Arduino not responding -- likely mid-tare or bowl wait, retry silently
                         print(
                             f"[Dispense] Arduino not responding, retrying (bowl wait?)..."
                         )

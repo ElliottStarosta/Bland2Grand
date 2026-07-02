@@ -40,7 +40,7 @@ for idx, spice in enumerate(spices):
     target = spice["target"]
     steps = max(10, int(target / 0.125))  # ~10 udp updates per gram
 
-    print(f"[{idx+1}/{total_slots}] {name} — target {target}g")
+    print(f"[{idx+1}/{total_slots}] {name} -- target {target}g")
 
     # indexing
     print(f"  → indexing to slot {slot}")

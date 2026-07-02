@@ -10,7 +10,6 @@ interface Props {
 }
 
 // Ambient orb config
-
 const ORBS = [
   { color: "#C94020", size: 300, left: "10%", top: "8%" },
   { color: "#8B6914", size: 240, left: "85%", top: "20%" },
@@ -534,7 +533,7 @@ export function IdleScreen({ onWake }: Props) {
         }}
       />
 
-      {/*  Three-zone layout  */}
+      {/*  Three-zone layout */}
       <div
         style={{
           position: "relative",

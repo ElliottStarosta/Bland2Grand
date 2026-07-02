@@ -1,4 +1,4 @@
-"""Load config from .env — Arduino URL, API keys, mock flag, etc."""
+"""Load config from .env -- Arduino URL, API keys, mock flag, etc."""
 
 import os
 from dotenv import load_dotenv

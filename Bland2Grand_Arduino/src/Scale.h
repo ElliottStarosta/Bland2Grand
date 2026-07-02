@@ -28,9 +28,9 @@ public:
         _hx711.set_scale(SCALE_CAL_FACTOR);
         _ready = true;
 
-        // Always tare on boot — the scale must be empty at startup.
+        // Always tare on boot -- the scale must be empty at startup.
         // If a bowl is already on it, readings will be wrong until the
-        // INDEXING tare runs. That's acceptable — bowl detection uses
+        // INDEXING tare runs. That's acceptable -- bowl detection uses
         // MIN_BOWL_WEIGHT_G which is 20g, well above noise.
         _hx711.tare(SCALE_AVG_SAMPLES);
         _lastWeight = 0.0f;
@@ -55,7 +55,7 @@ public:
         _filteredWeight = 0.0f;
 
         // Flush: read 5 real samples to confirm near-zero
-        // (don't update EMA — just discard to let HX711 settle)
+        // (don't update EMA -- just discard to let HX711 settle)
         for (uint8_t i = 0; i < 5; i++)
         {
             _waitReady();
@@ -91,7 +91,7 @@ public:
         return w;
     }
 
-    // Blocking stable read — waits for SETTLE_READS consecutive
+    // Blocking stable read -- waits for SETTLE_READS consecutive
     // readings within STABLE_BAND_G. Max wait 2s.
     float readStable()
     {

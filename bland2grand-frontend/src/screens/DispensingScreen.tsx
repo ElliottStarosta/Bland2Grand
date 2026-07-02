@@ -22,7 +22,7 @@ export function DispensingScreen({ session, onStop }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const bowlPromptRef = useRef<HTMLDivElement>(null);
   const bowlSvgRef = useRef<HTMLDivElement>(null);
-  const prevAwaitingBowl = useRef(true); // starts true — waiting on mount
+  const prevAwaitingBowl = useRef(true); // starts true -- waiting on mount
 
   const handleStop = async () => {
     if (stopping) return;
@@ -34,7 +34,7 @@ export function DispensingScreen({ session, onStop }: Props) {
     }
   };
 
-  // Entrance animation for main sections (not the bowl area — handled separately)
+  // Entrance animation for main sections (not the bowl area -- handled separately)
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -60,7 +60,7 @@ export function DispensingScreen({ session, onStop }: Props) {
         },
       );
     } else {
-      // Bowl already detected on mount — skip prompt, show SVG immediately
+      // Bowl already detected on mount -- skip prompt, show SVG immediately
       gsap.set(bowlPromptRef.current, { display: "none" });
       gsap.set(bowlSvgRef.current, { display: "block" });
       gsap.fromTo(
@@ -87,12 +87,12 @@ export function DispensingScreen({ session, onStop }: Props) {
     const svg = bowlSvgRef.current;
     if (!prompt || !svg) return;
 
-    // Skip the very first render — mount effect handles it
+    // Skip the very first render -- mount effect handles it
     if (prevAwaitingBowl.current === session.awaitingBowl) return;
     prevAwaitingBowl.current = session.awaitingBowl;
 
     if (session.awaitingBowl) {
-      // Bowl removed — hide SVG, show prompt
+      // Bowl removed -- hide SVG, show prompt
       gsap.to(svg, {
         opacity: 0,
         y: -10,
@@ -116,7 +116,7 @@ export function DispensingScreen({ session, onStop }: Props) {
         },
       });
     } else {
-      // Bowl placed — hide prompt, show SVG
+      // Bowl placed -- hide prompt, show SVG
       gsap.to(prompt, {
         opacity: 0,
         y: -10,
@@ -251,7 +251,7 @@ export function DispensingScreen({ session, onStop }: Props) {
           </div>
         </div>
 
-        {/* Bowl prompt — shown while awaiting bowl, hidden once detected */}
+        {/* Bowl prompt -- shown while awaiting bowl, hidden once detected */}
         <div
           ref={bowlPromptRef}
           className="glass-card px-5 py-8 flex-col items-center gap-5 text-center"
@@ -343,7 +343,7 @@ export function DispensingScreen({ session, onStop }: Props) {
           </div>
         </div>
 
-        {/* Bowl SVG — hidden until bowl is detected */}
+        {/* Bowl SVG -- hidden until bowl is detected */}
         <div
           ref={bowlSvgRef}
           className="glass-card px-3 pt-2 pb-2"

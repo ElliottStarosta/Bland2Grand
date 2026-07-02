@@ -75,7 +75,7 @@ public:
         return WiFi.status() == WL_CONNECTED;
     }
 
-    // Outbound event pushes to Flask (blocking HTTP — call only when motors are idle).
+    // Outbound event pushes to Flask (blocking HTTP -- call only when motors are idle).
 
     // Carousel has started moving to the requested slot.
     bool pushIndexing(uint8_t slot, const char *spiceName,
@@ -117,7 +117,7 @@ public:
         return _post("/api/arduino/dispense-start", b);
     }
 
-    // Blocking weight push — use pushWeightUDP() during motor moves instead
+    // Blocking weight push -- use pushWeightUDP() during motor moves instead
     bool pushWeightUpdate(uint8_t slot, float current, float target)
     {
         StaticJsonDocument<96> doc;
@@ -129,7 +129,7 @@ public:
         return _post("/api/arduino/weight-push", b);
     }
 
-    // Unblocks Flask dispense loop — must fire once per accepted spice command.
+    // Unblocks Flask dispense loop -- must fire once per accepted spice command.
     bool pushSpiceComplete(uint8_t slot, const char *spiceName,
                            float actual, float target, uint8_t slotIdx)
     {
@@ -224,7 +224,7 @@ public:
             Serial.println(F("[UDP] beginPacket failed"));
         }
     }
-    // Burst of fake progress updates — blocking, called after motors stop to animate the app progress bar smoothly.
+    // Burst of fake progress updates -- blocking, called after motors stop to animate the app progress bar smoothly.
     void pushProgressBurst(uint8_t slot, float targetGrams, uint8_t steps = 8)
     {
         for (uint8_t i = 1; i <= steps; i++)

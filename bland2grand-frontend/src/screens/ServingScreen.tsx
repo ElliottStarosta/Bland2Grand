@@ -1,4 +1,4 @@
-// Serving count picker — scales recipe grams before dispense.
+// Serving count picker -- scales recipe grams before dispense.
 
 import { useState, useRef, useEffect } from "react";
 import { gsap } from "gsap";
@@ -65,7 +65,7 @@ export function ServingScreen({ recipe, onDispense, loading }: Props) {
 
   const handleDispense = () => {
     if (loading) return;
-    primeAudio()
+    primeAudio();
     gsap.to(btnRef.current, {
       scale: 0.95,
       duration: 0.1,
@@ -90,7 +90,7 @@ export function ServingScreen({ recipe, onDispense, loading }: Props) {
       style={{ WebkitOverflowScrolling: "touch" }}
     >
       <div className="flex flex-col px-5 pb-safe gap-0">
-        {/*  Recipe identity  */}
+        {/*  Recipe identity */}
         <div data-s className="pt-2 pb-6">
           <span className="text-[10px] font-body font-semibold tracking-[0.2em] uppercase text-accent">
             {recipe.category}
@@ -105,7 +105,7 @@ export function ServingScreen({ recipe, onDispense, loading }: Props) {
           )}
         </div>
 
-        {/*  Serving counter -- the hero  */}
+        {/*  Serving counter -- the hero */}
         <div data-s>
           <p className="text-[10px] font-body font-semibold tracking-[0.2em] uppercase text-muted mb-4">
             How many servings?
@@ -174,10 +174,10 @@ export function ServingScreen({ recipe, onDispense, loading }: Props) {
           </div>
         </div>
 
-        {/*  Divider  */}
+        {/*  Divider */}
         <div data-s className="h-px bg-border mb-7" />
 
-        {/*  Spice breakdown  */}
+        {/*  Spice breakdown */}
         <div data-s className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <p className="text-[10px] font-body font-semibold tracking-[0.2em] uppercase text-muted">
@@ -231,7 +231,7 @@ export function ServingScreen({ recipe, onDispense, loading }: Props) {
           </div>
         </div>
 
-        {/*  Info note  */}
+        {/*  Info note */}
         <div
           data-s
           className="mb-6 px-4 py-3 rounded-xl border border-border"
@@ -243,7 +243,7 @@ export function ServingScreen({ recipe, onDispense, loading }: Props) {
           </p>
         </div>
 
-        {/*  Dispense button  */}
+        {/*  Dispense button */}
         <div data-s className="pb-2">
           <button
             ref={btnRef}

@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { DispenseSession, SlotProgress, SSEEvent } from "../types";
 import { playSlotVoiceLine } from "./slotAudio";
 
-// Default session shape before Flask sends session_start.
+// Default idle session state before any session_start event is received.
 const IDLE: DispenseSession = {
   recipeName: "",
   servingCount: 1,
@@ -19,24 +19,29 @@ const IDLE: DispenseSession = {
   awaitingBowl: true,
 };
 
-// Module-level audio scheduler — defers slot voice lines so they don't overlap indexing SFX.
+// Module-level audio scheduling state so voice lines don’t overlap with indexing SFX.
 let audioPlayAt: number | null = null;
 let audioPendingSlot: number | null = null;
 let pollInterval: ReturnType<typeof setInterval> | null = null;
 
+// Starts a lightweight polling loop that triggers delayed audio playback.
 function startAudioPoller() {
   if (pollInterval) return;
+
   pollInterval = setInterval(() => {
     if (audioPlayAt === null || audioPendingSlot === null) return;
+
     if (Date.now() >= audioPlayAt) {
       console.log(`[Audio] playing slot ${audioPendingSlot}`);
       playSlotVoiceLine(audioPendingSlot);
+
       audioPlayAt = null;
       audioPendingSlot = null;
     }
   }, 250);
 }
 
+// Stops the audio polling loop.
 function stopAudioPoller() {
   if (pollInterval) {
     clearInterval(pollInterval);
@@ -44,6 +49,7 @@ function stopAudioPoller() {
   }
 }
 
+// Cancels any pending scheduled audio playback.
 function cancelAudio() {
   audioPlayAt = null;
   audioPendingSlot = null;
@@ -52,13 +58,17 @@ function cancelAudio() {
 export function useDispenseStream() {
   const [session, setSession] = useState<DispenseSession>(IDLE);
   const [connected, setConnected] = useState(false);
+
   const esRef = useRef<EventSource | null>(null);
   const activeRef = useRef(false);
 
-  // Pure reducer: map each SSE payload to the next DispenseSession snapshot.
+  // Core SSE event handler: converts incoming events into session state updates.
   const handleMessage = useCallback((e: MessageEvent) => {
     if (!activeRef.current) return;
+
     let event: SSEEvent;
+
+    // Safely parse incoming SSE payload
     try {
       event = JSON.parse(e.data) as SSEEvent;
     } catch {
@@ -70,6 +80,7 @@ export function useDispenseStream() {
         case "connected":
         case "heartbeat":
           return prev;
+
         case "no_bowl":
           return { ...prev, awaitingBowl: true };
 
@@ -84,6 +95,7 @@ export function useDispenseStream() {
             current: 0,
             status: "pending",
           }));
+
           return {
             ...IDLE,
             recipeName: event.recipe_name,
@@ -97,14 +109,18 @@ export function useDispenseStream() {
         }
 
         case "indexing": {
+          // Cancel any queued voice audio when indexing starts
           cancelAudio();
+
           const slots = prev.slots.map((s) =>
-            s.slot === event.slot ? { ...s, status: "indexing" as const } : s,
+            s.slot === event.slot ? { ...s, status: "indexing" } : s,
           );
+
           return { ...prev, slots, activeSlotIndex: event.slot_index };
         }
 
         case "nearly_there": {
+          // Play slot voice cue only if session is still active
           if (!prev.isComplete && !prev.isError && prev.slots.length > 0) {
             playSlotVoiceLine(event.slot);
           }
@@ -116,22 +132,27 @@ export function useDispenseStream() {
             s.slot === event.slot
               ? {
                   ...s,
-                  status: "dispensing" as const,
+                  status: "dispensing",
                   target: event.target_weight,
                   current: 0,
                 }
               : s,
           );
+
           return { ...prev, slots, activeSlotIndex: event.slot_index };
         }
 
         case "weight_update": {
-          const slots = prev.slots.map(
-            (s) =>
-              s.slot !== event.slot
-                ? s
-                : { ...s, current: Math.max(s.current, event.current_weight) }, // never go down
+          const slots = prev.slots.map((s) =>
+            s.slot !== event.slot
+              ? s
+              : {
+                  ...s,
+                  // Prevent visual regression: weight never decreases
+                  current: Math.max(s.current, event.current_weight),
+                },
           );
+
           const totalWeight = slots.reduce((sum, s) => sum + s.current, 0);
           return { ...prev, slots, totalWeight };
         }
@@ -141,17 +162,21 @@ export function useDispenseStream() {
             s.slot === event.slot
               ? {
                   ...s,
-                  current: Math.max(s.current, event.actual), // never go down
+                  current: Math.max(s.current, event.actual),
                   actual: Math.max(s.current, event.actual),
-                  status:
-                    event.status === "done"
-                      ? ("done" as const)
-                      : ("error" as const),
+                  status: event.status === "done" ? "done" : "error",
                 }
               : s,
           );
+
           const totalWeight = slots.reduce((sum, s) => sum + s.current, 0);
-          return { ...prev, slots, totalWeight, lastCompletedSlot: event.slot };
+
+          return {
+            ...prev,
+            slots,
+            totalWeight,
+            lastCompletedSlot: event.slot,
+          };
         }
 
         case "session_complete":
@@ -173,7 +198,7 @@ export function useDispenseStream() {
     });
   }, []);
 
-  // Open SSE only (caller POSTs dispense separately).
+  // Opens SSE connection (no POST logic here).
   const connect = useCallback(() => {
     if (esRef.current) esRef.current.close();
 
@@ -185,7 +210,9 @@ export function useDispenseStream() {
       console.log("[SSE] connected");
       setConnected(true);
     };
+
     es.onmessage = handleMessage;
+
     es.onerror = () => {
       console.log("[SSE] error");
       setConnected(false);
@@ -194,7 +221,8 @@ export function useDispenseStream() {
     return es;
   }, [handleMessage]);
 
-  // Open SSE first, wait for connected, then POST /api/dispense so no events are dropped.
+  // Connects SSE, waits for "connected" ack, then triggers dispense request.
+  // Ensures no backend events are missed between connection and POST.
   const connectAndDispense = useCallback(
     (recipeId: number, servingCount: number): Promise<void> => {
       return new Promise((resolve, reject) => {
@@ -210,14 +238,17 @@ export function useDispenseStream() {
 
         es.onerror = () => {
           setConnected(false);
-          if (!dispatchedDispense)
+
+          if (!dispatchedDispense) {
             reject(
               new Error("SSE connection failed before dispense could start."),
             );
+          }
         };
 
         es.onmessage = (e: MessageEvent) => {
           console.log("[SSE raw]", e.data);
+
           if (!activeRef.current) return;
 
           let event: SSEEvent;
@@ -227,8 +258,10 @@ export function useDispenseStream() {
             return;
           }
 
+          // Once backend confirms connection, trigger dispense request
           if (event.type === "connected" && !dispatchedDispense) {
             dispatchedDispense = true;
+
             fetch("/api/dispense", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -242,6 +275,7 @@ export function useDispenseStream() {
                   const body = await r
                     .json()
                     .catch(() => ({ error: "Unknown error" }));
+
                   reject(new Error(body.error ?? `HTTP ${r.status}`));
                 } else {
                   resolve();
@@ -259,6 +293,7 @@ export function useDispenseStream() {
     [handleMessage],
   );
 
+  // Closes SSE connection cleanly.
   const disconnect = useCallback(() => {
     activeRef.current = false;
     esRef.current?.close();
@@ -266,6 +301,7 @@ export function useDispenseStream() {
     setConnected(false);
   }, []);
 
+  // Resets full session state and clears audio + SSE.
   const reset = useCallback(() => {
     disconnect();
     stopAudioPoller();
@@ -273,8 +309,10 @@ export function useDispenseStream() {
     setSession(IDLE);
   }, [disconnect]);
 
+  // Initialize audio poller on mount and cleanup on unmount.
   useEffect(() => {
     startAudioPoller();
+
     return () => {
       activeRef.current = false;
       esRef.current?.close();

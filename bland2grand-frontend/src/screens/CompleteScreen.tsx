@@ -1,4 +1,4 @@
-// Post-dispense summary — accuracy per slot, error state, restart CTA.
+// Post-dispense summary -- accuracy per slot, error state, restart CTA.
 
 import { useEffect, useRef } from 'react'
 import { gsap } from 'gsap'
@@ -56,7 +56,7 @@ export function CompleteScreen({ session, onReset }: Props) {
     <div className="flex-1 min-h-0 overflow-y-auto flex flex-col items-center px-5">
 
 
-      {/*  Icon  */}
+      {/*  Icon */}
       <div
         ref={iconRef}
         className="mt-6 mb-4 flex flex-col items-center"
@@ -80,7 +80,7 @@ export function CompleteScreen({ session, onReset }: Props) {
         </div>
       </div>
 
-      {/*  Title  */}
+      {/*  Title */}
       <div ref={titleRef} className="text-center mb-5 w-full" style={{ opacity: 0 }}>
         <h2
           className="font-display font-semibold text-txt"
@@ -98,7 +98,7 @@ export function CompleteScreen({ session, onReset }: Props) {
         </p>
       </div>
 
-      {/*  Summary card  */}
+      {/*  Summary card */}
       <div ref={cardRef} className="w-full luxury-card p-5 mb-4" style={{ opacity: 0 }}>
         <p
           className="font-body font-semibold uppercase mb-4"
@@ -164,7 +164,7 @@ export function CompleteScreen({ session, onReset }: Props) {
         </div>
       </div>
 
-      {/*  Reset button  */}
+      {/*  Reset button */}
       <button
         ref={btnRef}
         onClick={onReset}

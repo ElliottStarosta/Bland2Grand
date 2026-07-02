@@ -143,7 +143,7 @@ def gen_arduino(slots: dict) -> str:
 # database migration
 def migrate_db(db_path: str, slots: dict):
     if not os.path.exists(db_path):
-        print(f"[DB] {db_path} not found — skipping.")
+        print(f"[DB] {db_path} not found -- skipping.")
         return
 
     conn = sqlite3.connect(db_path)
@@ -219,7 +219,7 @@ def migrate_db(db_path: str, slots: dict):
     desired_set = set(new_col_for.values())
 
     if desired_set.issubset(existing_set):
-        print("[DB] Column names already match config — no migration needed.")
+        print("[DB] Column names already match config -- no migration needed.")
         conn.close()
         return
 

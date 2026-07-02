@@ -229,7 +229,7 @@ function UnitPicker({ unit, isActive, color, onSelect }: UnitPickerProps) {
         {unit}
       </button>
 
-      {/* Other-unit bubbles — rendered inline, animated via GSAP */}
+      {/* Other-unit bubbles -- rendered inline, animated via GSAP */}
       {open &&
         otherUnits.map((u, i) => (
           <button
@@ -547,7 +547,7 @@ function SlotInput({
               </span>
             )}
 
-            {/* Pencil — visible when not editing */}
+            {/* Pencil -- visible when not editing */}
             <button
               ref={pencilRef}
               onClick={startEditing}
@@ -570,7 +570,7 @@ function SlotInput({
               />
             </button>
 
-            {/* Check — only mounted when editing so GSAP fromTo works cleanly */}
+            {/* Check -- only mounted when editing so GSAP fromTo works cleanly */}
             {editing && (
               <button
                 ref={checkRef}
@@ -892,7 +892,7 @@ export function CustomRecipeScreen({ onSaved, onBack: _onBack }: Props) {
             className="font-body font-light leading-relaxed"
             style={{ fontSize: 13, color: "#9A9590" }}
           >
-            Place an empty bowl on the scale before dispensing — the machine
+            Place an empty bowl on the scale before dispensing -- the machine
             will tare automatically.
           </p>
         </div>

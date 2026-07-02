@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/*  Root variables  */
+/* Root variables */
 :root {
   --color-bg:        #080706;
   --color-surface:   #0F0E0C;
@@ -22,7 +22,7 @@
   --radius-pill:     100px;
 }
 
-/*  Reset & base  */
+/* Reset & base */
 *,
 *::before,
 *::after {
@@ -57,7 +57,7 @@ body {
   overflow-x: hidden;
 }
 
-/*  Safe-area helpers  */
+/* Safe-area helpers */
 .pb-safe {
   padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
 }
@@ -65,25 +65,25 @@ body {
   padding-top: max(1.25rem, env(safe-area-inset-top));
 }
 
-/*  Typography  */
+/* Typography */
 .font-display {
   font-family: 'Cormorant', serif;
 }
 
-/*  Scrollbar  */
+/* Scrollbar */
 ::-webkit-scrollbar { width: 0; height: 0; }
 
-/*  Input resets  */
+/* Input resets */
 input { outline: none; background: transparent; }
 
-/*  Touch feedback  */
+/* Touch feedback */
 button, [role='button'] {
   cursor: pointer;
   touch-action: manipulation;
   user-select: none;
 }
 
-/*  Card base  */
+/* Card base */
 .glass-card {
   background: var(--color-card);
   border: 1px solid var(--color-border);
@@ -101,7 +101,7 @@ button, [role='button'] {
   pointer-events: none;
 }
 
-/*  Luxury card  */
+/* Luxury card */
 .luxury-card {
   background: linear-gradient(145deg, #1C1915 0%, #131210 100%);
   border: 1px solid #2A2722;
@@ -119,7 +119,7 @@ button, [role='button'] {
   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
 }
 
-/*  Glow button  */
+/* Glow button */
 .btn-glow {
   background: linear-gradient(135deg, #D4742E 0%, #B85C1E 100%);
   box-shadow: 0 4px 24px rgba(200,105,42,0.3), 0 1px 0 rgba(255,255,255,0.1) inset;
@@ -131,7 +131,7 @@ button, [role='button'] {
   transform: scale(0.98);
 }
 
-/*  Shimmer animation  */
+/* Shimmer animation */
 @keyframes shimmer {
   0%   { background-position: -200% 0; }
   100% { background-position:  200% 0; }
@@ -148,7 +148,7 @@ button, [role='button'] {
   animation: shimmer 2s infinite;
 }
 
-/*  Grain texture  */
+/* Grain texture */
 @keyframes grain {
   0%, 100% { transform: translate(0,0); }
   10% { transform: translate(-1%,-1%); }
@@ -162,13 +162,13 @@ button, [role='button'] {
   90% { transform: translate(-1%,1%); }
 }
 
-/*  Focus ring  */
+/* Focus ring */
 button:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 3px;
 }
 
-/*  Ambient light pulse  */
+/* Ambient light pulse */
 @keyframes ambientPulse {
   0%, 100% { opacity: 0.12; }
   50% { opacity: 0.22; }
@@ -178,13 +178,13 @@ button:focus-visible {
   animation: ambientPulse 4s ease-in-out infinite;
 }
 
-/*  Spice dot pulse  */
+/* Spice dot pulse */
 @keyframes dotPulse {
   0%, 100% { transform: scale(1); opacity: 0.6; }
   50% { transform: scale(1.4); opacity: 1; }
 }
 
-/*  Idle screen  */
+/* Idle screen */
 .idle-overlay {
   position: fixed;
   inset: 0;
@@ -198,7 +198,7 @@ button:focus-visible {
   touch-action: manipulation;
 }
 
-/*  Category pill  */
+/* Category pill */
 .category-pill {
   display: inline-flex;
   align-items: center;
@@ -215,7 +215,7 @@ button:focus-visible {
   font-family: 'Outfit', sans-serif;
 }
 
-/*  Suggestion pill hover  */
+/* Suggestion pill hover */
 .suggestion-pill {
   padding: 10px 18px;
   border-radius: var(--radius-pill);
@@ -235,7 +235,7 @@ button:focus-visible {
   background: var(--color-accent-glow);
 }
 
-/*  Divider line  */
+/* Divider line */
 .gold-divider {
   height: 1px;
   background: linear-gradient(90deg, transparent, var(--color-accent-2), transparent);

@@ -23,7 +23,7 @@ public:
         Serial.println(F("[Carousel] Initialised. Assumed slot 1."));
     }
 
-    // Rotate to target slot. Blocking call — only invoke from INDEXING state.
+    // Rotate to target slot. Blocking call -- only invoke from INDEXING state.
     bool goToSlot(uint8_t target)
     {
         if (target < 1 || target > CAROUSEL_SLOT_COUNT)

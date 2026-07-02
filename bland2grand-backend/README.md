@@ -12,7 +12,7 @@ Frontend  ←SSE→  Flask  ←HTTP/UDP→  Arduino
               OpenRouter (optional)
 ```
 
-**Mock mode** (`MOCK_ARDUINO=true`, default): simulates dispensing in Python — no hardware needed for UI work.
+**Mock mode** (`MOCK_ARDUINO=true`, default): simulates dispensing in Python -- no hardware needed for UI work.
 
 **Real mode** (`MOCK_ARDUINO=false`): POSTs each spice to the Arduino and waits for push callbacks before continuing.
 
@@ -60,8 +60,8 @@ MOCK_ARDUINO=true
 | GET | `/api/health` | `{ status, mock_arduino }` |
 | GET | `/api/search?q=` | Up to 6 recipes; may hit AI if DB empty |
 | GET | `/api/recipes/<id>` | Single recipe |
-| POST | `/api/dispense` | `{ recipe_id, serving_count }` — starts background thread |
-| GET | `/api/status/stream` | SSE — see event types below |
+| POST | `/api/dispense` | `{ recipe_id, serving_count }` -- starts background thread |
+| GET | `/api/status/stream` | SSE -- see event types below |
 | POST | `/api/stop` | Cancel + UDP STOP to Arduino |
 | POST | `/api/calibrate` | Update slot cal factor |
 | POST | `/api/recipe` | Save custom blend |
@@ -75,7 +75,7 @@ Called by firmware, not the browser:
 | POST | `/api/arduino/indexing` | Carousel moving |
 | POST | `/api/arduino/dispense-start` | Auger started |
 | POST | `/api/arduino/weight-push` | Live weight (HTTP or UDP relay) |
-| POST | `/api/arduino/spice-complete` | One spice done — unblocks dispense loop |
+| POST | `/api/arduino/spice-complete` | One spice done -- unblocks dispense loop |
 | POST | `/api/arduino/session-complete` | All spices done |
 | POST | `/api/arduino/fault` | Error |
 
@@ -107,9 +107,9 @@ No API key → step 3 is skipped.
 
 ## Database
 
-**recipes** — `name`, `category`, `description`, plus `s1_cumin` … `s8_cayenne` (grams per serving).
+**recipes** -- `name`, `category`, `description`, plus `s1_cumin` … `s8_cayenne` (grams per serving).
 
-**calibration** — per-slot `cal_factor` (HX711 counts per gram).
+**calibration** -- per-slot `cal_factor` (HX711 counts per gram).
 
 ## WiFi provisioning
 

@@ -19,7 +19,7 @@ def find_arduino_port() -> str:
     candidates = list(serial.tools.list_ports.comports())
     print(f"[debug] All detected serial ports:")
     for p in candidates:
-        print(f"         {p.device}  —  {p.description}")
+        print(f"         {p.device}  --  {p.description}")
     for p in candidates:
         desc = (p.description or "").lower()
         if any(k in desc for k in ("arduino", "ch340", "cp210", "usb")):
@@ -86,12 +86,12 @@ def provision(port: str, ssid: str, password: str) -> None:
                 ser.close()
                 return
             if "PROV:FAIL" in line:
-                print("\n❌ Provisioning failed — Arduino rejected the credentials.")
+                print("\n❌ Provisioning failed -- Arduino rejected the credentials.")
                 print("   Check: cmd must be 'provision', ssid <= 32 chars, password <= 64 chars.")
                 ser.close()
                 return
             if "No WiFi credentials" in line or "Send JSON" in line:
-                print("[debug] Arduino is in provisioning mode — good.")
+                print("[debug] Arduino is in provisioning mode -- good.")
             if "Connecting" in line:
                 print("[debug] Arduino is trying to connect with saved credentials.")
                 print("        It has already been provisioned. To re-provision:")
@@ -101,13 +101,13 @@ def provision(port: str, ssid: str, password: str) -> None:
     ser.close()
 
     if not got_any_response:
-        print("\n⚠️  Timeout — Arduino sent NO response at all.")
+        print("\n⚠️  Timeout -- Arduino sent NO response at all.")
         print()
         print("Possible causes:")
         print("  1. Arduino is NOT in provisioning mode (already has credentials in EEPROM).")
         print("     Fix: flash clear_eeprom.cpp to wipe EEPROM, then reflash main.cpp.")
         print()
-        print("  2. Wrong baud rate — make sure main.cpp has Serial.begin(9600).")
+        print("  2. Wrong baud rate -- make sure main.cpp has Serial.begin(9600).")
         print("     NOT Serial.begin(9600).")
         print()
         print("  3. Arduino booted BEFORE this script opened the port.")
@@ -116,7 +116,7 @@ def provision(port: str, ssid: str, password: str) -> None:
         print("  4. USB cable is power-only (no data lines).")
         print("     Fix: try a different cable.")
     else:
-        print("\n⚠️  Timeout — got some output but no PROV:OK.")
+        print("\n⚠️  Timeout -- got some output but no PROV:OK.")
         print("   See Arduino output above for clues.")
 
 

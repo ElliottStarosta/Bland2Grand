@@ -10,9 +10,9 @@ PlatformIO project for the **Arduino UNO R4 WiFi**. Drives carousel indexing, au
 IDLE → INDEXING → DISPENSING → PARKING → (next spice or done)
 ```
 
-- **INDEXING** — carousel steps to the target slot (shortest CCW path).
-- **DISPENSING** — auger runs; weight pushed over UDP so HTTP doesn't stall steps.
-- **PARKING** — half-rev forward to disengage the spur gear and avoid drips.
+- **INDEXING** -- carousel steps to the target slot (shortest CCW path).
+- **DISPENSING** -- auger runs; weight pushed over UDP so HTTP doesn't stall steps.
+- **PARKING** -- half-rev forward to disengage the spur gear and avoid drips.
 
 `USE_LOAD_CELL` in `main.cpp` picks closed-loop (HX711) vs dead-reckoning (cycle counts only).
 
@@ -48,9 +48,9 @@ IDLE → INDEXING → DISPENSING → PARKING → (next spice or done)
 
 AugerDriver runs three phases when `USE_LOAD_CELL=1`:
 
-1. **Bulk** — fast run to ~85% of target by cycle count (scale is noisy while spinning).
-2. **Settle** — stop, wait for stable reads.
-3. **Nudge** — one auger cycle at a time until target or max taps.
+1. **Bulk** -- fast run to ~85% of target by cycle count (scale is noisy while spinning).
+2. **Settle** -- stop, wait for stable reads.
+3. **Nudge** -- one auger cycle at a time until target or max taps.
 
 Per-slot coast EMA learns how much spice keeps falling after the motor stops.
 
@@ -60,7 +60,7 @@ After each spice the auger reverses (back-purge) to re-seat the half-spur gear.
 
 Static IP default: `192.168.137.50` on the `bland2grand` hotspot (gateway `192.168.137.1`).
 
-Credentials at top of `main.cpp`. First boot with empty EEPROM can accept serial provisioning — see backend `provision.py`.
+Credentials at top of `main.cpp`. First boot with empty EEPROM can accept serial provisioning -- see backend `provision.py`.
 
 Flask push target is `FLASK_SERVER_HOST` in `Constants.h`.
 
@@ -90,8 +90,7 @@ AccelStepper, HX711, AS5600, ArduinoJson, ArduinoOTA
 
 | Address | Content |
 |---------|---------|
-| 0–63 | FlowModel per slot (legacy) |
 | 128–143 | Carousel position backup |
 | 200–297 | WiFi SSID/password |
 
-Exact layout may vary — check `FlowModel.h` / `WiFiComms.h` if you're poking EEPROM directly.
+Exact layout may vary -- check `FlowModel.h` / `WiFiComms.h` if you're poking EEPROM directly.
