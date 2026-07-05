@@ -7,6 +7,7 @@ export {
   SPICE_LABELS,
 } from "../slotConfig";
 
+// All possible screens in the app navigation flow
 export type Screen =
   | "search"
   | "results"
@@ -15,12 +16,14 @@ export type Screen =
   | "complete"
   | "custom";
 
+// Individual spice amount within a recipe
 export interface SpiceAmount {
-  slot: number;
-  name: string;
-  grams_per_serving: number;
+  slot: number; // Dispenser slot number (1-8)
+  name: string; // Spice name
+  grams_per_serving: number; // Weight in grams for one serving
 }
 
+// Complete recipe definition
 export interface Recipe {
   id: number;
   name: string;
@@ -29,50 +32,53 @@ export interface Recipe {
   spices: SpiceAmount[];
 }
 
-// Dispense state
+// Dispense state types
 
+// Current status of a single spice slot during dispensing
 export type SlotStatus =
-  | "pending"
-  | "indexing"
-  | "dispensing"
-  | "done"
-  | "error";
+  | "pending" // Not yet started
+  | "indexing" // Turntable rotating to position
+  | "dispensing" // Actively dispensing spice
+  | "done" // Successfully completed
+  | "error"; // Failed to dispense
 
+// Progress tracking for a single spice slot
 export interface SlotProgress {
   slot: number;
   name: string;
-  target: number;
-  current: number;
+  target: number; // Target weight in grams
+  current: number; // Current weight dispensed
   status: SlotStatus;
-  actual?: number;
+  actual?: number; // Final actual weight when complete
 }
 
+// Full dispense session state
 export interface DispenseSession {
   recipeName: string;
   servingCount: number;
   slots: SlotProgress[];
-  activeSlotIndex: number;
+  activeSlotIndex: number; // Index of currently active slot (-1 if none)
   isComplete: boolean;
   isError: boolean;
   errorMessage?: string;
-  totalWeight: number;
-  totalTarget: number;
-  lastCompletedSlot?: number;
-  awaitingBowl: boolean;
+  totalWeight: number; // Total weight dispensed so far
+  totalTarget: number; // Total target weight for all spices
+  lastCompletedSlot?: number; // Last slot that finished
+  awaitingBowl: boolean; // Whether bowl is needed on scale
 }
 
-// Payloads emitted by Flask on /api/status/stream (mirrors dispense.py broadcast types).
+// Server-sent events from Flask backend (/api/status/stream)
 export type SSEEvent =
-  | { type: "connected" }
-  | { type: "heartbeat" }
+  | { type: "connected" } // Connection established
+  | { type: "heartbeat" } // Keep-alive ping
   | {
       type: "session_start";
       recipe_name: string;
       total_slots: number;
       slots: { slot: number; name: string; target: number }[];
     }
-  | { type: "no_bowl" }
-  | { type: "bowl_detected" }
+  | { type: "no_bowl" } // No bowl detected on scale
+  | { type: "bowl_detected" } // Bowl placed on scale
   | {
       type: "indexing";
       slot: number;
@@ -81,7 +87,7 @@ export type SSEEvent =
       total_slots: number;
     }
   | {
-      type: "nearly_there";
+      type: "nearly_there"; // Voice cue trigger - spice nearly complete
       slot: number;
       spice_name: string;
     }
@@ -115,6 +121,7 @@ export type SSEEvent =
     }
   | { type: "session_error"; message: string; completed: CompletedSpice[] };
 
+// Final spice result after dispense
 export interface CompletedSpice {
   slot: number;
   name: string;
@@ -123,15 +130,22 @@ export interface CompletedSpice {
   status: "done" | "timeout";
 }
 
-export const TSP_ML = 4.92;
-export const TBSP_ML = 14.79;
+// Unit conversion constants
+export const TSP_ML = 4.92; // 1 teaspoon in mL
+export const TBSP_ML = 14.79; // 1 tablespoon in mL
 
+// Unit types for custom recipe builder
 export type Unit = "g" | "tsp" | "tbsp";
 
+// Unit configuration
 export const UNIT_STEPS: Record<Unit, number> = {
   g: 0.5,
   tsp: 0.25,
   tbsp: 0.25,
 };
-export const UNIT_MAX: Record<Unit, number> = { g: 10, tsp: 3, tbsp: 1 };
-export const UNIT_CYCLE: Unit[] = ["g", "tsp", "tbsp"];
+export const UNIT_MAX: Record<Unit, number> = {
+  g: 10,
+  tsp: 3,
+  tbsp: 1,
+};
+export const UNIT_CYCLE: Unit[] = ["g", "tsp", "tbsp"]; // Cycle order for unit picker
