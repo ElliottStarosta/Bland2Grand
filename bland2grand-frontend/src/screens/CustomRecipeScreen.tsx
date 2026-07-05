@@ -1,3 +1,5 @@
+// Custom recipe builder screen where users can create their own spice blends by adjusting individual spice amounts with unit switching and live previews.
+
 import { useState, useRef, useEffect } from "react";
 import { gsap } from "gsap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -25,6 +27,7 @@ import {
 } from "../types";
 import type { Unit } from "../types";
 
+// Convert a spice amount from any unit to grams
 function toGrams(value: number, unit: Unit, slot: number): number {
   const density = SPICE_DENSITY_G_PER_ML[slot] ?? 0.85;
   if (unit === "g") return value;
@@ -32,13 +35,14 @@ function toGrams(value: number, unit: Unit, slot: number): number {
   return Math.min(value * TBSP_ML * density, 10);
 }
 
+// Format value for display (removes unnecessary trailing zeros)
 function fmtVal(value: number): string {
   if (value === 0) return "0";
   if (value % 1 === 0) return value.toFixed(0);
   return value.toFixed(2).replace(/\.?0+$/, "");
 }
 
-// Reusable spring-press button
+// Reusable button with spring-press animation
 function PressButton({
   onClick,
   disabled = false,
@@ -85,7 +89,7 @@ function PressButton({
   );
 }
 
-// Bubble unit picker
+// Unit picker with animated bubble expansion
 interface UnitPickerProps {
   unit: Unit;
   isActive: boolean;
@@ -105,7 +109,7 @@ function UnitPicker({ unit, isActive, color, onSelect }: UnitPickerProps) {
     if (open) return;
     setOpen(true);
 
-    // Trigger pill shrinks slightly then springs back
+    // Trigger pill shrinks then springs back
     if (triggerRef.current) {
       gsap.to(triggerRef.current, {
         scale: 0.85,
@@ -121,7 +125,7 @@ function UnitPicker({ unit, isActive, color, onSelect }: UnitPickerProps) {
       });
     }
 
-    // Bubbles burst outward with stagger
+    // Bubbles burst outward with staggered animation
     requestAnimationFrame(() => {
       bubbleRefs.current.forEach((el, i) => {
         if (!el) return;
@@ -141,15 +145,13 @@ function UnitPicker({ unit, isActive, color, onSelect }: UnitPickerProps) {
     });
   };
 
-  // Collapses bubbles in reverse order (outermost first -> back to trigger),
-  // then the trigger does a small "receive" spring, then fires the callback.
   const closePicker = (selected?: Unit) => {
     const els = [...bubbleRefs.current.filter(Boolean)] as HTMLButtonElement[];
     const reversed = [...els].reverse();
 
-    // Fire the selection
     if (selected && selected !== unit) onSelect(selected);
 
+    // Collapse bubbles in reverse order
     gsap.to(reversed, {
       scale: 0,
       opacity: 0,
@@ -176,11 +178,9 @@ function UnitPicker({ unit, isActive, color, onSelect }: UnitPickerProps) {
     });
   };
 
-  const handleSelect = (u: Unit) => {
-    closePicker(u);
-  };
+  const handleSelect = (u: Unit) => closePicker(u);
 
-  // Close on outside click (no selection)
+  // Close picker when clicking outside
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
@@ -229,7 +229,7 @@ function UnitPicker({ unit, isActive, color, onSelect }: UnitPickerProps) {
         {unit}
       </button>
 
-      {/* Other-unit bubbles -- rendered inline, animated via GSAP */}
+      {/* Other unit bubbles;  animated via GSAP */}
       {open &&
         otherUnits.map((u, i) => (
           <button
@@ -241,7 +241,6 @@ function UnitPicker({ unit, isActive, color, onSelect }: UnitPickerProps) {
             className="focus:outline-none"
             style={{
               ...pillBase,
-              // start invisible; GSAP will animate in
               opacity: 0,
               scale: "0",
               background: isActive ? `${color}12` : "rgba(255,255,255,0.08)",
@@ -270,7 +269,7 @@ function UnitPicker({ unit, isActive, color, onSelect }: UnitPickerProps) {
   );
 }
 
-// Slot input
+// Individual spice input with controls
 interface SlotInputProps {
   slot: number;
   unit: Unit;
@@ -299,6 +298,7 @@ function SlotInput({
   const isActive = value > 0;
   const gramsEquiv = toGrams(value, unit, slot);
 
+  // Animate value change when using +/- buttons
   const animateValue = (dir: number) => {
     if (!valRef.current) return;
     gsap.fromTo(
@@ -309,7 +309,6 @@ function SlotInput({
   };
 
   const startEditing = () => {
-    // Pencil springs away, check bounces in
     if (pencilRef.current) {
       gsap.to(pencilRef.current, {
         scale: 0,
@@ -338,7 +337,6 @@ function SlotInput({
       const clamped = +Math.min(Math.max(parsed, 0), max).toFixed(2);
       onChange(slot, clamped);
     }
-    // Check springs away, pencil bounces back
     if (checkRef.current) {
       gsap.to(checkRef.current, {
         scale: 0,
@@ -364,8 +362,7 @@ function SlotInput({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") commitEdit();
-    if (e.key === "Escape") commitEdit();
+    if (e.key === "Enter" || e.key === "Escape") commitEdit();
   };
 
   const inc = () => {
@@ -383,6 +380,7 @@ function SlotInput({
     }
   };
 
+  // Convert existing value to new unit
   const handleUnitSelect = (u: Unit) => {
     const grams = toGrams(value, unit, slot);
     const density = SPICE_DENSITY_G_PER_ML[slot] ?? 0.85;
@@ -433,7 +431,7 @@ function SlotInput({
       className="py-4"
       style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}
     >
-      {/* Row 1: dot + name + bubble unit picker */}
+      {/* Row 1: dot + name + unit picker */}
       <div className="flex items-center gap-2.5 mb-3">
         <span
           style={{
@@ -494,7 +492,7 @@ function SlotInput({
             transition: "all 0.2s",
           }}
         >
-          {/* Value display / input */}
+          {/* Value display / edit input */}
           <div className="flex items-baseline gap-1.5">
             {editing ? (
               <input
@@ -536,7 +534,7 @@ function SlotInput({
             </span>
           </div>
 
-          {/* Right side: grams equiv + pencil/check toggle */}
+          {/* Right side: grams equivalent + edit/save toggle */}
           <div className="flex items-center gap-1.5">
             {isActive && unit !== "g" && !editing && (
               <span
@@ -547,7 +545,7 @@ function SlotInput({
               </span>
             )}
 
-            {/* Pencil -- visible when not editing */}
+            {/* Pencil -- shown when not editing */}
             <button
               ref={pencilRef}
               onClick={startEditing}
@@ -556,7 +554,6 @@ function SlotInput({
                 ...pillBase,
                 background: isActive ? `${color}18` : "rgba(255,255,255,0.05)",
                 border: `1px solid ${isActive ? `${color}30` : "rgba(255,255,255,0.08)"}`,
-                // hide but keep in DOM so ref works
                 visibility: editing ? "hidden" : "visible",
                 pointerEvents: editing ? "none" : "auto",
               }}
@@ -570,7 +567,7 @@ function SlotInput({
               />
             </button>
 
-            {/* Check -- only mounted when editing so GSAP fromTo works cleanly */}
+            {/* Check -- shown when editing */}
             {editing && (
               <button
                 ref={checkRef}
@@ -578,7 +575,6 @@ function SlotInput({
                 className="focus:outline-none"
                 style={{
                   ...pillBase,
-                  // start hidden; GSAP animates in
                   opacity: 0,
                   transform: "scale(0)",
                   background: `${color}25`,
@@ -614,7 +610,8 @@ function SlotInput({
     </div>
   );
 }
-// Main screen
+
+// Main custom recipe screen
 interface Props {
   onSaved: (recipe: Recipe) => void;
   onBack: () => void;
@@ -639,6 +636,7 @@ export function CustomRecipeScreen({ onSaved, onBack: _onBack }: Props) {
   const nameRef = useRef<HTMLInputElement>(null);
   const saveRef = useRef<HTMLButtonElement>(null);
 
+  // Staggered entrance animation for all sections
   useEffect(() => {
     const sections = containerRef.current?.querySelectorAll("[data-s]");
     if (!sections) return;
@@ -667,6 +665,7 @@ export function CustomRecipeScreen({ onSaved, onBack: _onBack }: Props) {
     }));
 
   const handleSave = async () => {
+    // Validation
     if (!name.trim()) {
       setError("Give your blend a name.");
       nameRef.current?.focus();
@@ -681,10 +680,12 @@ export function CustomRecipeScreen({ onSaved, onBack: _onBack }: Props) {
       setError("Add at least one spice.");
       return;
     }
+
     const spicesInGrams: Record<string, number> = {};
     Object.entries(values).forEach(([slot, val]) => {
       spicesInGrams[slot] = toGrams(val, units[Number(slot)], Number(slot));
     });
+
     setSaving(true);
     setError("");
     try {
@@ -694,6 +695,7 @@ export function CustomRecipeScreen({ onSaved, onBack: _onBack }: Props) {
         description.trim(),
       );
       setSaved(true);
+      // Success pulse animation before navigating away
       gsap.to(saveRef.current, {
         scale: 1.04,
         duration: 0.15,
@@ -712,6 +714,7 @@ export function CustomRecipeScreen({ onSaved, onBack: _onBack }: Props) {
 
   const handleSaveClick = () => {
     if (saving || saved || !saveRef.current) return;
+    // Press animation before saving
     gsap.to(saveRef.current, {
       scale: 0.97,
       duration: 0.08,
@@ -736,7 +739,7 @@ export function CustomRecipeScreen({ onSaved, onBack: _onBack }: Props) {
       style={{ WebkitOverflowScrolling: "touch" }}
     >
       <div className="flex flex-col px-5 pb-safe">
-        {/* Name + description */}
+        {/* Name and description inputs */}
         <div data-s className="pt-3 pb-5">
           <p
             style={{
@@ -782,7 +785,7 @@ export function CustomRecipeScreen({ onSaved, onBack: _onBack }: Props) {
           />
         </div>
 
-        {/* Spice bar preview */}
+        {/* Spice bar preview -- shows blend composition */}
         {activeCount > 0 && (
           <div data-s className="mb-5">
             <div className="flex h-1.5 rounded-full overflow-hidden gap-px mb-2">
@@ -815,7 +818,7 @@ export function CustomRecipeScreen({ onSaved, onBack: _onBack }: Props) {
           </div>
         )}
 
-        {/* Spice inputs */}
+        {/* All spice inputs */}
         <div data-s className="luxury-card px-4 py-1 mb-5">
           <div
             className="flex items-center justify-between py-3"
@@ -856,7 +859,7 @@ export function CustomRecipeScreen({ onSaved, onBack: _onBack }: Props) {
           ))}
         </div>
 
-        {/* Error */}
+        {/* Error message */}
         {error && (
           <div
             data-s
@@ -879,7 +882,7 @@ export function CustomRecipeScreen({ onSaved, onBack: _onBack }: Props) {
           </div>
         )}
 
-        {/* Info note */}
+        {/* Info note about bowl placement */}
         <div
           data-s
           className="mb-6 px-4 py-3.5 rounded-xl"
@@ -897,7 +900,7 @@ export function CustomRecipeScreen({ onSaved, onBack: _onBack }: Props) {
           </p>
         </div>
 
-        {/* Save button */}
+        {/* Save and Dispense button */}
         <div data-s className="pb-2">
           <button
             ref={saveRef}
