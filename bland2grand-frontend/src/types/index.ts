@@ -87,7 +87,7 @@ export type SSEEvent =
       total_slots: number;
     }
   | {
-      type: "nearly_there"; // Voice cue trigger - spice nearly complete
+      type: "nearly_there"; // Voice cue trigger -- spice nearly complete
       slot: number;
       spice_name: string;
     }
