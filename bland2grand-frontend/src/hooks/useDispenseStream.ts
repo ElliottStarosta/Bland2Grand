@@ -105,9 +105,9 @@ export function useDispenseStream() {
         }
 
         case "indexing": {
-          cancelAudio(); // Cancel voice audio when indexing starts
-          const slots = prev.slots.map((s) =>
-            s.slot === event.slot ? { ...s, status: "indexing" } : s,
+          cancelAudio();
+          const slots: SlotProgress[] = prev.slots.map((s) =>
+            s.slot === event.slot ? { ...s, status: "indexing" as const } : s,
           );
           return { ...prev, slots, activeSlotIndex: event.slot_index };
         }
@@ -121,11 +121,11 @@ export function useDispenseStream() {
         }
 
         case "dispensing_start": {
-          const slots = prev.slots.map((s) =>
+          const slots: SlotProgress[] = prev.slots.map((s) =>
             s.slot === event.slot
               ? {
                   ...s,
-                  status: "dispensing",
+                  status: "dispensing" as const,
                   target: event.target_weight,
                   current: 0,
                 }
@@ -135,26 +135,34 @@ export function useDispenseStream() {
         }
 
         case "weight_update": {
-          const slots = prev.slots.map((s) =>
+          const slots: SlotProgress[] = prev.slots.map((s) =>
             s.slot !== event.slot
               ? s
               : {
                   ...s,
-                  current: Math.max(s.current, event.current_weight), // Prevent visual regression
+                  current: Math.max(s.current, event.current_weight),
+                  status: "dispensing" as const,
                 },
           );
-          const totalWeight = slots.reduce((sum, s) => sum + s.current, 0);
-          return { ...prev, slots, totalWeight };
+
+          return {
+            ...prev,
+            slots,
+            totalWeight: slots.reduce((sum, s) => sum + s.current, 0),
+          };
         }
 
         case "spice_complete": {
-          const slots = prev.slots.map((s) =>
+          const slots: SlotProgress[] = prev.slots.map((s) =>
             s.slot === event.slot
               ? {
                   ...s,
                   current: Math.max(s.current, event.actual),
                   actual: Math.max(s.current, event.actual),
-                  status: event.status === "done" ? "done" : "error",
+                  status:
+                    event.status === "done"
+                      ? ("done" as const)
+                      : ("error" as const),
                 }
               : s,
           );
