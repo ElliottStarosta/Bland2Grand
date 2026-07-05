@@ -6,6 +6,7 @@ import requests
 from config import OPENROUTER_API_KEY, AI_MODEL, API_URL
 from slot_config import SPICE_SLOTS
 
+# System prompt that guides the AI to respond with JSON only
 _SYSTEM = (
     "You are a professional culinary spice expert. "
     "Respond ONLY with a valid JSON object -- no markdown fences, no preamble. "
@@ -13,6 +14,7 @@ _SYSTEM = (
 )
 
 def _build_template(dish: str) -> str:
+    """Build the user prompt with available spice slots and formatting instructions."""
     slot_list = ", ".join(f"{k}={v}" for k, v in SPICE_SLOTS.items())
 
     return (
@@ -41,7 +43,7 @@ def _call_api(prompt: str) -> str:
             {"role": "system", "content": _SYSTEM},
             {"role": "user", "content": prompt},
         ],
-        "temperature": 0.3
+        "temperature": 0.3  # Low temperature for consistent, deterministic output
     }
     resp = requests.post(API_URL, headers=headers, json=payload, timeout=30)
     resp.raise_for_status()
@@ -50,18 +52,18 @@ def _call_api(prompt: str) -> str:
 
 def _parse_blend(text: str) -> dict:
     """Extract a JSON blob from the model response and validate it."""
-    # Strip potential markdown fences
+    # Strip potential markdown fences (code blocks)
     cleaned = re.sub(r"```(?:json)?", "", text).strip()
-    # Grab the first {...} block
+    # Grab the first JSON object block
     match = re.search(r"\{[^}]+\}", cleaned)
     if not match:
         raise ValueError(f"No JSON object found in AI response: {text!r}")
     blend = json.loads(match.group())
-    # Ensure all 8 keys present and values are non-negative floats
+    # Ensure all 8 keys are present and values are non-negative floats
     validated = {}
     for slot in range(1, 9):
         val = float(blend.get(str(slot), 0))
-        validated[str(slot)] = max(0.0, min(val, 10.0))  # clamp 0–10 g
+        validated[str(slot)] = max(0.0, min(val, 10.0))  # Clamp to 0–10g per serving
     return validated
 
 
