@@ -1,8 +1,8 @@
 """
-Dispense orchestration: SSE fan-out, Arduino push handlers, mock mode.
-
-Flask posts one spice at a time to the Arduino and waits for a push back
-before moving on. The frontend listens on /api/status/stream for live updates.
+Dispense orchestration module: manages SSE client connections, Arduino event handling,
+and the main dispense loop. Flask posts one spice at a time to the Arduino and waits
+for a completion push before moving to the next spice. Frontend clients receive
+real-time updates via the /api/status/stream SSE endpoint.
 """
 
 import queue
@@ -19,16 +19,18 @@ import sys
 import requests
 from config import ARDUINO_URL, MOCK_ARDUINO, SPICE_SLOTS
 
-# SSE client registry
+# SSE client registry - holds message queues for each connected client
 _sse_clients: list[queue.Queue] = []
 _clients_lock = threading.Lock()
 
-# Session state
+# UDP listener thread reference
 _udp_thread: threading.Thread | None = None
 
 
 # UDP listener -- Arduino sends weight updates here to avoid blocking its step loop.
 def _udp_listener() -> None:
+    """Listen for UDP weight updates from Arduino on port 5001."""
+    # Windows: kill any process using port 5001 before binding
     if sys.platform == "win32":
         try:
             result = subprocess.check_output("netstat -ano", shell=True).decode()
@@ -66,6 +68,7 @@ def _udp_listener() -> None:
             print(f"[UDP] Error: {e}")
 
 def start_udp_listener() -> None:
+    """Start the UDP listener thread if not already running."""
     global _udp_thread
     if _udp_thread and _udp_thread.is_alive():
         return
@@ -77,6 +80,7 @@ start_udp_listener()
 
 
 def register_sse_client() -> queue.Queue:
+    """Register a new SSE client and return its message queue."""
     q: queue.Queue = queue.Queue(maxsize=50)
     with _clients_lock:
         _sse_clients.append(q)
@@ -84,6 +88,7 @@ def register_sse_client() -> queue.Queue:
 
 
 def unregister_sse_client(q: queue.Queue) -> None:
+    """Remove an SSE client from the registry."""
     with _clients_lock:
         try:
             _sse_clients.remove(q)
@@ -92,6 +97,7 @@ def unregister_sse_client(q: queue.Queue) -> None:
 
 
 def _broadcast(event: dict) -> None:
+    """Internal broadcast to all SSE clients."""
     print(f"[Broadcast] {event['type']} -> {len(_sse_clients)} clients")
     with _clients_lock:
         for q in _sse_clients:
@@ -106,20 +112,24 @@ def broadcast(event: dict) -> None:
     _broadcast(event)
 
 
-# Spice-complete signal
+# Spice-complete signal - used to block and wait for Arduino completion events
 class _SpiceCompleteSignal:
+    """Thread-safe signal to wait for spice completion from Arduino."""
     def __init__(self):
         self._event = threading.Event()
         self._result: dict = {}
 
     def wait(self, timeout_s: float) -> bool:
+        """Wait for signal with timeout. Returns True if signaled."""
         return self._event.wait(timeout=timeout_s)
 
     def signal(self, result: dict) -> None:
+        """Signal completion with result data."""
         self._result = result
         self._event.set()
 
     def reset(self) -> None:
+        """Reset signal for next spice."""
         self._event.clear()
         self._result = {}
 
@@ -131,7 +141,7 @@ class _SpiceCompleteSignal:
 _spice_signal = _SpiceCompleteSignal()
 
 
-# Session state
+# Session state - tracks active dispense session
 class DispenseSession:
     def __init__(self) -> None:
         self.active = False
@@ -145,8 +155,9 @@ class DispenseSession:
 _session = DispenseSession()
 
 
-# Arduino push receivers
+# Arduino push receivers - broadcast events to all SSE clients
 def handle_arduino_indexing(data: dict) -> None:
+    """Broadcast indexing (turntable rotating) event."""
     _broadcast(
         {
             "type": "indexing",
@@ -159,6 +170,7 @@ def handle_arduino_indexing(data: dict) -> None:
 
 
 def handle_arduino_dispense_start(data: dict) -> None:
+    """Broadcast dispense start event."""
     _broadcast(
         {
             "type": "dispensing_start",
@@ -172,6 +184,7 @@ def handle_arduino_dispense_start(data: dict) -> None:
 
 
 def handle_arduino_no_bowl(data: dict) -> None:
+    """Broadcast no-bowl detected event."""
     _broadcast(
         {
             "type": "no_bowl",
@@ -180,6 +193,7 @@ def handle_arduino_no_bowl(data: dict) -> None:
 
 
 def handle_arduino_bowl_detected(data: dict) -> None:
+    """Broadcast bowl detected event."""
     _broadcast(
         {
             "type": "bowl_detected",
@@ -188,6 +202,7 @@ def handle_arduino_bowl_detected(data: dict) -> None:
 
 
 def handle_arduino_weight_push(data: dict) -> None:
+    """Broadcast live weight update event."""
     _broadcast(
         {
             "type": "weight_update",
@@ -227,6 +242,7 @@ def handle_arduino_session_complete(data: dict) -> None:
 
 
 def handle_arduino_fault(data: dict) -> None:
+    """Handle Arduino fault - broadcast error and unblock dispense loop."""
     _session.active = False
     _spice_signal.signal({"status": "fault"})  # unblock loop on fault too
     _broadcast(
@@ -238,8 +254,9 @@ def handle_arduino_fault(data: dict) -> None:
     )
 
 
-# Mock helpers
+# Mock helpers - simulates Arduino dispensing without hardware
 def _mock_dispense_spice(slot: int, target_grams: float) -> dict:
+    """Simulate dispensing a spice with realistic weight updates."""
     current = 0.0
     timeout_at = time.time() + 60
 
@@ -247,6 +264,7 @@ def _mock_dispense_spice(slot: int, target_grams: float) -> dict:
         if time.time() > timeout_at:
             return {"status": "timeout", "actual": round(current, 2)}
 
+        # Simulate deceleration as target approaches
         ratio = current / target_grams if target_grams > 0 else 1.0
         if ratio < 0.80:
             speed, sleep_t = 1.0, 0.15
@@ -273,6 +291,7 @@ def _mock_dispense_spice(slot: int, target_grams: float) -> dict:
 
 
 def handle_arduino_nearly_there(data: dict) -> None:
+    """Broadcast nearly-there event for voice cue trigger."""
     _broadcast(
         {
             "type": "nearly_there",
@@ -283,6 +302,7 @@ def handle_arduino_nearly_there(data: dict) -> None:
 
 
 def _friendly_error(exc: Exception) -> str:
+    """Convert exception to user-friendly error message."""
     msg = str(exc)
     if "ConnectTimeoutError" in msg or "connect timeout" in msg.lower():
         return "Arduino unreachable -- check it is powered and on the network."
@@ -295,6 +315,10 @@ def _friendly_error(exc: Exception) -> str:
 
 # Main dispense orchestration -- one background thread, one spice POST at a time.
 def start_dispense(recipe: dict, serving_count: int) -> tuple[bool, str]:
+    """
+    Start a dispense session in a background thread.
+    Posts one spice at a time to Arduino and waits for completion.
+    """
     if _session.busy:
         return False, "A dispense is already in progress."
 
@@ -309,9 +333,11 @@ def start_dispense(recipe: dict, serving_count: int) -> tuple[bool, str]:
         return False, "No spice amounts to dispense."
 
     def _run() -> None:
+        """Background thread: orchestrate the entire dispense session."""
         _session.active = True
         time.sleep(0.3)
         try:
+            # Broadcast session start
             _broadcast(
                 {
                     "type": "session_start",
@@ -323,6 +349,7 @@ def start_dispense(recipe: dict, serving_count: int) -> tuple[bool, str]:
                 }
             )
 
+            # Process each spice one at a time
             for idx, (slot, name, grams) in enumerate(targets):
                 if not _session.active:
                     break
@@ -338,7 +365,7 @@ def start_dispense(recipe: dict, serving_count: int) -> tuple[bool, str]:
                     "total_slots": len(targets),
                 }
 
-                # POST one spice -- retry silently while Arduino is waiting for bowl
+                # POST one spice -- retry while Arduino is waiting for bowl
                 # (Arduino won't respond to HTTP during bowl detection / tare)
                 posted = False
                 post_deadline = time.time() + 120  # wait up to 2 min for bowl
@@ -401,6 +428,7 @@ def start_dispense(recipe: dict, serving_count: int) -> tuple[bool, str]:
                     )
                     return
 
+            # All spices complete
             if _session.active:
                 _broadcast(
                     {
@@ -428,4 +456,5 @@ def start_dispense(recipe: dict, serving_count: int) -> tuple[bool, str]:
 
 
 def is_busy() -> bool:
+    """Check if a dispense session is currently active."""
     return _session.busy
