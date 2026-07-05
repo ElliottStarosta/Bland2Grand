@@ -1,4 +1,4 @@
-// Serving count picker -- scales recipe grams before dispense.
+// Serving count picker that scales recipe grams before dispensing.
 
 import { useState, useRef, useEffect } from "react";
 import { gsap } from "gsap";
@@ -9,9 +9,9 @@ import { SPICE_COLORS } from "../types";
 import { primeAudio } from "../hooks/slotAudio";
 
 interface Props {
-  recipe: Recipe;
-  onDispense: (servings: number) => void;
-  loading?: boolean;
+  recipe: Recipe; // Recipe to dispense
+  onDispense: (servings: number) => void; // Callback with selected servings
+  loading?: boolean; // Disable button during dispense
 }
 
 export function ServingScreen({ recipe, onDispense, loading }: Props) {
@@ -22,7 +22,7 @@ export function ServingScreen({ recipe, onDispense, loading }: Props) {
   const btnRef = useRef<HTMLButtonElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Entrance animation
+  // Staggered entrance animation for all sections
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -34,6 +34,7 @@ export function ServingScreen({ recipe, onDispense, loading }: Props) {
     );
   }, []);
 
+  // Animate the count number when it changes
   const animateCount = (delta: number) => {
     if (!countRef.current) return;
     gsap.fromTo(
@@ -48,6 +49,7 @@ export function ServingScreen({ recipe, onDispense, loading }: Props) {
     if (next === servings) return;
     setServings(next);
     animateCount(delta);
+    // Spring feedback on the button
     const btn = delta > 0 ? plusRef.current : minusRef.current;
     if (btn)
       gsap.fromTo(
@@ -65,7 +67,7 @@ export function ServingScreen({ recipe, onDispense, loading }: Props) {
 
   const handleDispense = () => {
     if (loading) return;
-    primeAudio();
+    primeAudio(); // Preload voice lines before dispensing
     gsap.to(btnRef.current, {
       scale: 0.95,
       duration: 0.1,
@@ -83,14 +85,13 @@ export function ServingScreen({ recipe, onDispense, loading }: Props) {
   );
 
   return (
-    /* Outer: full height, scrollable */
     <div
       ref={containerRef}
       className="flex-1 overflow-y-auto"
       style={{ WebkitOverflowScrolling: "touch" }}
     >
       <div className="flex flex-col px-5 pb-safe gap-0">
-        {/*  Recipe identity */}
+        {/* Recipe identity */}
         <div data-s className="pt-2 pb-6">
           <span className="text-[10px] font-body font-semibold tracking-[0.2em] uppercase text-accent">
             {recipe.category}
@@ -105,15 +106,14 @@ export function ServingScreen({ recipe, onDispense, loading }: Props) {
           )}
         </div>
 
-        {/*  Serving counter -- the hero */}
+        {/* Serving counter */}
         <div data-s>
           <p className="text-[10px] font-body font-semibold tracking-[0.2em] uppercase text-muted mb-4">
             How many servings?
           </p>
 
-          {/* Big counter row */}
+          {/* Big counter with +/- buttons */}
           <div className="flex items-center justify-between mb-5">
-            {/* Minus button */}
             <button
               ref={minusRef}
               onClick={() => changeServings(-1)}
@@ -126,7 +126,7 @@ export function ServingScreen({ recipe, onDispense, loading }: Props) {
               <FontAwesomeIcon icon={faMinus} className="text-lg" />
             </button>
 
-            {/* Number centred absolutely between buttons */}
+            {/* Current count */}
             <div className="flex-1 flex flex-col items-center gap-1">
               <span
                 ref={countRef}
@@ -140,7 +140,6 @@ export function ServingScreen({ recipe, onDispense, loading }: Props) {
               </span>
             </div>
 
-            {/* Plus button */}
             <button
               ref={plusRef}
               onClick={() => changeServings(1)}
@@ -154,7 +153,7 @@ export function ServingScreen({ recipe, onDispense, loading }: Props) {
             </button>
           </div>
 
-          {/* Quick-pick row */}
+          {/* Quick-preset buttons */}
           <div className="grid grid-cols-5 gap-2 mb-8">
             {[1, 2, 4, 6, 8].map((n) => (
               <button
@@ -174,10 +173,9 @@ export function ServingScreen({ recipe, onDispense, loading }: Props) {
           </div>
         </div>
 
-        {/*  Divider */}
         <div data-s className="h-px bg-border mb-7" />
 
-        {/*  Spice breakdown */}
+        {/* Spice breakdown with scaled amounts */}
         <div data-s className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <p className="text-[10px] font-body font-semibold tracking-[0.2em] uppercase text-muted">
@@ -212,6 +210,7 @@ export function ServingScreen({ recipe, onDispense, loading }: Props) {
                       {grams.toFixed(1)} g
                     </span>
                   </div>
+                  {/* Proportional bar */}
                   <div
                     className="h-[3px] rounded-full overflow-hidden"
                     style={{ background: "rgba(255,255,255,0.06)" }}
@@ -231,7 +230,7 @@ export function ServingScreen({ recipe, onDispense, loading }: Props) {
           </div>
         </div>
 
-        {/*  Info note */}
+        {/* Info note about bowl placement */}
         <div
           data-s
           className="mb-6 px-4 py-3 rounded-xl border border-border"
@@ -243,7 +242,7 @@ export function ServingScreen({ recipe, onDispense, loading }: Props) {
           </p>
         </div>
 
-        {/*  Dispense button */}
+        {/* Dispense button */}
         <div data-s className="pb-2">
           <button
             ref={btnRef}
@@ -257,10 +256,7 @@ export function ServingScreen({ recipe, onDispense, loading }: Props) {
           >
             {loading ? (
               <>
-                <FontAwesomeIcon
-                  icon={faPlay}
-                  className="animate-pulse text-sm"
-                />
+                <FontAwesomeIcon icon={faPlay} className="animate-pulse text-sm" />
                 Starting…
               </>
             ) : (
