@@ -47,17 +47,13 @@ CORS(app, resources={r"/api/*": {"origins": "*"}})
 init_db()
 
 
-
 # Health check endpoint
-
 @app.get("/api/health")
 def health():
     return jsonify({"status": "ok", "mock_arduino": MOCK_ARDUINO})
 
 
-
 # Emergency stop endpoint
-
 import socket
 
 
@@ -88,9 +84,7 @@ def stop_dispense():
     return jsonify({"status": "stopped"})
 
 
-
 # Recipe search endpoint
-
 @app.get("/api/search")
 def search():
     query = request.args.get("q", "").strip()
@@ -102,9 +96,7 @@ def search():
     return jsonify({"results": results, "count": len(results)})
 
 
-
-# Fetch single recipe
-
+# Fetch single recipe by ID
 @app.get("/api/recipes/<int:recipe_id>")
 def get_recipe(recipe_id: int):
     recipe = get_recipe_by_id(recipe_id)
@@ -115,9 +107,7 @@ def get_recipe(recipe_id: int):
     return jsonify(recipe)
 
 
-
 # Arduino event hooks (bowl detection)
-
 @app.post("/api/arduino/no-bowl")
 def arduino_no_bowl():
     data = request.get_json(silent=True) or {}
@@ -132,9 +122,7 @@ def arduino_bowl_detected():
     return jsonify({"ok": True})
 
 
-
 # Start dispense session
-
 @app.post("/api/dispense")
 def dispense():
     if is_busy():
@@ -167,12 +155,9 @@ def dispense():
     )
 
 
-
 # SSE stream (real-time updates)
-
 @app.get("/api/status/stream")
 def status_stream():
-
     def generate():
         q = register_sse_client()
 
@@ -216,9 +201,7 @@ def status_stream():
     return response
 
 
-
 # Calibration update
-
 @app.post("/api/calibrate")
 def calibrate():
     body = request.get_json(silent=True) or {}
@@ -234,9 +217,7 @@ def calibrate():
     return jsonify({"status": "ok", "slot": slot, "cal_factor": cal_factor})
 
 
-
 # Create custom recipe
-
 @app.post("/api/recipe")
 def create_recipe():
     body = request.get_json(silent=True) or {}
@@ -260,9 +241,7 @@ def create_recipe():
     return jsonify({"status": "created", "recipe": recipe}), 201
 
 
-
 # Arduino push events (SSE bridge)
-
 @app.post("/api/arduino/nearly-there")
 def arduino_nearly_there():
     data = request.get_json(silent=True) or {}
@@ -312,9 +291,7 @@ def arduino_fault():
     return jsonify({"ok": True})
 
 
-
 # Entry point
-
 if __name__ == "__main__":
     print(f"[Bland2Grand] Starting Flask on port {FLASK_PORT}")
     print(f"[Bland2Grand] Arduino mode: {'MOCK' if MOCK_ARDUINO else 'REAL'}")
