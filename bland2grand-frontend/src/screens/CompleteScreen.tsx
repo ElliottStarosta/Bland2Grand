@@ -1,4 +1,4 @@
-// Post-dispense summary -- accuracy per slot, error state, restart CTA.
+// Post-dispense summary screen showing accuracy per spice slot, error states, and a restart CTA button.
 
 import { useEffect, useRef } from 'react'
 import { gsap } from 'gsap'
@@ -12,29 +12,31 @@ import type { DispenseSession } from '../types'
 import { SPICE_COLORS } from '../types'
 
 interface Props {
-  session: DispenseSession
-  onReset: () => void
+  session: DispenseSession // Final dispense session data
+  onReset: () => void // Callback to restart the flow
 }
 
 export function CompleteScreen({ session, onReset }: Props) {
-  const iconRef    = useRef<HTMLDivElement>(null)
-  const titleRef   = useRef<HTMLDivElement>(null)
-  const cardRef    = useRef<HTMLDivElement>(null)
-  const btnRef     = useRef<HTMLButtonElement>(null)
+  const iconRef = useRef<HTMLDivElement>(null)
+  const titleRef = useRef<HTMLDivElement>(null)
+  const cardRef = useRef<HTMLDivElement>(null)
+  const btnRef = useRef<HTMLButtonElement>(null)
 
   const hasError = session.isError || session.slots.some((s) => s.status === 'error')
 
+  // Staggered entrance animation with a subtle bounce on the icon
   useEffect(() => {
     gsap.set([iconRef.current, titleRef.current, cardRef.current, btnRef.current], {
       opacity: 0, y: 20,
     })
 
     const tl = gsap.timeline({ defaults: { ease: 'power3.out' } })
-    tl.to(iconRef.current,  { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: 'back.out(2)' })
+    tl.to(iconRef.current, { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: 'back.out(2)' })
       .to(titleRef.current, { opacity: 1, y: 0, duration: 0.4 }, '-=0.25')
-      .to(cardRef.current,  { opacity: 1, y: 0, duration: 0.4 }, '-=0.2')
-      .to(btnRef.current,   { opacity: 1, y: 0, duration: 0.35 }, '-=0.15')
+      .to(cardRef.current, { opacity: 1, y: 0, duration: 0.4 }, '-=0.2')
+      .to(btnRef.current, { opacity: 1, y: 0, duration: 0.35 }, '-=0.15')
 
+    // Gentle pulse animation on the icon for success state
     if (!hasError) {
       gsap.to(iconRef.current, {
         scale: 1.05,
@@ -54,9 +56,7 @@ export function CompleteScreen({ session, onReset }: Props) {
 
   return (
     <div className="flex-1 min-h-0 overflow-y-auto flex flex-col items-center px-5">
-
-
-      {/*  Icon */}
+      {/* Status icon: Checkmark or warning */}
       <div
         ref={iconRef}
         className="mt-6 mb-4 flex flex-col items-center"
@@ -80,7 +80,7 @@ export function CompleteScreen({ session, onReset }: Props) {
         </div>
       </div>
 
-      {/*  Title */}
+      {/* Title and subtitle */}
       <div ref={titleRef} className="text-center mb-5 w-full" style={{ opacity: 0 }}>
         <h2
           className="font-display font-semibold text-txt"
@@ -98,7 +98,7 @@ export function CompleteScreen({ session, onReset }: Props) {
         </p>
       </div>
 
-      {/*  Summary card */}
+      {/* Summary card showing each dispensed spice with accuracy */}
       <div ref={cardRef} className="w-full luxury-card p-5 mb-4" style={{ opacity: 0 }}>
         <p
           className="font-body font-semibold uppercase mb-4"
@@ -110,7 +110,7 @@ export function CompleteScreen({ session, onReset }: Props) {
         <div className="space-y-3">
           {completedSlots.map((s) => {
             const diff = Math.abs((s.actual ?? 0) - s.target)
-            const ok   = s.status === 'done' && diff < 0.5
+            const ok = s.status === 'done' && diff < 0.5 // Within tolerance
             const color = SPICE_COLORS[s.slot] ?? '#888'
             return (
               <div key={s.slot} className="flex items-center gap-3">
@@ -144,7 +144,7 @@ export function CompleteScreen({ session, onReset }: Props) {
           })}
         </div>
 
-        {/* Divider + total */}
+        {/* Total weight summary */}
         <div
           className="mt-4 pt-3 flex justify-between items-center"
           style={{ borderTop: '1px solid #1E1B17' }}
@@ -164,7 +164,7 @@ export function CompleteScreen({ session, onReset }: Props) {
         </div>
       </div>
 
-      {/*  Reset button */}
+      {/* Reset button to start a new blend */}
       <button
         ref={btnRef}
         onClick={onReset}
