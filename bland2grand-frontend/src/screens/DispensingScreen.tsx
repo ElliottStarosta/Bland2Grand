@@ -1,3 +1,5 @@
+// Live dispensing screen showing real-time progress of each spice being dispensed.
+
 import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -13,8 +15,8 @@ import { Bowl } from "../components/Bowl";
 import { SlotRow } from "../components/SlotRow";
 
 interface Props {
-  session: DispenseSession;
-  onStop?: () => void;
+  session: DispenseSession; // Current dispense session state
+  onStop?: () => void; // Optional stop callback
 }
 
 export function DispensingScreen({ session, onStop }: Props) {
@@ -22,7 +24,7 @@ export function DispensingScreen({ session, onStop }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const bowlPromptRef = useRef<HTMLDivElement>(null);
   const bowlSvgRef = useRef<HTMLDivElement>(null);
-  const prevAwaitingBowl = useRef(true); // starts true -- waiting on mount
+  const prevAwaitingBowl = useRef(true); // Track bowl state changes
 
   const handleStop = async () => {
     if (stopping) return;
@@ -30,11 +32,11 @@ export function DispensingScreen({ session, onStop }: Props) {
     try {
       await fetch("/api/stop", { method: "POST" });
     } catch {
-      // session_error SSE will handle navigation regardless
+      // session_error SSE will handle navigation
     }
   };
 
-  // Entrance animation for main sections (not the bowl area -- handled separately)
+  // Initial entrance animation for all sections
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -46,7 +48,7 @@ export function DispensingScreen({ session, onStop }: Props) {
     );
 
     if (session.awaitingBowl) {
-      // Show prompt
+      // Show bowl prompt with animation
       gsap.fromTo(
         bowlPromptRef.current,
         { opacity: 0, y: 16, scale: 0.96 },
@@ -60,7 +62,7 @@ export function DispensingScreen({ session, onStop }: Props) {
         },
       );
     } else {
-      // Bowl already detected on mount -- skip prompt, show SVG immediately
+      // Bowl already detected -- show SVG immediately
       gsap.set(bowlPromptRef.current, { display: "none" });
       gsap.set(bowlSvgRef.current, { display: "block" });
       gsap.fromTo(
@@ -77,22 +79,21 @@ export function DispensingScreen({ session, onStop }: Props) {
       );
     }
 
-    // Sync the ref so the swap effect doesn't fire on first render
     prevAwaitingBowl.current = session.awaitingBowl;
   }, []);
 
-  // Swap between prompt and bowl SVG when awaitingBowl changes
+  // Animate bowl prompt and SVG transitions when bowl state changes
   useEffect(() => {
     const prompt = bowlPromptRef.current;
     const svg = bowlSvgRef.current;
     if (!prompt || !svg) return;
 
-    // Skip the very first render -- mount effect handles it
+    // Skip first render (handled by mount effect)
     if (prevAwaitingBowl.current === session.awaitingBowl) return;
     prevAwaitingBowl.current = session.awaitingBowl;
 
     if (session.awaitingBowl) {
-      // Bowl removed -- hide SVG, show prompt
+      // Bowl removed: hide SVG, show prompt
       gsap.to(svg, {
         opacity: 0,
         y: -10,
@@ -116,7 +117,7 @@ export function DispensingScreen({ session, onStop }: Props) {
         },
       });
     } else {
-      // Bowl placed -- hide prompt, show SVG
+      // Bowl placed: hide prompt, show SVG
       gsap.to(prompt, {
         opacity: 0,
         y: -10,
@@ -153,6 +154,7 @@ export function DispensingScreen({ session, onStop }: Props) {
   const overallPct =
     totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
+  // Determine current phase display text
   const phase = session.awaitingBowl
     ? "Waiting for bowl…"
     : activeSlot?.status === "indexing"
@@ -163,6 +165,7 @@ export function DispensingScreen({ session, onStop }: Props) {
           ? "Starting…"
           : "Finishing…";
 
+  // Circular progress ring calculations
   const R = 13;
   const CIRC = 2 * Math.PI * R;
   const dash = (overallPct / 100) * CIRC;
@@ -174,9 +177,10 @@ export function DispensingScreen({ session, onStop }: Props) {
       style={{ WebkitOverflowScrolling: "touch" }}
     >
       <div className="flex flex-col px-4 pb-safe gap-3">
-        {/* Status bar */}
+        {/* Status bar with progress ring */}
         <div data-s className="flex items-center justify-between">
           <div className="flex items-center gap-2 min-w-0">
+            {/* Status icon */}
             {session.awaitingBowl && (
               <FontAwesomeIcon
                 icon={faBowlFood}
@@ -201,6 +205,7 @@ export function DispensingScreen({ session, onStop }: Props) {
 
           <div className="flex items-center gap-2 flex-shrink-0 ml-3">
             <span className="text-xs text-muted font-body">{overallPct}%</span>
+            {/* Progress ring */}
             <svg
               width="34"
               height="34"
@@ -228,7 +233,7 @@ export function DispensingScreen({ session, onStop }: Props) {
               />
             </svg>
 
-            {/* Stop button */}
+            {/* Emergency stop button */}
             {onStop && (
               <button
                 onClick={handleStop}
@@ -251,7 +256,7 @@ export function DispensingScreen({ session, onStop }: Props) {
           </div>
         </div>
 
-        {/* Bowl prompt -- shown while awaiting bowl, hidden once detected */}
+        {/* Bowl prompt -- shown when no bowl detected */}
         <div
           ref={bowlPromptRef}
           className="glass-card px-5 py-8 flex-col items-center gap-5 text-center"
@@ -261,7 +266,7 @@ export function DispensingScreen({ session, onStop }: Props) {
             border: "1px solid rgba(200,105,42,0.35)",
           }}
         >
-          {/* Pulsing icon */}
+          {/* Animated pulsing icon */}
           <div style={{ position: "relative", width: 72, height: 72 }}>
             <div
               style={{
@@ -300,7 +305,6 @@ export function DispensingScreen({ session, onStop }: Props) {
             </div>
           </div>
 
-          {/* Text */}
           <div>
             <p
               className="font-display font-semibold text-txt"
@@ -318,7 +322,7 @@ export function DispensingScreen({ session, onStop }: Props) {
             </p>
           </div>
 
-          {/* Waiting dots */}
+          {/* Waiting animation dots */}
           <div className="flex items-center gap-2.5">
             <div className="flex gap-1.5">
               {[0, 1, 2].map((i) => (
@@ -343,7 +347,7 @@ export function DispensingScreen({ session, onStop }: Props) {
           </div>
         </div>
 
-        {/* Bowl SVG -- hidden until bowl is detected */}
+        {/* Bowl visualization -- shown once bowl is detected */}
         <div
           ref={bowlSvgRef}
           className="glass-card px-3 pt-2 pb-2"
@@ -356,6 +360,7 @@ export function DispensingScreen({ session, onStop }: Props) {
             activeSlot={activeSlot?.slot}
           />
           <div className="mt-1">
+            {/* Overall progress bar */}
             <div className="h-0.5 bg-surface rounded-full overflow-hidden">
               <div
                 className="h-full bg-accent rounded-full transition-all duration-500 ease-out"
@@ -375,7 +380,7 @@ export function DispensingScreen({ session, onStop }: Props) {
           </div>
         </div>
 
-        {/* Slot rows */}
+        {/* List of all spice slot rows showing individual progress */}
         <div data-s className="glass-card px-3 py-1">
           <div className="divide-y divide-border">
             {session.slots.map((s) => (
@@ -389,6 +394,7 @@ export function DispensingScreen({ session, onStop }: Props) {
         </div>
       </div>
 
+      {/* CSS animations for bowl waiting states */}
       <style>{`
         @keyframes bowlWait {
           0%, 80%, 100% { transform: translateY(0); opacity: 0.35; }
