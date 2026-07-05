@@ -69,6 +69,7 @@ def find_recipes(query: str) -> list[dict]:
         return []
 
     try:
+        # Generate a custom blend using AI
         blend = get_blend_for_dish(query)
         recipe_id = save_recipe(
             name=query.title(),
