@@ -1,4 +1,4 @@
-// Recipe list card -- spice bar preview, category badge, tap to select.
+// Recipe card displaying a spice blend with visual bar preview, category badge, and tap-to-select interaction with a press animation.
 
 import { useRef, useEffect } from "react";
 import { gsap } from "gsap";
@@ -8,12 +8,13 @@ import type { Recipe } from "../types";
 import { SPICE_COLORS } from "../types";
 
 interface Props {
-  recipe: Recipe;
-  servings?: number;
-  onSelect: (recipe: Recipe) => void;
-  delay?: number;
+  recipe: Recipe; // Recipe data to display
+  servings?: number; // Number of servings affects spice quantities shown
+  onSelect: (recipe: Recipe) => void; // Callback when card is selected
+  delay?: number; // Stagger delay for entrance animation
 }
 
+// Short category codes for the badge display
 const CATEGORY_MAP: Record<string, string> = {
   Mexican: "MX",
   Indian: "IN",
@@ -48,6 +49,7 @@ export function SpiceCard({
 }: Props) {
   const cardRef = useRef<HTMLButtonElement>(null);
 
+  // Staggered entrance animation - cards slide up from below
   useEffect(() => {
     gsap.fromTo(
       cardRef.current,
@@ -56,6 +58,7 @@ export function SpiceCard({
     );
   }, [delay]);
 
+  // Press animation: scale down briefly, then back up with a spring
   const handlePress = () => {
     gsap.to(cardRef.current, {
       scale: 0.97,
@@ -84,13 +87,13 @@ export function SpiceCard({
       ref={cardRef}
       onClick={handlePress}
       className="w-full text-left focus:outline-none"
-      style={{ opacity: 0 }}
+      style={{ opacity: 0 }} // Hidden initially, GSAP fades in
     >
       <div
         className="luxury-card p-4 transition-all duration-150 active:brightness-110"
         style={{ borderRadius: 20 }}
       >
-        {/* Top row: badge + arrow */}
+        {/* Top row: category badge + chevron button */}
         <div className="flex items-start justify-between gap-2 mb-3">
           <div className="category-pill">
             <span>{label}</span>
@@ -111,7 +114,7 @@ export function SpiceCard({
           </div>
         </div>
 
-        {/* Name */}
+        {/* Recipe name */}
         <h3
           className="font-display font-semibold text-txt leading-tight mb-1"
           style={{ fontSize: 22 }}
@@ -119,7 +122,7 @@ export function SpiceCard({
           {recipe.name}
         </h3>
 
-        {/* Description */}
+        {/* Optional description */}
         {recipe.description && (
           <p
             className="font-body font-light leading-snug mb-4"
@@ -129,7 +132,7 @@ export function SpiceCard({
           </p>
         )}
 
-        {/* Spice bar visualization */}
+        {/* Spice bar: proportional colored segments showing blend composition */}
         <div className="mb-3">
           <div className="flex h-1.5 rounded-full overflow-hidden gap-px">
             {activeSpices.map((sp) => {
@@ -151,7 +154,7 @@ export function SpiceCard({
           </div>
         </div>
 
-        {/* Spice pills */}
+        {/* Spice pills showing individual spices and their weights */}
         <div className="flex items-center gap-1.5 flex-wrap">
           {activeSpices.map((sp) => {
             const grams = (sp.grams_per_serving * servings).toFixed(1);
