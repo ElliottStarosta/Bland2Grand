@@ -1,4 +1,4 @@
-// Top app bar -- screen title, subtitle, optional back button; animates on screen change.
+// Top app bar (header) with dynamic title/subtitle based on current screen.
 
 import { useRef, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -8,12 +8,13 @@ import type { Screen } from "../types";
 import logoUrl from "../../public/logo.png";
 
 interface Props {
-  screen: Screen;
-  onBack?: () => void;
+  screen: Screen; // Current screen determines which title/subtitle to display
+  onBack?: () => void; // Optional callback renders a back button when provided
 }
 
+// Main titles displayed for each screen
 const TITLES: Record<Screen, string> = {
-  search: "bland2grand",
+  search: "bland2grand", // Brand name shown on home screen
   results: "Recipes",
   serving: "Servings",
   dispensing: "Dispensing",
@@ -21,6 +22,7 @@ const TITLES: Record<Screen, string> = {
   custom: "Custom Blend",
 };
 
+// Supporting subtitles that provide context for each screen
 const SUBTITLES: Record<Screen, string> = {
   search: "Spice Dispensing System",
   results: "Select your spice blend",
@@ -30,6 +32,7 @@ const SUBTITLES: Record<Screen, string> = {
   custom: "Build your own mix",
 };
 
+// Consistent typography styles applied to all titles
 const BASE_TITLE_STYLE = {
   fontFamily: "Cormorant, serif",
   fontWeight: 600,
@@ -66,6 +69,7 @@ export function Header({ screen, onBack }: Props) {
       );
   }, [screen]);
 
+  // Entrance animation when header first mounts.
   useEffect(() => {
     gsap.fromTo(
       containerRef.current,
@@ -81,6 +85,7 @@ export function Header({ screen, onBack }: Props) {
       style={{ borderBottom: "1px solid rgba(37,34,32,0.6)" }}
     >
       <div className="flex items-center gap-3 flex-1 min-w-0">
+        {/* Logo only appears on the search/home screen */}
         {isSearch && (
           <img
             src={logoUrl}
@@ -100,6 +105,7 @@ export function Header({ screen, onBack }: Props) {
             }}
           >
             {isSearch ? (
+              // Search screen has a stylized brand name with larger "2"
               <>
                 bland<span style={{ fontSize: "2.1rem" }}>2</span>grand
               </>
@@ -135,6 +141,7 @@ export function Header({ screen, onBack }: Props) {
         </div>
       </div>
 
+      {/* Back button - only rendered when onBack callback is provided */}
       {onBack && (
         <button
           onClick={onBack}
