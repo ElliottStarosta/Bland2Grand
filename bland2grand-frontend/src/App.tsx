@@ -1,4 +1,5 @@
-// Root app shell: screen routing, idle screensaver, dispense SSE hookup.
+// Root app shell: handles screen routing, idle screensaver, and dispense SSE integration.
+// Manages navigation between all screens and dispense session state.
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
@@ -31,19 +32,19 @@ export default function App() {
   } = useDispenseStream();
 
   const contentRef = useRef<HTMLDivElement>(null);
-  const fromFeatured = useRef(false);
+  const fromFeatured = useRef(false); // Track if navigation came from featured card
   const screenRef = useRef<Screen>(screen);
 
   useEffect(() => {
     screenRef.current = screen;
   }, [screen]);
 
-  // Idle timer -- inside the component
+  // Idle timer - returns to idle after 60s of inactivity (except during dispensing)
   const { wakeUp } = useIdleTimer(60_000, () => {
-    // Don't go idle while dispensing
     if (screenRef.current !== "dispensing") setIsIdle(true);
   });
 
+  // Emergency stop handler
   const handleStop = useCallback(async () => {
     try {
       await fetch("/api/stop", { method: "POST" });
@@ -57,7 +58,7 @@ export default function App() {
     wakeUp(); // restart the countdown
   }, [wakeUp]);
 
-  // Screen transition
+  // Screen transition with slide animation
   const navigateTo = useCallback((next: Screen) => {
     const el = contentRef.current;
     if (!el) {
@@ -81,7 +82,7 @@ export default function App() {
     });
   }, []);
 
-  // Handlers
+  // Search results handler
   const handleResults = useCallback(
     (recipes: Recipe[], q: string) => {
       setResults(recipes);
@@ -91,15 +92,17 @@ export default function App() {
     [navigateTo],
   );
 
+  // Recipe selection handler
   const handleSelect = useCallback(
     (recipe: Recipe) => {
       setSelected(recipe);
-      fromFeatured.current = screen === "search"; // came directly from search
+      fromFeatured.current = screen === "search"; // Track if from search or results
       navigateTo("serving");
     },
     [navigateTo, screen],
   );
 
+  // Start dispense flow
   const handleDispense = useCallback(
     async (servings: number) => {
       if (!selected) return;
@@ -107,8 +110,7 @@ export default function App() {
       setSession((prev) => ({ ...prev, servingCount: servings }));
 
       try {
-        // Opens SSE AND waits for 'connected' ack before posting dispense
-        // This guarantees no events are missed
+        // Opens SSE and waits for 'connected' ack before posting dispense. This guarantees no backend events are missed
         await connectAndDispense(selected.id, servings);
         navigateTo("dispensing");
       } catch (e: unknown) {
@@ -122,6 +124,7 @@ export default function App() {
     [selected, connectAndDispense, navigateTo, setSession],
   );
 
+  // Reset to search screen
   const handleReset = useCallback(() => {
     resetSession();
     setResults([]);
@@ -131,6 +134,7 @@ export default function App() {
     wakeUp();
   }, [resetSession, navigateTo, wakeUp]);
 
+  // Custom recipe saved handler
   const handleCustomSaved = useCallback(
     (recipe: Recipe) => {
       setSelected(recipe);
@@ -139,8 +143,10 @@ export default function App() {
     [navigateTo],
   );
 
+  // Back navigation logic
   const handleBack = useCallback(() => {
     if (screen === "serving" && fromFeatured.current) {
+      // If from featured card, go back to search directly
       fromFeatured.current = false;
       navigateTo("search");
     } else {
@@ -154,7 +160,7 @@ export default function App() {
     }
   }, [screen, navigateTo]);
 
-  // Auto-navigate to complete
+  // Auto-navigate to complete screen when dispense finishes
   const prevComplete = useRef(false);
   if (
     (session.isComplete || session.isError) &&
@@ -171,6 +177,7 @@ export default function App() {
     prevComplete.current = false;
   }
 
+  // Show back button on these screens
   const showBack =
     screen === "results" || screen === "serving" || screen === "custom";
 
@@ -182,7 +189,7 @@ export default function App() {
       {/* Idle screen overlay */}
       {isIdle && <IdleScreen onWake={handleWake} />}
 
-      {/* Grain overlay */}
+      {/* Grain texture overlay */}
       <div
         className="pointer-events-none fixed inset-0 z-40 opacity-[0.022]"
         style={{
@@ -192,7 +199,7 @@ export default function App() {
         }}
       />
 
-      {/* Ambient glow top */}
+      {/* Ambient glow at top */}
       <div
         className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 z-0"
         style={{
@@ -203,10 +210,10 @@ export default function App() {
         }}
       />
 
-      {/* Header */}
+      {/* Header with dynamic back button */}
       <Header screen={screen} onBack={showBack ? handleBack : undefined} />
 
-      {/* Screen content */}
+      {/* Screen content with slide transitions */}
       <div
         ref={contentRef}
         className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden"
