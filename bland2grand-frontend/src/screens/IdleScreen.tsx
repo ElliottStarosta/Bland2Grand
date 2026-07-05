@@ -1,15 +1,15 @@
+// Idle/screensaver screen shown when the app is inactive.
+
 import { useEffect, useRef, useCallback } from "react";
 import { gsap } from "gsap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHandPointer } from "@fortawesome/free-solid-svg-icons";
 
-// Types
-
 interface Props {
-  onWake: () => void;
+  onWake: () => void; // Callback to wake the app and navigate to search
 }
 
-// Ambient orb config
+// Ambient gradient orbs - large blurred circles floating in background
 const ORBS = [
   { color: "#C94020", size: 300, left: "10%", top: "8%" },
   { color: "#8B6914", size: 240, left: "85%", top: "20%" },
@@ -18,6 +18,7 @@ const ORBS = [
   { color: "#C63B0A", size: 160, left: "50%", top: "92%" },
 ];
 
+// Decorative dots that pulse in the background
 const DOTS = [
   "#8B6914",
   "#C94020",
@@ -30,9 +31,6 @@ const DOTS = [
 ];
 
 // Hook: idle timer
-// Fires onIdle after timeoutMs of no interaction.
-// Call the returned `wakeUp()` after dismissing the idle screen to restart the timer.
-
 export function useIdleTimer(timeoutMs: number, onIdle: () => void) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isIdleRef = useRef(false);
@@ -135,7 +133,6 @@ function AmbientOrbs() {
 }
 
 // Logo (logo.png)
-
 function Logo() {
   const ref = useRef<HTMLImageElement>(null);
   const initiated = useRef(false);
@@ -180,7 +177,6 @@ function Logo() {
 }
 
 // Wordmark
-
 function Wordmark() {
   const ref = useRef<HTMLDivElement>(null);
   const initiated = useRef(false);
@@ -235,7 +231,6 @@ function Wordmark() {
 }
 
 // Tap button (visual only -- whole screen is the tap target)
-
 function TapCue() {
   const wrapRef = useRef<HTMLDivElement>(null);
   const ring1Ref = useRef<HTMLDivElement>(null);
@@ -375,7 +370,6 @@ function TapCue() {
 }
 
 // Spice dot strip
-
 function SpiceDots() {
   const ref = useRef<HTMLDivElement>(null);
   const initiated = useRef(false);
@@ -454,10 +448,6 @@ function SpiceDots() {
 }
 
 // Main idle screen
-// Clicking ANYWHERE on the screen wakes it up
-// All child animations guard with `initiated` ref so they never re-run
-// if the component remounts (e.g. user goes idle a second time)
-
 export function IdleScreen({ onWake }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const waking = useRef(false);
