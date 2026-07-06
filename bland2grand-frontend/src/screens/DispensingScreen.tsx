@@ -178,7 +178,8 @@ export function DispensingScreen({ session, onStop }: Props) {
     >
       <div className="flex flex-col px-4 pb-safe gap-3">
         {/* Status bar with progress ring */}
-        <div data-s className="flex items-center justify-between">
+        <div data-s className="flex items-center justify-between"  style={{ marginTop: "1rem", marginBottom: "1rem"  }}>
+          
           <div className="flex items-center gap-2 min-w-0">
             {/* Status icon */}
             {session.awaitingBowl && (
@@ -347,7 +348,7 @@ export function DispensingScreen({ session, onStop }: Props) {
           </div>
         </div>
 
-        {/* Bowl visualization -- shown once bowl is detected */}
+        {/* Bowl visualization - shown once bowl is detected */}
         <div
           ref={bowlSvgRef}
           className="glass-card px-3 pt-2 pb-2"
