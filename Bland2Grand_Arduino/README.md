@@ -1,6 +1,6 @@
 # Bland2Grand Arduino firmware
 
-PlatformIO project for the **Arduino UNO R4 WiFi**. Drives carousel indexing, auger dispensing, load-cell feedback, and talks to Flask over WiFi.
+PlatformIO project for the **Arduino UNO Q**. Drives carousel indexing, auger dispensing, load-cell feedback, and talks to Flask over WiFi.
 
 ## What runs where
 
@@ -20,7 +20,7 @@ IDLE → INDEXING → DISPENSING → PARKING → (next spice or done)
 
 | Part | Job |
 |------|-----|
-| UNO R4 WiFi | Controller + LED matrix status |
+| UNO Q | Controller + LED matrix status |
 | NEMA 23 + TB6600 | 8-slot carousel |
 | NEMA 17 + TB6600 | Auger / half-spur gear |
 | HX711 + load cell | Gram feedback (optional) |
