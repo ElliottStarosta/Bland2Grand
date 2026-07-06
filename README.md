@@ -7,7 +7,7 @@
 
 ### Automatic AI‑Powered Spice Dispensing System
 
-**Arduino UNO R4 WiFi • Flask • React • Load Cell Feedback • Custom Recipe Generation**
+**Arduino UNO Q • Flask • React • Load Cell Feedback • Custom Recipe Generation**
 
 Search for a recipe (or build your own blend), choose the number of servings, and Bland2Grand automatically dispenses each spice with real-time weight feedback.
 
@@ -43,7 +43,7 @@ Flask Backend (5000)
  HTTP + UDP
       │
       ▼
-Arduino UNO R4 WiFi
+Arduino UNO Q
       │
  GPIO
       │
@@ -87,7 +87,7 @@ Development was documented weekly throughout the project.
 ## Quick Start
 
 1. Enable the **bland2grand** Windows hotspot.
-2. Power the Arduino UNO R4 WiFi.
+2. Power the Arduino UNO Q.
 3. Run the **Bland2Grand: Full Stack** VS Code task.
 4. Forward port **5173** and set visibility to **Public**.
 5. Open the forwarded URL on your phone or `http://localhost:5173` on your PC.
@@ -158,7 +158,7 @@ Open `Bland2Grand_Arduino` using PlatformIO and upload the firmware.
 
 | Component | Purpose |
 |-----------|----------|
-|Arduino UNO R4 WiFi|Main controller|
+|Arduino UNO Q|Main controller|
 |NEMA 23 + TB6600|Carousel motor|
 |NEMA 17 + TB6600|Auger motor|
 |HX711 + Load Cell|Weight feedback|
