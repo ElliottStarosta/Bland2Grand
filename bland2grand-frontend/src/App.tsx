@@ -13,6 +13,7 @@ import { CompleteScreen } from "./screens/CompleteScreen";
 import { CustomRecipeScreen } from "./screens/CustomRecipeScreen";
 import { api } from "./screens/lib/api";
 import { useDispenseStream } from "./hooks/useDispenseStream";
+import { useGlobalClickGuard } from "./hooks/useGlobalClickGuard";
 import type { Recipe, Screen } from "./types";
 
 export default function App() {
@@ -39,10 +40,14 @@ export default function App() {
     screenRef.current = screen;
   }, [screen]);
 
-  // Idle timer - returns to idle after 60s of inactivity (except during dispensing)
+  // Idle timer -- returns to idle after 60s of inactivity (except during dispensing)
   const { wakeUp } = useIdleTimer(60_000, () => {
     if (screenRef.current !== "dispensing") setIsIdle(true);
   });
+
+  // App-wide guard: blocks rapid repeat clicks on the same button anywhere
+  // in the tree, so spam-clicking can't resend a signal.
+  useGlobalClickGuard(400);
 
   // Emergency stop handler
   const handleStop = useCallback(async () => {

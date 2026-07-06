@@ -106,7 +106,6 @@ button, [role='button'] {
   background: linear-gradient(145deg, #1C1915 0%, #131210 100%);
   border: 1px solid #2A2722;
   border-radius: var(--radius-card);
-  box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 8px 32px rgba(0,0,0,0.4);
   position: relative;
   overflow: hidden;
 }
