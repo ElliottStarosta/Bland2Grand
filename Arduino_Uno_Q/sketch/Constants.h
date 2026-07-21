@@ -1,0 +1,159 @@
+#pragma once
+
+#include <Arduino.h>
+
+// Pin Assignments
+
+// Carousel motor (M1 / NEMA 23 / TB6600) - rotates the spice carousel to bring the selected slot under the auger
+static constexpr uint8_t PIN_CAROUSEL_STEP = 5;
+static constexpr uint8_t PIN_CAROUSEL_DIR = 7;
+
+// Auger motor (M2 / NEMA 17 / TB6600) - turns the dispensing auger
+static constexpr uint8_t PIN_AUGER_STEP = 3;
+static constexpr uint8_t PIN_AUGER_DIR = 4;
+
+// HX711 load cell amplifier (weighs the dispensed spice)
+static constexpr uint8_t PIN_HX711_DOUT = A1;
+static constexpr uint8_t PIN_HX711_SCK = A0;
+
+// Stepper Motor Geometry
+
+// Both motors: 1.8 deg step angle, 1/8 microstepping
+static constexpr float STEP_ANGLE_DEG = 1.8f;
+static constexpr uint8_t MICROSTEP_DIVISOR = 8;
+// Microsteps per full motor shaft revolution (360 / 1.8 * 8 = 1600)
+static constexpr uint16_t STEPS_PER_REV = static_cast<uint16_t>(
+    360.0f / STEP_ANGLE_DEG * MICROSTEP_DIVISOR); // = 1600
+
+// Carousel Kinematics
+
+// Gear reduction between the carousel motor shaft and the carousel itself
+static constexpr float CAROUSEL_GEAR_RATIO = 18.0f;
+static constexpr uint8_t CAROUSEL_SLOT_COUNT = 8;
+// Angle (at the carousel, not the motor) between adjacent slots
+static constexpr float CAROUSEL_SLOT_DEG = 360.0f / CAROUSEL_SLOT_COUNT;
+
+// Motor shaft degrees to move one carousel slot (accounts for gear ratio)
+static constexpr float MOTOR_DEG_PER_SLOT = CAROUSEL_SLOT_DEG * CAROUSEL_GEAR_RATIO;
+
+// Microsteps per carousel index move (one slot-to-slot rotation)
+static constexpr uint16_t STEPS_PER_SLOT = static_cast<uint16_t>(
+    MOTOR_DEG_PER_SLOT / 360.0f * STEPS_PER_REV);
+
+// Homing scan speed while searching for the home sensor/flag (steps/s)
+static constexpr float HOMING_SPEED_STEPS_S = 500.0f;
+
+// Normal carousel indexing speed and acceleration (steps/s, steps/s^2)
+static constexpr float INDEX_SPEED_STEPS_S = 3000.0f;
+static constexpr float INDEX_ACCEL_STEPS_S2 = 500.0f;
+
+// Empirical correction added per slot to counter accumulated mechanical backlash/slip that STEPS_PER_SLOT alone doesn't fully capture
+static constexpr uint16_t STEPS_PER_SLOT_CORRECTION = 143;
+
+// Settle delay after index before dispense begins (ms) - lets carousel vibration die down before the auger starts turning
+static constexpr uint16_t INDEX_SETTLE_MS = 1000;
+
+// Auger / Half-Spur Gear Geometry
+
+// Microsteps for one full auger revolution (auger drives 1:1 off its motor)
+static constexpr uint16_t STEPS_PER_AUGER_CYCLE = STEPS_PER_REV;
+
+// Back-purge: reverse all dispensed steps after each dispense. This sweeps spice back up the helix and re-parks the toothless arc.
+static constexpr float BACK_PURGE_SPEED_STEPS_S = 1600.0f;
+
+// Delay after back-purge before disabling coils (ms) -- lets the auger fully stop before power is cut, avoiding a coasting drift
+static constexpr uint16_t AUGER_COIL_DISABLE_DELAY_MS = 200;
+
+// Auger Speed Ramp
+
+// Top speed used for bulk (coarse) dispensing (steps/s)
+static constexpr float AUGER_FULL_SPEED_STEPS_S = 3200.0f;
+// Max speed allowed during fine "nudge" taps near the target weight
+static constexpr float AUGER_NUDGE_MAX_SPEED = AUGER_FULL_SPEED_STEPS_S * 0.35f;
+
+// Three-stage closed-loop speed ramp keyed to dispense progress (steps_done / total_steps). Slows the auger down as it approaches target to reduce overshoot.
+static constexpr float RAMP_STAGE2_THRESHOLD = 0.80f; // progress fraction to enter stage 2
+static constexpr float RAMP_STAGE3_THRESHOLD = 0.95f; // progress fraction to enter stage 3
+
+static constexpr float RAMP_SPEED_STAGE1 = 1.00f; // 0%-80% progress: full speed
+static constexpr float RAMP_SPEED_STAGE2 = 0.75f; // 80%-95% progress: 3/4 speed
+static constexpr float RAMP_SPEED_STAGE3 = 0.50f; // 95%-100% progress: half speed
+
+// Auger Flow Model - clump / overshoot tuning constants
+
+// Phase 1 (bulk/coast) stops at this fraction of target weight. In-flight spice + any clump release must not push the total past target.
+static constexpr float COAST_UNDERSHOOT_RATIO = 0.85f;
+
+// Phase 3 (nudge): how many auger cycles per nudge tap. Smaller = finer control but more settle delays. 1 cycle ~= GRAMS_PER_REV[slot] grams per tap.
+static constexpr uint8_t TAP_CYCLES = 1;
+
+// Phase 2/3: how many consecutive stable scale reads before we trust the weight.
+// Stability = successive readings within STABLE_BAND_G of each other.
+static constexpr uint8_t SETTLE_READS = 3;
+static constexpr float STABLE_BAND_G = 0.25f;
+
+// Maximum nudge taps before giving up (prevents infinite loop on stuck auger).
+static constexpr uint8_t MAX_TAPS = 30;
+
+// Per-slot coast EMA: how fast the coast estimate adapts (0=never, 1=instant).
+static constexpr float COAST_ALPHA = 0.30f;
+
+// Safety: if a single tap delivers more than this many grams, flag it as a clump.
+// Useful for Monitor diagnostics; does not abort the dispense.
+static constexpr float CLUMP_WARN_G = 0.5f;
+
+// Bridge Push Timing
+
+// How often to push a weight update to Python during dispensing (ms).
+// Keep >= 150 ms so the RPC call fits between motor steps cleanly.
+static constexpr uint16_t BRIDGE_PUSH_INTERVAL_MS = 150;
+
+// Settle delay between forward dispense ending and back-purge starting (ms)
+static constexpr uint16_t DISPENSE_SETTLE_MS = 400;
+
+// Per-spice dispense timeout (ms) - aborts the dispense if it runs too long
+static constexpr uint32_t DISPENSE_TIMEOUT_MS = 60000UL;
+
+static constexpr uint32_t WATCHDOG_TIMEOUT_MS = 30000UL;
+
+// Load Cell
+
+// Number of raw samples averaged per normal weight reading
+static constexpr uint8_t SCALE_AVG_SAMPLES = 1;
+// Number of raw samples averaged during calibration (slower, more accurate)
+static constexpr uint8_t SCALE_AVG_SAMPLES_CAL = 32;
+// Delay between successive scale polls when settling on a stable reading (ms)
+static constexpr uint16_t SCALE_POLL_MS = 100;
+// Delay after taring before trusting the zero point (ms)
+static constexpr uint16_t TARE_SETTLE_MS = 500;
+// Rated maximum load of the scale (g)
+static constexpr float SCALE_CAPACITY_G = 1000.0f;
+// Hard overload cutoff - readings above this are treated as a fault (g)
+static constexpr float SCALE_OVERLOAD_G = 1500.0f;
+// Expected measurement accuracy/resolution of the scale (g)
+static constexpr float SCALE_ACCURACY_G = 0.30f;
+// HX711 calibration factor (raw counts per gram), determined experimentally
+static constexpr float SCALE_CAL_FACTOR = 687.473f;
+// Minimum weight expected for an empty bowl to be considered "present" (g)
+static constexpr float MIN_BOWL_WEIGHT_G = 50.0f;
+
+// Flow Model (EEPROM-backed regression)
+
+// Minimum number of calibration data points required before trusting a
+// per-slot regression model
+static constexpr uint8_t CALIB_POINTS_MIN = 3;
+// Upper bound on the modeled "coast" (in-flight spice) allowance (g)
+static constexpr float MAX_COAST_GRAMS = 2.0f;
+// Starting EEPROM address for stored per-slot calibration data
+static constexpr uint16_t EEPROM_BASE_ADDR = 0;
+// Bytes of EEPROM reserved per slot for calibration data
+static constexpr uint8_t EEPROM_BYTES_PER_SLOT = 8;
+
+// Physical Dimensions (informational - not used directly in control logic)
+
+static constexpr float CAROUSEL_LOAD_RADIUS_M = 0.080f;
+static constexpr float CONTAINER_LOADED_MASS_KG = 0.125f;
+static constexpr float AUGER_TUBE_RADIUS_M = 0.010f;
+static constexpr float AUGER_PITCH_M = 0.010f;
+static constexpr float SPICE_DENSITY_MIN_G_ML = 0.19f; // oregano
+static constexpr float SPICE_DENSITY_MAX_G_ML = 1.20f; // e.g. dense ground spices
