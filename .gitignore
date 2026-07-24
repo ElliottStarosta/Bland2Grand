@@ -28,5 +28,3 @@ dist-ssr
 # Python bytecode
 __pycache__/
 *.py[cod]
-
-Maker's Guide/
