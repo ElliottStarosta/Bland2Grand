@@ -45,7 +45,7 @@ python app.py
 `.env` example:
 
 ```env
-ARDUINO_URL=http://192.168.137.50
+ARDUINO_URL=http://192.168.x.x
 OPENROUTER_API_KEY=sk-or-...
 AI_MODEL=anthropic/claude-3-haiku
 DATABASE_PATH=bland2grand.db
