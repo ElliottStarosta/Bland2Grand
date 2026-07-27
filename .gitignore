@@ -28,3 +28,13 @@ dist-ssr
 # Python bytecode
 __pycache__/
 *.py[cod]
+
+# Ignore everything in System Manual
+System Manual/**
+
+# Keep the LaTeX source
+!System Manual/main.tex
+
+# Keep the images folder and its contents
+!System Manual/images/
+!System Manual/images/**
