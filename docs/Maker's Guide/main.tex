@@ -495,8 +495,7 @@ Once the \textbf{Backend + Frontend} task is running, the web app is accessible 
 \colorbox{palegray}{\texttt{\textcolor{terracottadark}{http://\{laptop\_ip\}:5173}}}
 \end{center}
 
-\paragraphshot[0.6\linewidth]{The laptop's IP address is printed in the Vite terminal panel when it starts. On the Arduino's serial monitor you will also see the IP it received from the hotspot, which confirms the two devices are on the same subnet.}{images/r4_vite_server.png}{Vite dev server terminal output showing the network URL to open on the phone.}
-
+The laptop's IP address is printed in the Vite terminal panel when it starts. On the Arduino's serial monitor you will also see the IP it received from the hotspot, which confirms the two devices are on the same subnet.
 \subsubsection{First-Time Backend Setup}
 
 If this is the first time running the backend on this laptop, set it up once before using the VS Code tasks:
@@ -509,10 +508,11 @@ pip install -r requirements.txt
 python seed_recipes.py
 \end{lstlisting}
 
+\newpage
 Create a \texttt{.env} file in \texttt{bland2grand-backend/}:
 
 \begin{lstlisting}
-ARDUINO_URL=http://192.168.137.50
+ARDUINO_URL=http://192.168.x.x
 OPENROUTER_API_KEY=YOUR_KEY_HERE
 AI_MODEL=anthropic/claude-3-haiku
 DATABASE_PATH=bland2grand.db
