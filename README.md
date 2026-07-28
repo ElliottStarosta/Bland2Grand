@@ -82,6 +82,7 @@ Development was documented weekly throughout the project.
 | **HRS**  | Hardware Requirements Specification | [docs/HRS.pdf](docs/HRS.pdf) |
 | **PDD**  | Preliminary Design Document | [docs/PDD.pdf](docs/PDD.pdf) |
 | **HDD**  | Hardware Design Document | [docs/HDD.pdf](docs/HDD.pdf) |
+| **MGD**  | Maker's Guide Document | [docs/MGD.pdf](docs/Incomplete_MG.pdf) |
 
 ---
 
