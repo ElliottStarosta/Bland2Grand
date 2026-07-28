@@ -532,8 +532,190 @@ Open \texttt{Bland2Grand\_Arduino} in PlatformIO once to confirm it builds befor
 \texttt{MOCK\_ARDUINO=true} simulates dispensing in software with no hardware attached --- useful for testing the app without the machine. Set it to \texttt{false} once the Arduino is flashed and wired, so the backend talks to the real hardware.
 \end{tcolorbox}
 
-\subsubsection{Using the App}
+\section{Using Bland2Grand}
+\label{sec:using}
 
-Once the web app is open on a phone, use it the same way regardless of which board is running underneath: search for a dish (or build a custom blend), pick a result, set the number of servings, tap \textbf{Dispense}, and watch the live progress screen until the Complete screen appears.
+Once your board is flashed and the app is running (\secref{sec:unoq-setup} or \secref{sec:unor4-setup}), everything from here on is identical regardless of which board you built. You interact with Bland2Grand entirely through a web app on your phone: the machine handles all indexing, dispensing, and weight confirmation autonomously and reports the result back in real time.
+
+\begin{center}
+  \IfFileExists{images/user_guide/system_front_view.jpeg}{%
+    \includegraphics[width=0.45\linewidth,angle=-90]{images/user_guide/system_front_view.jpeg}\par
+    \captionof{figure}{Bland2Grand assembled system, ready to dispense.}\par
+  }{%
+    \begin{tcolorbox}[shotbox, width=0.45\linewidth]
+      \centering
+      \vspace{2pt}
+      {\small\textbf{\textcolor{terracottadark}{Screenshot placeholder}}}\\[4pt]
+      {\footnotesize\ttfamily\textcolor{midgray}{\detokenize{images/user_guide/system_front_view.jpeg}}}
+      \vspace{2pt}
+    \end{tcolorbox}
+    \captionof{figure}{Bland2Grand assembled system, ready to dispense.}\par
+  }
+\end{center}
+
+\subsection{Powering On and Preparing to Dispense}
+
+\begin{steplist}
+  \item \textbf{Place the machine on a flat, level surface.} The load cell platform must stay level to within 2\textdegree\ for accurate readings --- avoid uneven countertops or surfaces that vibrate.
+
+  \item \textbf{Connect power to the board.} 24\,V for the UNO R4 build, or the UNO Q's own power input if that's your build.
+
+  \item \textbf{Verify spice containers are loaded.} Each of the 8 slots should hold its designated spice (see the slot map in \secref{sec:refill}). Friction-fit lids pull straight off --- do not twist.
+
+  \item \stepshot{\textbf{Place an empty bowl on the scale platform.} Sit it flat and centred --- the scale tares before each dispense, so the exact bowl weight doesn't matter.}{images/user_guide/bowl_onscale.jpg}{Bowl placed on the scale platform at the base of the machine.}
+
+  \item \textbf{Confirm the app is reachable.} Open the board's URL on your phone (port \textbf{5000} for UNO Q, or \texttt{http://\{laptop\_ip\}:5173} for UNO R4) and make sure the phone is on the same network as the board.
+\end{steplist}
+
+\begin{tcolorbox}[notebox, title={\ticon{i}\ \ Same app, either board}]
+\small
+The interface below is served identically whether the Flask app is running on the UNO Q itself or on a laptop for the UNO R4 build. Once the URL loads, the rest of this section applies exactly as written.
+\end{tcolorbox}
+
+\subsection{Using the Mobile Web App}
+
+\subsubsection{Idle Screen: Tap to Wake}
+
+When you first open the URL, the idle screen appears: ambient coloured orbs drift across a dark background with the Bland2Grand logo and a pulsing tap indicator. Tap anywhere to wake the app.
+
+\begin{center}
+\screenshot[0.3\linewidth]{images/user_guide/idle_screen.png}{Idle screen. Tap anywhere to continue.}
+\end{center}
+
+\newpage
+\subsubsection{Search Screen: Find a Recipe}
+
+The search screen offers three ways to find a recipe:
+
+\begin{enumerate}[leftmargin=1.5em, itemsep=4pt]
+  \item \textbf{Type a dish name} into the search bar. Results appear automatically after a 2.5-second pause. If no local match exists, the AI generates a blend and saves it to the database for next time.
+  \item \textbf{Tap a Featured Blend} tile to jump directly to a popular recipe without searching.
+  \item \textbf{Tap a cuisine category} (Mexican, Indian, Italian, etc.) to browse everything in that category.
+\end{enumerate}
+
+\begin{center}
+\screenshot[0.4\linewidth]{images/user_guide/search_screen.png}{Search screen showing the search bar, featured blends, and cuisine category grid.}
+\end{center}
+
+If the dish isn't in the local database yet, an AI loading overlay appears while the blend is generated --- this takes 1--3 seconds and only happens once per unique dish name; every future search for the same dish is served instantly from the cache.
+
+\begin{figure}[H]
+  \centering
+  \begin{minipage}{0.45\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{images/user_guide/ai_loading.png}
+    \small\textit{AI generating a blend}
+  \end{minipage}
+  \hfill
+  \begin{minipage}{0.45\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{images/user_guide/ai_result.png}
+    \small\textit{Generated result}
+  \end{minipage}
+  \caption{AI loading overlay shown while generating a new recipe, and the resulting spice blend.}
+\end{figure}
+
+\subsubsection{Results Screen: Choose Your Blend}
+
+Up to six matching recipes appear as cards, each showing the recipe name, a cuisine badge, a proportional spice colour bar, and the gram amount per serving for every active spice. Tap a card to select it.
+
+\begin{center}
+\screenshot[0.45\linewidth]{images/user_guide/results_screen.png}{Results screen showing matching recipe cards with spice colour bars and gram breakdowns.}
+\end{center}
+
+\subsubsection{Serving Screen: Set Portions}
+
+Use the large +/- buttons or the quick-pick row (1, 2, 4, 6, 8) to set how many servings to dispense. Gram amounts update live as you adjust. When ready, tap \textbf{Dispense N servings}.
+
+\begin{center}
+\screenshot[0.45\linewidth]{images/user_guide/serving_screen.png}{Serving screen with the counter set and gram breakdown updating live.}
+\end{center}
+
+\subsubsection{Dispensing Screen: Watch It Work}
+
+While dispensing, the screen shows:
+
+\begin{itemize}[leftmargin=1.5em, itemsep=2pt]
+  \item A \textbf{bowl visualisation} that fills with layered spice in each slot's colour as weight accumulates.
+  \item A \textbf{per-spice progress row} with a live bar, status icon (rotating for indexing, spinning for dispensing, checkmark for done), and current vs.\ target weight.
+  \item A \textbf{circular progress ring} showing overall completion percentage.
+  \item A \textbf{status line} showing the current action (e.g.\ \textit{``Rotating\ldots''} or \textit{``Cumin''}).
+\end{itemize}
+
+Each spice plays a voice announcement when the carousel reaches its slot.
+
+\begin{tcolorbox}[warningbox, title={\ticon{!}\ \ Don't remove the bowl mid-dispense}]
+\small
+Pulling the bowl off the scale during dispensing will throw off the weight readings for the rest of the session. Wait for the Complete screen before touching it.
+\end{tcolorbox}
+
+\begin{center}
+\screenshot[0.45\linewidth]{images/user_guide/dispensing_screen.jpg}{Dispensing screen mid-session: bowl filling, per-spice rows, and progress ring.}
+\end{center}
+
+\subsubsection{Complete Screen: Your Blend Is Ready}
+
+Once every spice has been dispensed, the screen transitions to Ready, showing:
+
+\begin{itemize}[leftmargin=1.5em, itemsep=2pt]
+  \item A green checkmark (or amber warning if any slot timed out).
+  \item A summary card listing the actual dispensed weight for each spice against its target.
+  \item The total dispensed weight.
+\end{itemize}
+
+Retrieve your bowl and start cooking. Tap \textbf{Start a new blend} to return to the search screen.
+
+\begin{center}
+\screenshot[0.45\linewidth]{images/user_guide/complete_screen.jpg}{Complete screen showing the dispensed summary with accuracy indicators.}
+\end{center}
+
+\subsubsection{Custom Recipe Builder}
+
+Tap \textbf{Create Custom Blend} on the search screen to build your own blend from scratch:
+
+\begin{enumerate}[leftmargin=1.5em, itemsep=4pt]
+  \item Enter a blend name and optional description at the top.
+  \item For each of the 8 slots, tap the unit label (\texttt{tsp}, \texttt{tbsp}, or \texttt{g}) to cycle between units --- amounts convert automatically using each spice's density constant.
+  \item Use the +/- buttons to set the amount for each spice. A live proportional bar chart updates as you adjust.
+  \item Tap \textbf{Save \& Dispense} to write the recipe to the database and proceed to the serving screen.
+\end{enumerate}
+
+\begin{center}
+\screenshot[0.4\linewidth]{images/user_guide/custom_recipe_builder.png}{Custom recipe builder showing per-slot amount controls, unit picker bubbles, and live spice bar.}
+\end{center}
+
+\subsection{Refilling Containers}
+\label{sec:refill}
+
+Each container has a twist-off lid. Make sure the machine isn't actively dispensing, then twist counter-clockwise to open, fill, and replace clockwise until the lid seats firmly.
+
+\begin{center}
+\begin{tabular}{|C{1.2cm}|L{3.5cm}|C{1.2cm}|L{3.5cm}|}
+\hline
+\rowcolor{terracotta}
+\textcolor{white}{\textbf{Slot}} & \textcolor{white}{\textbf{Spice}} &
+\textcolor{white}{\textbf{Slot}} & \textcolor{white}{\textbf{Spice}} \\\hline
+1 & Salt & 5 & Cumin \\\hline
+\rowcolor{lightgray}
+2 & Black Pepper & 6 & Paprika \\\hline
+3 & Onion Powder & 7 & Oregano \\\hline
+\rowcolor{lightgray}
+4 & Garlic Powder & 8 & Cayenne \\\hline
+\end{tabular}
+\end{center}
+
+\begin{tcolorbox}[warningbox, title={\ticon{!}\ \ Don't swap spices between slots without recalibrating}]
+\small
+Each slot's calibration factor is measured for that specific spice's bulk density. Swapping spices without running a new calibration will produce inaccurate dispense amounts. Use the \texttt{POST /api/calibrate} endpoint, or the calibration sketch in \texttt{src/tests/calibration.cpp}, to update a slot's factor after any spice change.
+\end{tcolorbox}
+
+\subsection{Safety Notes}
+
+\begin{itemize}[leftmargin=1.5em, itemsep=4pt]
+  \item A \textbf{60-second per-spice timeout} halts the auger and aborts the blend if the target weight isn't reached; protects against empty containers or a jammed auger.
+  \item A \textbf{30-second watchdog} halts all motors if the connection to the backend is lost mid-session.
+  \item A \textbf{scale overload fault} triggers if more than 1\,500\,g is detected on the platform.
+  \item Do not reach into the carousel area while the machine is powered on.
+\end{itemize}
 
 \end{document}
