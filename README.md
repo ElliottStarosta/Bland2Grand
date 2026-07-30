@@ -19,7 +19,7 @@ Search for a recipe (or build your own blend), choose the number of servings, an
 
 - 8-slot automatic spice carousel
 - Weight-based dispensing with HX711 load cell
-- React touchscreen kiosk interface
+- React touchscreen interface
 - Flask orchestration backend
 - Arduino firmware controlling motors and sensors
 - AI-assisted custom spice blend generation
